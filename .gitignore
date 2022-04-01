@@ -1,32 +1,42 @@
-# Prerequisites
-*.d
+# This file is used to record file suffixes that do not require version tracking.
+# Last change time: 2022-03-30 10:34
 
-# Compiled Object files
+# Visual Studio (Code) cache/config directory
+/.vs/
+/.vscode/
+
+# Dev-C++ project/backup
+*.dev
+*.layout
+*.win
+
+# Visual Studio project
+/buildconfig/
+*.sln
+*.idb
+
+# Program debug file
+*.pdb
+*.obj.enc
+*.exe.recipe
+*.ilk
+*.tlog
+
+# Target/Executable file
+*.exe
+*.log
+
+# Compiled object files
 *.slo
 *.lo
 *.o
 *.obj
 
-# Precompiled Headers
+# Precompiled headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Others
+*.mp3
+*.wav
+*.m4a

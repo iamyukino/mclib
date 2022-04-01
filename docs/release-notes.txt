@@ -1,0 +1,145 @@
+# mclib v0.5.1-debug.3461
+
+Release notes for Mclib
+--------------------------------
+  |
+.3461     March 29th 2022 - March 31th 2022
+  |  
+  |  [ IMPROVE  ]    Ensure that there are no errors or warnings under the
+  |                       highest warning level of MSVC.
+  |  [ IMPROVE  ]    Fixed some exceptions thrown at runtime.
+  |
+  |
+  |
+.3460     March 17th 2022 - March 28th 2022
+  |  
+  |  [   NEW    ]    Add pyobj/tuple.h .
+  |  [   NEW    ]    Add in mclib.cpp: init/quit/version/register_quit.
+  |  [   NEW    ]    Add clog4m.init(void) to use console output.
+  |  [ IMPROVE  ]    Add mcl_base_obj to ensure the execution order of destructors.
+  |
+  |
+  |
+.3457-59  February 17th 2022 - March 16th 2022
+  |  
+  |  [  FIXED   ]    Fixed a bug where toggle_fullscreen() couldn't be used
+  |                       properly because of get_active().
+  |  [  FIXED   ]    Fixed mixer.music.unload's & mcl_clog4m_weak_guard_t's
+  |                       call timing.
+  |  [ IMPROVE  ]    Rewritten mlog and renamed it 'clog4m'.
+  |  [ IMPROVE  ]    Uses wchar_t instead and provides char conversion.
+  |  [  ADDED   ]    Add function display.maximize() .
+  |
+  |
+  |
+.3454-56  January 27th 2022 - February 13th 2022
+  |  
+  |  [   NEW    ]    Add mcl::mixer.music .
+  |  [ IMPROVE  ]    Enable music to be played circularly.
+  |  [ IMPROVE  ]    Ensure that all functions in mixer.music are executed
+  |                       in the same thread.
+  |  [   NEW    ]    Add file README.md & README.zh.md .
+  |  [   NEW    ]    Add function to fade music.
+  |
+  |
+  |
+.3453     January 19th 2022 - January 26th 2022
+  |   
+  |  [   NEW    ]    Add file timer.h & timer.cpp .
+  |  [  FIXED   ]    Update copyright related information.
+  |  [  FIXED   ]    Optimize some implementation details of display.
+  |
+  |
+  |
+.3450-52  December 30th 2021 - January 18th 2022
+  |   
+  |  [   NEW    ]    Add function set_mode (init module).
+  |  [   NEW    ]    Implemented the setting flags module of set_mode.
+  |  [   NEW    ]    Add function get_flags.
+  |  [ IMPROVED ]    Strengthened set_mode's ability to adapt to external changes.
+  |  [  FIXED   ]    Optimized some implementation details of mlog and display.
+  |
+  |
+  |
+.3448-49  December 23rd-28th 2021
+  |   
+  |  [  FIXED   ]    Fixed the problem that white boxes should not appear in full
+  |                       screen window.
+  |  [  FIXED   ]    Fixed the problem of abnormal window display caused by hiding
+  |                       first and then full screen.
+  |  [   NEW    ]    Add function set_window_alpha.
+  |  [ IMPROVED ]    Improve get_wm_info for explicit transformation not being needed.
+  |
+  |
+  |
+.3445-47  December 20th-22nd 2021
+  |   
+  |  [ IMPROVED ]    Improve the guard of mlog.
+  |  [   NEW    ]    Add get_wm_info to get information about the current windowing
+  |                       system with key strings.
+  |  [  ADDED   ]    Add intention functions.
+  |
+  |
+  |
+.3439-44  December 10th-19th 2021
+  |   
+  |  [   NEW    ]    Completed some functions in mdraw and renamed them display.
+  |  [  ADDED   ]    Basically finished creating the window.
+  |  [   NEW    ]    Realizes the function of "temporarily disable screen saver".
+  |  [ IMPROVED ]    Add nothrow guarantee for mlog.
+  |  [   NEW    ]    Add function toggle_fullscreen.
+  |
+  |
+  |
+.3435-38  December 4th-9th 2021
+  |   
+  |  [ IMPROVED ]    Adding timecnt-spinlock to ensure thread safety of mlog.
+  |  [  FIXED   ]    Correct some functions.
+  |
+  |
+  |
+.3434     November 27th-28th 2021
+  |   
+  |  [ IMPROVED ]    Rearrange code and add Doc Comments for some functions.
+  |  [  FIXED   ]    Correct all functions in color.cpp.
+  |
+  |
+  |
+.3431-33  November 24th-26th 2021
+  |   
+  |  [   NEW    ]    New thread creation function with ability to write logs.
+  |
+  |
+  |
+.3428-30  November 21st-23rd 2021
+  |   
+  |  [ IMPROVED ]    Optimize directories structure.
+  |  [   NEW    ]    Create 'mdraw.h/cpp'.
+  |  [ IMPROVED ]    Eliminate most of warnings.
+  |
+  |
+  |
+.3425-27  November 19th 2021
+  |   
+  |  [   NEW    ]    Add 'merr' for unbuffered logging.
+  |  [ IMPROVED ]    Add template function 'pttimestr' for fast time print.
+  |
+  |
+  |
+.3421-25  November 10th-19th 2021
+  |   
+  |  [   NEW    ]    Add 'proxy' for layer_t so that it can be indexed as an array.
+  |  [  ADDED   ]    Extend colors.
+  |  [  ADDED   ]    Add support for wchar_t
+  |  [  FIXED   ]    Correct 'string_cast' on function template parameters.
+  |  [  FIXED   ]    Correct 'bind_mf' on function template parameters.
+  |  [ IMPROVED ]    .h / .hpp / .cpp files are all encoded in UTF-8 format.
+  |
+  |
+  |
+.FIRST    November 19th 2021
+  |
+  |  [   NEW   ]    Create release notes for changes
+  |
+  |
+  |
