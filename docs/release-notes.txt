@@ -1,7 +1,13 @@
-# mclib v0.5.1-debug.3461
+# mclib v0.5.1-debug.3462
 
 Release notes for Mclib
 --------------------------------
+  |
+.3462     April 20th 2022
+  |  
+  |  [ IMPROVE  ]    Use class instead of enum.
+  |
+  |
   |
 .3461     March 29th 2022 - March 31th 2022
   |  

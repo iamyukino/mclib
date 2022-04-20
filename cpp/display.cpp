@@ -50,7 +50,16 @@
 namespace
 mcl {
     
+    mcl_dflags_t dflags;
     mcl_display_t display;
+
+    dflags_t constexpr mcl_dflags_t::Shown;
+    dflags_t constexpr mcl_dflags_t::Hidden;
+    dflags_t constexpr mcl_dflags_t::Minimize;
+    dflags_t constexpr mcl_dflags_t::Maximize;
+    dflags_t constexpr mcl_dflags_t::Movable;
+    dflags_t constexpr mcl_dflags_t::NoFrame;
+    dflags_t constexpr mcl_dflags_t::NoMinimizeBox;
     
    /**
     * @function mcl_display_t::operator void* <src/display.h>
@@ -95,7 +104,7 @@ mcl {
         }
         
         // failed. use default caption "mclib"
-        clog4m[logWarn] <<
+        clog4m[cll4m.Warn] <<
            L"title = \nerror:  Failed to get module path "
            L"[-Wdisplay-winapi-" << ::GetLastError () << L"]\n, default ";
         if (!mcl_control_obj.windowtext[0])
@@ -203,11 +212,11 @@ mcl {
         mcl_control_obj.realh = ptrsize -> y;
     }
     static void
-    mcl_init_window (point2d_t* ptrsize, flag32_t dpm_flags = 0) noexcept{
+    mcl_init_window (point2d_t* ptrsize, dflags_t dpm_flags = 0) noexcept{
     // Create Window & Start Message Loop.
         // Initialize window parameters.
-        bool bopen = clog4m.is_init () && clog4m.get_event_level () <= logInt;
-        clog4m_t ml_; ml_[logInt];
+        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        clog4m_t ml_; ml_[cll4m.Int];
         if (bopen) ml_
            << L"mcl::display::init  | window settings reset:\n"
               L"  base resolution:   ";
@@ -294,7 +303,7 @@ mcl {
     * @function mcl_display_t::set_mode <src/display.h>
     * @brief Initialize a window or screen for display
     * @param {point2d_t} size
-    * @param {dword32_t} dpm_flags
+    * @param {dflags_t} dpm_flags
     * @return mcl_display_t
     */
     mcl_display_t& mcl_display_t::
@@ -304,14 +313,14 @@ mcl {
         if (mcl_control_obj.bIsReady) {
         // change form size only
             if (mcl_control_obj.b_fullscreen) {
-                clog4m[logDebug] << L"mcl.display.set_mode()\n"
+                clog4m[cll4m.Debug] << L"mcl.display.set_mode()\n"
                    L"    warning:  Not take effect.  In full screen "
                    L"mode [-display-window-togglefullscreen]\n";
                 return *this;
             }
             bool bopen = clog4m.is_init ()
-                         && clog4m.get_event_level () <= logInt;
-            clog4m_t ml_; ml_[logInt];
+                         && clog4m.get_event_level ().value <= cll4m.Int.value;
+            clog4m_t ml_; ml_[cll4m.Int];
             mcl_set_size (&size);
             
             // adjust windows rect for style
@@ -335,14 +344,14 @@ mcl {
         return *this;
     }
     mcl_display_t& mcl_display_t::
-    set_mode (point2d_t size, flag32_t dpm_flags) noexcept {
+    set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
     // Initialize Window & Start Message Loop
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (mcl_control_obj.bIsReady) {
         // change form style only
             bool bopen = clog4m.is_init ()
-                         && clog4m.get_event_level () <= logInt;
-            clog4m_t ml_; ml_[logInt];
+                         && clog4m.get_event_level ().value <= cll4m.Int.value;
+            clog4m_t ml_; ml_[cll4m.Int];
             mcl_set_size (&size);
             
             LONG_PTR last_style =
@@ -356,12 +365,12 @@ mcl {
             
             if (!mcl_control_obj.b_fullscreen) {
                 // set window form style
-                if (dpm_flags & dpmNoFrame)       last_style &= ~WS_CAPTION, last_style |= WS_POPUP;
-                else                              last_style |= WS_CAPTION,  last_style &= ~WS_POPUP;
-                if (dpm_flags & dpmMovable)       last_style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
-                else                              last_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
-                if (dpm_flags & dpmNoMinimizeBox) last_style &= ~WS_MINIMIZEBOX;
-                else                              last_style |= WS_MINIMIZEBOX;
+                if (dpm_flags & dflags.NoFrame)       last_style &= ~WS_CAPTION, last_style |= WS_POPUP;
+                else                                  last_style |= WS_CAPTION,  last_style &= ~WS_POPUP;
+                if (dpm_flags & dflags.Movable)       last_style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
+                else                                  last_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+                if (dpm_flags & dflags.NoMinimizeBox) last_style &= ~WS_MINIMIZEBOX;
+                else                                  last_style |= WS_MINIMIZEBOX;
                 
                 last_exstyle = ::GetWindowLongPtrW (
                                    mcl_control_obj.threadhwnd, GWL_EXSTYLE );
@@ -378,14 +387,14 @@ mcl {
             }
             
             // Handle flags related to ShowWindow 
-            if (dpm_flags & dpmHidden)
+            if (dpm_flags & dflags.Hidden)
                 ::ShowWindow (mcl_control_obj.threadhwnd, SW_HIDE);
             else if (!(last_style & WS_VISIBLE))
                 ::ShowWindow (mcl_control_obj.threadhwnd, SW_SHOW);
             
-            if (dpm_flags & dpmMaximize)
+            if (dpm_flags & dflags.Maximize)
                 ::ShowWindow (mcl_control_obj.threadhwnd, SW_MAXIMIZE);
-            if (dpm_flags & dpmMinimize)
+            if (dpm_flags & dflags.Minimize)
                 ::ShowWindow (mcl_control_obj.threadhwnd, SW_MINIMIZE);
             
             // Update window
@@ -399,7 +408,7 @@ mcl {
             if (bopen) {
                 ml_.wprintln (L"0x%08lx", last_style);
                 if (mcl_control_obj.b_fullscreen)
-                    ml_[logDebug] << L"    warning:  Not take effect."
+                    ml_[cll4m.Debug] << L"    warning:  Not take effect."
                        L"  In full screen mode"
                        L" [-display-window-togglefullscreen]\n";
             }
@@ -415,20 +424,20 @@ mcl {
         return mcl_fullscreen_last_style_obj;
     }
     
-    flag32_t mcl_display_t::
+    dflags_t mcl_display_t::
     get_flags () const noexcept {
     // get dpm_flags from form style
         LONG_PTR style =
             ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
         LONG_PTR last_style = mcl_control_obj.b_fullscreen ?
             mcl_fullscreen_last_style () : style;
-        flag32_t flags = dpmHidden | dpmNoFrame | dpmNoMinimizeBox;
-        if (     style & WS_VISIBLE)    flags &= ~dpmHidden;
-        if (     style & WS_MINIMIZE)   flags |=  dpmMinimize;
-        if (mcl_control_obj.b_maximize) flags |=  dpmMaximize;
-        if (last_style & WS_CAPTION)    flags &= ~dpmNoFrame;
-        if (last_style & WS_MINIMIZEBOX)flags &= ~dpmNoMinimizeBox;
-        if (last_style & WS_THICKFRAME) flags |=  dpmMovable;
+        dflags_t flags = dflags.Hidden | dflags.NoFrame | dflags.NoMinimizeBox;
+        if (     style & WS_VISIBLE)    flags &= ~dflags.Hidden;
+        if (     style & WS_MINIMIZE)   flags |=  dflags.Minimize;
+        if (mcl_control_obj.b_maximize) flags |=  dflags.Maximize;
+        if (last_style & WS_CAPTION)    flags &= ~dflags.NoFrame;
+        if (last_style & WS_MINIMIZEBOX)flags &= ~dflags.NoMinimizeBox;
+        if (last_style & WS_THICKFRAME) flags |=  dflags.Movable;
         return flags;
     }
 
@@ -451,7 +460,7 @@ mcl {
                 ::UpdateWindow (mcl_control_obj.threadhwnd);
                 ::SetFocus (mcl_control_obj.threadhwnd);
             }
-        } else clog4m[logDebug] <<
+        } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
            L" [-Wdisplay-window-uninitialized]\n";
         return *this;
@@ -479,7 +488,7 @@ mcl {
             } else
                 ::ShowWindow (mcl_control_obj.threadhwnd, SW_MINIMIZE);
         
-        } else clog4m[logDebug] <<
+        } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
            L" [-Wdisplay-window-uninitialized]\n";
         return *this;
@@ -509,7 +518,7 @@ mcl {
             ::UpdateWindow (mcl_control_obj.threadhwnd); // for vc6
             ::SetFocus (mcl_control_obj.threadhwnd);
 
-        } else clog4m[logDebug] <<
+        } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
            L" [-Wdisplay-window-uninitialized]\n";
         return *this;
@@ -527,7 +536,7 @@ mcl {
         if (!mcl_control_obj.bIsReady) return *this; 
         ::PostMessage (mcl_control_obj.threadhwnd, WM_CLOSE, 2, 0);
         DWORD ret = ::WaitForSingleObject (mcl_control_obj.taskhandle, 1024);
-        if (ret) clog4m[logWarn].wprintln (
+        if (ret) clog4m[cll4m.Warn].wprintln (
            L"failed to wait for thread to end, return: 0x%08lu", ret);
         return *this;
     }
@@ -636,7 +645,7 @@ mcl {
                 
             }
             ::UpdateWindow (mcl_control_obj.threadhwnd); // for vc6
-        } else clog4m[logDebug] <<
+        } else clog4m[cll4m.Info] <<
             L"warning:  try to toggle fullscreen with no active display. [-Wdisplay-window-notactive]\n";
         return *this;
     }
@@ -657,7 +666,7 @@ mcl {
                 ::GetWindowLong (mcl_control_obj.threadhwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
             ::SetLayeredWindowAttributes (mcl_control_obj.threadhwnd,
                 0, static_cast<BYTE>(255.f * (1.f - f_alpha)), LWA_ALPHA);
-        } else clog4m[logDebug] <<
+        } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created [-Wdisplay-window-uninitialized]\n";
         return *this;
     }
@@ -673,8 +682,9 @@ mcl {
     wmi_dict_t mcl_display_t::
         get_wm_info () const noexcept{ return wmi_dict_t{}; }
     
-    #   define MCL_MAKRGB(R, G, B) \
+#   define MCL_MAKRGB(R, G, B) \
           ( (static_cast<color_t>(R) << 4) | (static_cast<color_t>(G) << 2) | (static_cast<color_t>(B)) )
+
     MCL_NODISCARD_CXX17 static void* mcl_get_wm_info (char const* key) noexcept{
         if (!(key && key[0] && key[1] && key[2])) return nullptr;
         switch (MCL_MAKRGB(key[0], key[1], key[2])) {
@@ -696,7 +706,8 @@ mcl {
           default:                       break;
         }                                return nullptr;
     }
-    #   undef MCL_MAKRGB
+
+#   undef MCL_MAKRGB
     
     wchar_t const* wmi_dict_t::get_ (size_t it) noexcept{
         switch (it) {

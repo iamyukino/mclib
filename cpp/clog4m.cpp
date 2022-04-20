@@ -42,7 +42,18 @@
 namespace
 mcl {
     
+    mcl_cll4m_t cll4m;
     mcl_clog4m_t clog4m;
+
+    cll4m_t constexpr mcl_cll4m_t::All;
+    cll4m_t constexpr mcl_cll4m_t::Int;
+    cll4m_t constexpr mcl_cll4m_t::Trace;
+    cll4m_t constexpr mcl_cll4m_t::Debug;
+    cll4m_t constexpr mcl_cll4m_t::Info;
+    cll4m_t constexpr mcl_cll4m_t::Warn;
+    cll4m_t constexpr mcl_cll4m_t::Error;
+    cll4m_t constexpr mcl_cll4m_t::Fatal;
+    cll4m_t constexpr mcl_cll4m_t::Off;
     
    /**
     * @class mcl_logbuf_t <src/clog4m.cpp>
@@ -67,8 +78,7 @@ mcl {
         // displayed on the next line
         // Output stream
         bool bf_fail_ = false;
-        bool bf_deconstructed = false;
-        mcl_loglevel_enum log_level_;
+        cll4m_t log_level_;
         friend class clog4m_t;
         friend class mcl_clog4m_t;
         
@@ -136,7 +146,7 @@ mcl {
         lock_t nrtlock_obj = 0u;
             // non-reentrant spinlock ( to ensure orderly writing
             //  of log files)
-        unsigned u_level = logAll;
+        unsigned u_level = cll4m.All.value;
             // log level
         FILE* f_u8log = nullptr;
             // ptr to log file 
@@ -152,11 +162,11 @@ mcl {
    /**
     * @function mcl_ptnewline <src/clog4m.cpp>
     * @brief Print header to the beginning of each line of the file.
-    * @param {mcl_loglevel_enum} level: logLevel
+    * @param {cll4m_t} level: logLevel
     * @return void
     */
     static void
-    mcl_ptnewline (mcl_loglevel_enum level) noexcept{
+    mcl_ptnewline (cll4m_t level) noexcept{
     // This function is called when time string needed.
         static wchar_t mcl_time_s[25] =
         { '[', 0, 0, 0, 0, '-', 0, 0, '-', 0, 0, ' ',
@@ -191,17 +201,17 @@ mcl {
         ::fwrite (mcl_time_s, sizeof (wchar_t), 25, mcl_logf_obj.f_u8log);
         
         // log level
-        switch (level) {
-            case logInt:    ::fwrite (L"[INT]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logTrace:  ::fwrite (L"[TRC]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logDebug:  ::fwrite (L"[DBG]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logInfo:   ::fwrite (L"[INF]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logWarn:   ::fwrite (L"[WRN]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logError:  ::fwrite (L"[ERR]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logFatal:  ::fwrite (L"[FAT]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
-            case logAll:    MCL_FALLTHROUGH_CXX17
-            case logOff:    MCL_FALLTHROUGH_CXX17
-            default:        ::fwrite (L"[ ? ]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+        switch (level.value) {
+            case cll4m.Int.value:    ::fwrite (L"[INT]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Trace.value:  ::fwrite (L"[TRC]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Debug.value:  ::fwrite (L"[DBG]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Info.value:   ::fwrite (L"[INF]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Warn.value:   ::fwrite (L"[WRN]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Error.value:  ::fwrite (L"[ERR]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.Fatal.value:  ::fwrite (L"[FAT]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
+            case cll4m.All.value:    MCL_FALLTHROUGH_CXX17
+            case cll4m.Off.value:    MCL_FALLTHROUGH_CXX17
+            default:                 ::fwrite (L"[ ? ]", sizeof (wchar_t), 5, mcl_logf_obj.f_u8log); break;
         }
         
         // thread id
@@ -226,7 +236,7 @@ mcl {
         if (begin == end) return ; 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
         if (!mcl_logf_obj.f_u8log) return ;
-        if (mcl_logf_obj.u_level > static_cast<unsigned>(log_level_)) return ;
+        if (mcl_logf_obj.u_level > log_level_.value) return ;
         
         wchar_t const* c = begin;
         DWORD thread_id = ::GetCurrentThreadId ();
@@ -275,7 +285,6 @@ mcl {
         return !mcl_logf_obj.f_u8log;
     }
     
-    static mcl_logbuf_t mcl_main_logbuf_obj;
     /**
      * @function mcl_logbuf_t::get_tl_obj <src/clog4m.cpp>
      * @brief Get pointer of current thread's logger
@@ -284,18 +293,17 @@ mcl {
     MCL_NODISCARD_CXX17 mcl_logbuf_t* mcl_logbuf_t::
     get_tl_obj () noexcept {
         thread_local mcl_logbuf_t mcl_tl_logbuf_obj;
-        return mcl_tl_logbuf_obj.bf_deconstructed ?
-            &mcl_main_logbuf_obj : &mcl_tl_logbuf_obj;
+        return &mcl_tl_logbuf_obj;
     }
 
     /**
      * @function mcl_clog4m_t::operator[] <src/clog4m.h>
      * @brief Get a copy of the thread local logger
-     * @param[in] {mcl_loglevel_enum} logLevel
+     * @param[in] {cll4m_t} logLevel
      * @return {clog4m_t}
      */
     clog4m_t mcl_clog4m_t::
-    operator[] (mcl_loglevel_enum logLevel) noexcept{
+    operator[] (cll4m_t logLevel) noexcept{
         mcl_logbuf_t::get_tl_obj ()
             -> log_level_ = logLevel;
         return clog4m_t{};
@@ -415,7 +423,7 @@ mcl {
         unsigned long dwMajorVer, dwMinorVer, dwBuildNumber, ret;
         ret = mcl_get_sys_version (dwMajorVer, dwMinorVer, dwBuildNumber);
         if (ret)
-            bf[logWarn].wprintln
+            bf[cll4m.Warn].wprintln
             (L"Unable to load 'ntdll.dll' module for function: "
                 "'RtlGetNtVersionNumbers', error code %lu.", ret);
         
@@ -423,12 +431,12 @@ mcl {
         int nbits, iTimeZone;
         ret = mcl_get_sys_localinfo (nbits, iTimeZone);
         if (ret)
-            bf[logWarn].wprintln
+            bf[cll4m.Warn].wprintln
             (L"Unable to load 'kernel32' module for function: "
                 "'GetNativeSystemInfo', error code %lu.", ret);
         
         // Print log header
-        bf[logOff].wprintln (
+        bf[cll4m.Off].wprintln (
         L"{\"WinVer\":\"%lu.%lu Build %lu (%d-bit)\", "
           "\"TimeZone\":\"UTC%+05d\", "
           "\"MclVer\":\"%ls\"}\n", 
@@ -447,44 +455,45 @@ mcl {
     mcl_clog4m_t& mcl_clog4m_t::
     init (wchar_t const* directory_path) noexcept{
     // This is called to log where threads open.
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
-        if (mcl_logf_obj.f_u8log) return *this;
-        
-        if (directory_path) { // create a new log file
-            SYSTEMTIME lt;
-            ::GetLocalTime (&lt);
-            wchar_t temp[MAX_PATH];
-            unsigned long i = 1;
-            if (MCL_SNWPRINTF (temp, MAX_PATH - 1,
-                        L"%ls%hu-%02hu-%02hu_%02hu-%02hu-%02hu.log",
-                        directory_path, lt.wYear, lt.wMonth, lt.wDay, lt.wHour,
-                        lt.wMinute, lt.wSecond
-                    ) == MAX_PATH - 1
-                ) return *this;
-            while (::_waccess (temp, 0) == 0) {
-                if (MCL_SNWPRINTF (temp, MAX_PATH - 1,
+        {
+            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_logf_obj.nrtlock_obj);
+            if (mcl_logf_obj.f_u8log) return *this;
+
+            if (directory_path) { // create a new log file
+                SYSTEMTIME lt;
+                ::GetLocalTime(&lt);
+                wchar_t temp[MAX_PATH];
+                unsigned long i = 1;
+                if (MCL_SNWPRINTF(temp, MAX_PATH - 1,
+                    L"%ls%hu-%02hu-%02hu_%02hu-%02hu-%02hu.log",
+                    directory_path, lt.wYear, lt.wMonth, lt.wDay, lt.wHour,
+                    lt.wMinute, lt.wSecond
+                ) == MAX_PATH - 1
+                    ) return *this;
+                while (::_waccess(temp, 0) == 0) {
+                    if (MCL_SNWPRINTF(temp, MAX_PATH - 1,
                         L"%ls%hu-%02hu-%02hu_%02hu-%02hu-%02hu_(%lu).log",
                         directory_path, lt.wYear, lt.wMonth, lt.wDay, lt.wHour,
                         lt.wMinute, lt.wSecond, ++i
                     ) == MAX_PATH - 1
-                ) return *this;
+                        ) return *this;
+                }
+                MCL_WFOPEN(mcl_logf_obj.f_u8log, temp, L"w+t, ccs=UTF-8");
+                if (!mcl_logf_obj.f_u8log) return *this;
             }
-            MCL_WFOPEN(mcl_logf_obj.f_u8log, temp, L"w+t, ccs=UTF-8");
-            if (!mcl_logf_obj.f_u8log) return *this;
-        } else { // open the console
-            mcl_logf_obj.b_console = true;
-            ::AllocConsole ();
-            MCL_WFREOPEN (mcl_logf_obj.f_u8log, L"CONOUT$", L"w+t", stderr);
-            if (!mcl_logf_obj.f_u8log) return *this;
-            ::_wsystem (L"chcp 65001");
-        } 
-        
-        mcl_ptnewline (logOff);
-        ::fwrite (L"mcl::clog4m::init  | LoggerStart \n", sizeof (wchar_t),
-            //      12345678901234567890123456789012344
-                                                34, mcl_logf_obj.f_u8log);
-        lock.~mcl_spinlock_t ();
-            // !! not to re-enter the spin lock
+            else { // open the console
+                mcl_logf_obj.b_console = true;
+                ::AllocConsole();
+                MCL_WFREOPEN(mcl_logf_obj.f_u8log, L"CONOUT$", L"w+t", stderr);
+                if (!mcl_logf_obj.f_u8log) return *this;
+                ::_wsystem(L"chcp 65001");
+            }
+
+            mcl_ptnewline(cll4m.Off);
+            ::fwrite(L"mcl::clog4m::init  | LoggerStart \n", sizeof(wchar_t),
+                //      12345678901234567890123456789012344
+                34, mcl_logf_obj.f_u8log);
+        } // !! not to re-enter the spin lock
         
         // Output operating environment
         mcl_ptheader ();
@@ -519,9 +528,9 @@ mcl {
         mcl_logf_obj.dw_indent = 0u;
         
         if (!mcl_logf_obj.b_newl) ::fputwc ('\n', mcl_logf_obj.f_u8log);
-        mcl_ptnewline (logOff);
+        mcl_ptnewline (cll4m.Off);
         ::fputwc ('\n', mcl_logf_obj.f_u8log);
-        mcl_ptnewline (logOff);
+        mcl_ptnewline (cll4m.Off);
         ::fwrite (L"mcl::clog4m::uninit  | LoggerCloseFile {\"code\":\"0\", \"debug\":\"\"}\n",
             sizeof (wchar_t), 64, mcl_logf_obj.f_u8log);
         // string:  1234567890123456789012345678901234567890112345667889001233456789901122344
@@ -529,18 +538,18 @@ mcl {
 
         unsigned long cnt = mcl_logf_obj.dw_cnt;
         if (cnt) {
-            mcl_ptnewline (logWarn);
+            mcl_ptnewline (cll4m.Warn);
             ::fwprintf (mcl_logf_obj.f_u8log,
                 L"  warning: %lu clog4m object destructor(s) were not"
-                " called [-Wclog4m-memory-leak]\n", cnt );
-            mcl_ptnewline (logWarn);
+                " called before uninit [-Wclog4m-memory-leak]\n", cnt );
+            mcl_ptnewline (cll4m.Info);
             
             // string   123456789012345678901234567890123456789012344
             ::fwrite (L"  note: check that all threads end normally\n",
                 sizeof (wchar_t), 44, mcl_logf_obj.f_u8log );
         }
         if (mcl_logf_obj.b_console) {
-            mcl_ptnewline (logOff);
+            mcl_ptnewline (cll4m.Off);
             ::_wsystem (L"pause");
             ::FreeConsole (); 
             mcl_logf_obj.b_console = false;
@@ -555,23 +564,23 @@ mcl {
     * @function mcl_clog4m_t::enable_event_level <src/clog4m.h>
     * @brief Set the event level for the log entry.
     * @param[in] logLevel: event level
-    * @return enum mcl_loglevel_enum
+    * @return enum cll4m_t
     */
-    mcl_loglevel_enum mcl_clog4m_t::
-    enable_event_level (mcl_loglevel_enum logLevel) noexcept{
-        return static_cast<mcl_loglevel_enum>(
-            ::InterlockedExchange (&mcl_logf_obj.u_level, logLevel)
-        );
+    cll4m_t mcl_clog4m_t::
+    enable_event_level (cll4m_t logLevel) noexcept{
+        return cll4m_t{
+            ::InterlockedExchange(&mcl_logf_obj.u_level, logLevel.value)
+        };
     }
 
    /**
     * @function mcl_clog4m_t::get_event_level <src/clog4m.h>
     * @brief Get the event level for the log entry.
-    * @return enum mcl_loglevel_enum
+    * @return enum cll4m_t
     */
-    mcl_loglevel_enum mcl_clog4m_t::
+    cll4m_t mcl_clog4m_t::
     get_event_level () noexcept{
-        return static_cast<mcl_loglevel_enum>(mcl_logf_obj.u_level);
+        return cll4m_t {mcl_logf_obj.u_level};
     }
     
     
@@ -592,7 +601,7 @@ mcl {
             return *this;
         }
         if (mcl_logf_obj.u_level >
-            static_cast<mcl_logbuf_t*>(m_dataplus_) -> log_level_
+            static_cast<mcl_logbuf_t*>(m_dataplus_) -> log_level_.value
             ) return *this;
         try { this -> flush (); } catch (...) {
             static_cast<mcl_logbuf_t*>(m_dataplus_)
@@ -652,7 +661,7 @@ mcl {
     )), m_data_{ 0 } { } 
     
     mcl_logbuf_t::mcl_logbuf_t() noexcept
-    : log_level_ (logAll) {
+    : log_level_ (cll4m.All) {
         std::basic_streambuf<wchar_t, std::char_traits<wchar_t> >::
             setp (Cbuf_, Cbuf_ + buf_size);
         ::InterlockedIncrement (&mcl_logf_obj.dw_cnt);
@@ -710,10 +719,7 @@ mcl {
         }
     }
     mcl_logbuf_t::~mcl_logbuf_t () noexcept { 
-        if (!bf_deconstructed) {
-            ::InterlockedDecrement (&mcl_logf_obj.dw_cnt);
-            bf_deconstructed = true;
-        }
+        ::InterlockedDecrement (&mcl_logf_obj.dw_cnt);
     }
     
    /**
@@ -728,8 +734,7 @@ mcl {
             static_cast<mcl_logbuf_t*>(m_dataplus_) -> bf_fail_ = false;
             return true;
         }
-        return static_cast<mcl_logbuf_t*>(m_dataplus_) -> bf_deconstructed
-            || !mcl_logf_obj.f_u8log || basic_ostream::fail ();
+        return !mcl_logf_obj.f_u8log || basic_ostream::fail ();
     }
 
    /**
@@ -749,7 +754,7 @@ mcl {
     * @return *this
     */
     clog4m_t& clog4m_t::
-    operator[] (enum mcl_loglevel_enum logLevel) noexcept{
+    operator[] (cll4m_t logLevel) noexcept{
         if (!m_dataplus_) { 
             mcl_logbuf_t::get_tl_obj () -> bf_fail_ = true;
             return *this;
@@ -973,7 +978,7 @@ mcl {
             return *this;
         }
         if (mcl_logf_obj.u_level > static_cast<mcl_logbuf_t*>(
-          m_dataplus_) -> log_level_ ) {
+          m_dataplus_) -> log_level_.value ) {
             return *this;
         }
         if (!mcl_logf_obj.b_newl) {

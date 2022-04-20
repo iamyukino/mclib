@@ -56,8 +56,8 @@ namespace
 mcl {
 
    /**
-    * @enum logLevel <src/clog4m.h>
-    * @brief An api logger for mclib
+    * @enum class mcl_cll4m_t <src/clog4m.h>
+    * @brief log level for clog4m
     * 
     * @ingroup logger
     * @ingroup mclib
@@ -68,55 +68,58 @@ mcl {
     *  than or equal to the event level for the log
     *  entry. The following enum lists the event levels
     *  that mclib supports and the manifest constants
-    *  that represent these event levels.  logInt is
+    *  that represent these event levels.  cll4m.Int is
     *  the lowest event level, followed by the next
-    *  highest event level logTrace, and so on. logFatal
-    *  is the highest event level. logAll and logOff
+    *  highest event level cll4m.Trace, and so on. cll4m.Fatal
+    *  is the highest event level. cll4m.All and cll4m.Off
     *  are only for opening or closing logs.
     */
-    enum 
-    mcl_loglevel_enum
-    : unsigned {
-    
-        logAll,
+    class
+    mcl_cll4m_t {
+
+    public:
+        struct type { unsigned value; };
+        
+        static type constexpr All{ 0 };
           // For opening all logs
        
-        logInt,       // internal (buffered)
+        static type constexpr Int{ 1 };       // internal (buffered)
           // For mclib internal function, it is generally
           // used in the mclib functions. 
          
-        logTrace,     // trace (buffered)
+        static type constexpr Trace{ 2 };     // trace (buffered)
           // Designates finer-grained informational events
-          // than the logDebug.
+          // than the cll4m.Debug.
         
-        logDebug,     // debug (buffered)
+        static type constexpr Debug{ 3 };     // debug (buffered)
           // For function developers, it is generally used
           // in the function development stage to check
           // whether the function is normal for developers.
         
-        logInfo,      // information (buffered)
+        static type constexpr Info{ 4 };      // information (buffered)
           // The internal beta version can output this log
           // to check whether the newly developed features
           // or bug fix are normal.
         
-        logWarn,      // warning (unbuffered)
+        static type constexpr Warn{ 5 };      // warning (unbuffered)
           // Logs above this level will be set to unbuffered.
           // Abnormal processes that will not affect the
           // system.
         
-        logError,     // error (unbuffered) 
+        static type constexpr Error{ 6 };     // error (unbuffered) 
           // Abnormal processes that will affect the system
           // can be self repaired without affecting the
           // stability of the system.
             
-        logFatal,     // fatal error (unbuffered)
+        static type constexpr Fatal{ 7 };     // fatal error (unbuffered)
           // An irreversible error has occurred and the
           // system cannot work normally.
         
-        logOff,
+        static type constexpr Off{ 8 };
           // For closing all logs    
     };
-    
+    using cll4m_t = mcl_cll4m_t::type;
+    extern mcl_cll4m_t cll4m;
     
     
     
@@ -158,7 +161,7 @@ mcl {
         
         operator   void*      () const noexcept;
         bool       operator!  () const noexcept; 
-        clog4m_t&  operator[] (mcl_loglevel_enum logLevel) noexcept;
+        clog4m_t&  operator[] (cll4m_t logLevel) noexcept;
         
         clog4m_t&  depth_incr () noexcept; 
         clog4m_t&  depth_decr () noexcept; 
@@ -197,27 +200,27 @@ mcl {
     *  linked to above.  Here are examples:
     *  
     *  @code
-    *      clog4m[logInt] << "Hello!";
+    *      clog4m[cll4m.Int] << "Hello!";
     *      // will end up with a newline and flush here
     *      clog4m_t logger;
-    *      logger[logInt].wprintf (L"This is %c ", 'a');
-    *      logger[logInt].println ("test of clog4m.");
-    *      logger[logInt] << std::flush;
+    *      logger[cll4m.Int].wprintf (L"This is %c ", 'a');
+    *      logger[cll4m.Int].println ("test of clog4m.");
+    *      logger[cll4m.Int] << std::flush;
     *      // will flush here
     *  @endcode
     *  
     *  @code
-    *      clog4m[logInt] << "Hello!";
+    *      clog4m[cll4m.Int] << "Hello!";
     *        // is same as
-    *      clog4m[logInt] << "Hello!\n";
+    *      clog4m[cll4m.Int] << "Hello!\n";
     *        // or
     *      clog4m_t logger;
-    *      logger[logInt] << "Hello!";
-    *      logger[logInt] << std::endl;
+    *      logger[cll4m.Int] << "Hello!";
+    *      logger[cll4m.Int] << std::endl;
     *        // or
     *      {
     *          clog4m_t logger;
-    *          logger[logInt] << "Hello!";
+    *          logger[cll4m.Int] << "Hello!";
     *      }
     *  @endcode
     */
@@ -233,15 +236,15 @@ mcl {
         
         operator      void*        () const noexcept;
         bool          operator!    () const noexcept;
-        clog4m_t      operator[]   (mcl_loglevel_enum logLevel) noexcept;
+        clog4m_t      operator[]   (cll4m_t logLevel) noexcept;
         
         mcl_clog4m_t& init         (char const* directory_path) noexcept;
         mcl_clog4m_t& init         (wchar_t const* directory_path = nullptr) noexcept;
         mcl_clog4m_t& uninit       () noexcept;
         inline mcl_clog4m_t& is_init () noexcept{ return *this; }
         
-        mcl_loglevel_enum enable_event_level (mcl_loglevel_enum logLevel) noexcept;
-        mcl_loglevel_enum get_event_level    () noexcept;
+        cll4m_t enable_event_level (cll4m_t logLevel) noexcept;
+        cll4m_t get_event_level    () noexcept;
     
     };
     extern mcl_clog4m_t clog4m;

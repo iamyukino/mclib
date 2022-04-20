@@ -91,7 +91,7 @@ mcl {
                 ::calloc (mcl_base_obj.atquit_table_size + 32,
                     sizeof (_onquit_t)));
             if (!newtable) {
-                clog4m[logWarn].putws (L"warning:  Calloc failed.  "
+                clog4m[cll4m.Warn].putws (L"warning:  Calloc failed.  "
                    L"In mcl_register_quit  [-mcl-malloc-quit]");
                 return false;
             }
@@ -119,13 +119,15 @@ mcl {
         // Execute the registered function
         {
           mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock);
-          while (mcl_base_obj.atquit_registered) try{
-              mcl_base_obj.atquit_table[-- mcl_base_obj.atquit_registered] ();
-          } catch (...) {
-              clog4m[logWarn].putws (L"warning:  atquit: exception caught");
+          if (mcl_base_obj.atquit_table_size) {
+              while (mcl_base_obj.atquit_registered) try{
+                  mcl_base_obj.atquit_table[-- mcl_base_obj.atquit_registered] ();
+              } catch (...) {
+                  clog4m[cll4m.Warn].putws (L"warning:  atquit: exception caught");
+              }
+              ::free (mcl_base_obj.atquit_table);
+              mcl_base_obj.atquit_table_size = 0;
           }
-          ::free (mcl_base_obj.atquit_table);
-          mcl_base_obj.atquit_table_size = 0;
         } 
         
         // Uninit all modules

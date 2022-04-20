@@ -27,11 +27,12 @@ using namespace mcl;
 
 int main()
 {
-    clog4m.init("log\\").enable_event_level(logAll);
-    display.set_mode(0, dpmMovable | dpmMaximize).set_window_alpha(.3);
+    clog4m.init("log\\");// .enable_event_level(cll4m.All);
+    display.set_mode(nullptr, dflags.Movable | dflags.NoMinimizeBox).set_window_alpha(.3);
 
     register_quit([] { display.toggle_fullscreen(); mcl::time.delay(1000); });
-    register_quit([] { clog4m[logOff] << "Hello, World!"; });
+    register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
 
+    // mcl::time.delay(10000);
     return 0;
 }

@@ -56,28 +56,37 @@ namespace
 mcl {
     
    /**
-    * @enum mcl_display_mode_flag_enum <src/display.h>
-    * @brief window style
+    * @enum class mcl_dflags_t <src/display.h>
+    * @brief flags that controls which type of display you want
     * 
     * @ingroup display
     * @ingroup mclib
     */
-    enum
-    mcl_display_mode_flag_enum
-    : flag32_t {
-        dpmShown      = 0x0,
-        dpmHidden     = 0x1,
-        dpmMinimize   = 0x2,
-        dpmMaximize   = 0x4,
-                
-        dpmMovable       = 0x10,
-        dpmNoFrame       = 0x20,
-        dpmNoMinimizeBox = 0x40,
-        
-//      dpmBySizeForm = 0x100 | dpmMovable,
-//      dpmDoubleBuf  = 0x200,
-//      dpmLayered    = 0x400,
+    class
+    mcl_dflags_t {
+    
+    public:
+        using type = unsigned long;
+
+        static type constexpr Shown      = 0x0;
+            // window is opened in visible mode (default)
+        static type constexpr Hidden     = 0x1;
+            // window is opened in hidden mode
+        static type constexpr Minimize   = 0x2;
+            // create an iconified display
+        static type constexpr Maximize   = 0x4;  
+            // create an maximized display
+        static type constexpr Movable       = 0x10;
+            // display window should be movable
+        static type constexpr NoFrame       = 0x20;
+            // display window will have no border or controls
+        static type constexpr NoMinimizeBox = 0x40;
+            // display window will disable minimizing
+    
     };
+    using dflags_t = mcl_dflags_t::type;
+    extern mcl_dflags_t dflags;
+
 
    /**
     * @class mcl_display_t <src/display.h>
@@ -157,10 +166,10 @@ mcl {
         mcl_display_t&    init             () noexcept;                 // Initialize the window
         bool              is_init          () const noexcept;           // Returns true if the window has been created
         mcl_display_t&    uninit           () noexcept;                 // Uninitialize the window. NOT end the program
-        flag32_t          get_flags        () const noexcept;           // Get dpm_flags for set_mode
-        inline mcl_display_t& set_mode     (char = 0) noexcept{ return init (); }
-        inline mcl_display_t& set_mode     (char, flag32_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
-        mcl_display_t&    set_mode         (point2d_t size, flag32_t dpm_flags) noexcept;
+        dflags_t          get_flags        () const noexcept;           // Get dpm_flags for set_mode
+        inline mcl_display_t& set_mode     (void* = 0) noexcept{ return init (); }
+        inline mcl_display_t& set_mode     (void*, dflags_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
+        mcl_display_t&    set_mode         (point2d_t size, dflags_t dpm_flags) noexcept;
         mcl_display_t&    set_mode         (point2d_t size) noexcept;   // Initialize a window or screen for display
         char const*       get_driver_a     () const noexcept;           // Get the name of the pygame display backend.  This is always 'windows' at present.
         wchar_t const*    get_driver       () const noexcept;           // Get the name of the pygame display backend.  This is always 'windows' at present.

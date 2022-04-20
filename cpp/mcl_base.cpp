@@ -68,7 +68,7 @@ namespace mcl
             if (!::InterlockedCompareExchange (&lk_, threadid, 0))
                 return ;
             if (lk_ == threadid) {
-                clog4m[logDebug]. putws (
+                clog4m[cll4m.Debug]. putws (
                    L"\n  mcl::spinlock  | "
                     "Same thread acquires the same spinlock twice. ");
                 return ; 
@@ -80,7 +80,7 @@ namespace mcl
                     if (nowt < oldt) nowt = oldt;
                     if (nowt - oldt > uWaitMs) {
                         oldt = nowt;
-                        clog4m[logWarn]. wprintln (
+                        clog4m[cll4m.Warn]. wprintln (
                            L"\n  mcl::spinlock  | TimeOut "
                             "{\"own\":\"%lux\", \"cur\":\"%lux\"}", lk_, threadid);
                         ::InterlockedExchange (&lk_, 0);

@@ -32,8 +32,7 @@
 */
 
 
-#include "../src/display.h"
-#include "../src/clog4m.h"
+#include "../src/mclib.h"
 #include "mcl_control.h"
 
 #include <cerrno>     // for errno
@@ -60,7 +59,7 @@ mcl {
             | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             nullptr, eif, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
             LPWSTR (&lpMsgBuf), 0, nullptr );
-        clog4m[logWarn] << L"\n"
+        clog4m[cll4m.Warn] << L"\n"
            L"SYSTEM EXCEPTION: " << what << L"\n"
            L"- type:  "    "mcl::win32api_error\n"
            L"- value: " << eif      << L"\n"
@@ -84,19 +83,20 @@ mcl {
     // WM_CLOSE
         if (::InterlockedCompareExchange (&bIsReady, 0, 1) == 0)
             return 0u;
-        bool bopen = clog4m.is_init () && clog4m.get_event_level () <= logInt;
-        clog4m_t ml_; ml_[logInt];
+
+        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        clog4m_t ml_;
         if (bopen) {
-            ml_ << L"\n"
+            ml_[cll4m.Int] << L"\n"
             L"==== Shutting down ====\n"
             L"mcl::quit" << std::endl << 
-            L"mcl::display::uninit  | Message loop terminated. "
+            L"mcl::display::uninit  | Message loop terminated "
              << std::flush <<  L"{\"reason\":\"";
         }
         switch (wParam) {
             case 0:  if (bopen) ml_ << L"user";    bIsExit = 2ul; break;
             case 2:  if (bopen) ml_ << L"program"; bIsExit = 3ul; break;
-            default: if (bopen) ml_ << L"unknown";   bIsExit = 4ul; break;
+            default: if (bopen) ml_ << L"unknown"; bIsExit = 4ul; break;
         }
         if (bopen) ml_ << "\"}\n" << L"Reseting..." << std::endl;
         ::ShowWindow (threadhwnd, SW_HIDE);
@@ -133,7 +133,7 @@ mcl {
             b_allow_screensaver_before = 2;
         }
         
-        if (bopen) ml_ << L"All window data cleared\n";
+        if (bopen) ml_ << std::endl;
         return 0ul;
     }
     
@@ -235,8 +235,8 @@ mcl {
     threadMessageLoop (void* _parm_flags) {
     // Message loop
         { // <- sub for exit
-        bool bopen = clog4m.is_init () && clog4m.get_event_level () <= logInt;
-        clog4m_t ml_; ml_[logInt];
+        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        clog4m_t ml_; ml_[cll4m.Int];
         
         WNDCLASSEXW wc; // A properties struct of our window
         ::memset (&wc, 0, sizeof (wc));
@@ -260,7 +260,7 @@ mcl {
         bufw  = bufh  = 0;                                          \
         realw = realh = 0;                                          \
         x_pos = y_pos = 0;                                          \
-        ml_[logWarn]                                                \
+        ml_[cll4m.Warn]                                                \
             << L"threadMessageLoop initialization terminated.\n";   \
         bErrorCode = true;                                          \
         ::InterlockedExchange (&bIsReady, 1);
@@ -286,16 +286,16 @@ mcl {
             return 0;
         }
         
-        flag32_t flags  = _parm_flags ? *static_cast<flag32_t*>(_parm_flags) : 0;
+        dflags_t flags  = _parm_flags ? *static_cast<dflags_t*>(_parm_flags) : 0;
         LONG_PTR fstyle = WS_VISIBLE | WS_OVERLAPPEDWINDOW;
         bool     fvisi  = true;
         // if (bopen) ml_.println ("  Setting styles... flags: 0x%08lx", flags);
-        if (flags & dpmNoFrame)       fstyle &= ~WS_CAPTION, fstyle |= WS_POPUP;
-        if (!(flags & dpmMovable))    fstyle &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
-        if (flags & dpmNoMinimizeBox) fstyle &= ~WS_MINIMIZEBOX;
-        if (flags & dpmHidden)        fstyle &= ~WS_VISIBLE, fvisi = false;
-        if (flags & dpmMinimize)      fstyle |= WS_MINIMIZE, fvisi = false;
-        if (flags & dpmMaximize)      fstyle |= WS_MAXIMIZE;
+        if (flags & dflags.NoFrame)       fstyle &= ~WS_CAPTION, fstyle |= WS_POPUP;
+        if (!(flags & dflags.Movable))    fstyle &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+        if (flags & dflags.NoMinimizeBox) fstyle &= ~WS_MINIMIZEBOX;
+        if (flags & dflags.Hidden)        fstyle &= ~WS_VISIBLE, fvisi = false;
+        if (flags & dflags.Minimize)      fstyle |= WS_MINIMIZE, fvisi = false;
+        if (flags & dflags.Maximize)      fstyle |= WS_MAXIMIZE;
         
         // Adjusting window rect
         RECT wr = {0, 0, realw, realh};
@@ -363,8 +363,10 @@ mcl {
             ::DispatchMessage (&msg);
         }
         
-        if (::InterlockedExchange (&bIsExit, 0) == 2ul)
+        if (::InterlockedExchange(&bIsExit, 0) == 2ul) {
+            quit ();
             ::exit (0);
+        }
         return 0;
     }
     

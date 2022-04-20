@@ -77,7 +77,6 @@ mcl {
     using colorcv_t = unsigned char; // components of color models
     
     // class for graphics interface control.  see display.h
-    using flag32_t = unsigned long;
     class mcl_display_t;
     class wmi_dict_t;
     
