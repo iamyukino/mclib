@@ -208,6 +208,9 @@ namespace mcl
         mcl_base_t () noexcept;
         long long frequency;
     public:
+        unsigned mcl_threadid_after_exit = 0;
+        void* mcl_clog4m_after_exit = nullptr;
+    public:
         size_t atquit_registered = 0;
         size_t atquit_table_size = 0;
         std::function<void()>* atquit_table = nullptr;

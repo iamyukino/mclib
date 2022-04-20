@@ -32,7 +32,8 @@
 */
 
 
-#include "../src/mclib.h"
+#include "../src/display.h"
+#include "../src/clog4m.h"
 #include "mcl_control.h"
 
 #include <cerrno>     // for errno
@@ -351,10 +352,14 @@ mcl {
 #        undef MCL_UNREGISTERING_WINDOW_
 #        undef MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_
         
-        if (bopen)
+        if (bopen) {
             ml_.putws (L"\n== Startup complete ==");
+            ml_.flush ();
+        }
         
         } // end sub for exit
+        
+        {
         MSG msg;
         ::InterlockedExchange (&bIsReady, 1);
         
@@ -362,9 +367,9 @@ mcl {
             ::TranslateMessage (&msg);
             ::DispatchMessage (&msg);
         }
-        
+        } // end subfor exit
+
         if (::InterlockedExchange(&bIsExit, 0) == 2ul) {
-            quit ();
             ::exit (0);
         }
         return 0;

@@ -285,6 +285,14 @@ mcl {
         return !mcl_logf_obj.f_u8log;
     }
     
+    void* mcl_new_mcl_logbuf_t () {
+        return new(std::nothrow) mcl_logbuf_t();
+    }
+    void mcl_del_mcl_logbuf_t (void** pbuf) {
+        delete static_cast<mcl_logbuf_t*>(*pbuf);
+        *pbuf = nullptr;
+    }
+
     /**
      * @function mcl_logbuf_t::get_tl_obj <src/clog4m.cpp>
      * @brief Get pointer of current thread's logger
@@ -293,7 +301,10 @@ mcl {
     MCL_NODISCARD_CXX17 mcl_logbuf_t* mcl_logbuf_t::
     get_tl_obj () noexcept {
         thread_local mcl_logbuf_t mcl_tl_logbuf_obj;
-        return &mcl_tl_logbuf_obj;
+        return mcl_base_obj.mcl_clog4m_after_exit
+            && mcl_base_obj.mcl_threadid_after_exit == ::GetCurrentThreadId ()
+            ? static_cast<mcl_logbuf_t*>(mcl_base_obj.mcl_clog4m_after_exit)
+            : &mcl_tl_logbuf_obj;
     }
 
     /**
