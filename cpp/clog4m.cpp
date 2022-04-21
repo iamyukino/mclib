@@ -42,8 +42,10 @@
 namespace
 mcl {
     
-    mcl_cll4m_t cll4m;
-    mcl_clog4m_t clog4m;
+    // Enum class of log level for clog4m.
+    mcl_cll4m_t cll4m; 
+    // Module for loging.
+    mcl_clog4m_t clog4m; 
 
     cll4m_t constexpr mcl_cll4m_t::All;
     cll4m_t constexpr mcl_cll4m_t::Int;

@@ -230,199 +230,222 @@ mcl {
 
     };
     
+    // Synthesize colors with red, green, and blue components.
     constexpr color_t
     makrgb (colorcv_t byRed, colorcv_t byGreen,
            colorcv_t byBlue, colorcv_t byAlpha = 0) {
-    // Synthesize colors with red, green, and blue components.
         return ( static_cast<color_t>(byAlpha) << 24)
             |  ( static_cast<color_t>(byRed)   << 16)
             |  ( static_cast<color_t>(byGreen) << 8 )
             |  ( static_cast<color_t>(byBlue)       );
     }
+
+    // Synthesize colors with hue, saturation, lightness, alpha components.
     constexpr color_t
     makhsl (colorcv_t byHue,   colorcv_t bySaturation,
         colorcv_t byLightness, colorcv_t byAlpha = 0) {
-    // Synthesize colors with hue, saturation, lightness, alpha components.
         return makrgb (byHue, bySaturation, byLightness, byAlpha);
     }
+
+    // Synthesize colors with hue, saturation, value, alpha components.
     constexpr color_t
     makhsv (colorcv_t byHue,   colorcv_t bySaturation,
           colorcv_t byValue,   colorcv_t byAlpha = 0) {
-    // Synthesize colors with hue, saturation, value, alpha components.
         return makrgb (byHue, bySaturation, byValue,     byAlpha);
     }
+
+    // Synthesize colors with lightness components.
     constexpr color_t
     makgray (colorcv_t byLight, colorcv_t byAlpha = 0) {
-    // Synthesize colors with lightness components.
         return ( static_cast<color_t>(byAlpha) << 24 )
             |  ( static_cast<color_t>(byLight) << 16 )
             |  ( static_cast<color_t>(byLight) << 8  )
             |  ( static_cast<color_t>(byLight)       );
     }
-    
+
+    // Return the alpha value in the specified rgbcolor.
     constexpr colorcv_t
     geta4rgb (color_t rgbcolor) {
-    // Return the alpha value in the specified rgbcolor.
         return static_cast<colorcv_t>(   rgbcolor >> 24          );
     }
+
+    // Return the red value in the specified rgbcolor.
     constexpr colorcv_t
     getr4rgb (color_t rgbcolor) {
-    // Return the red value in the specified rgbcolor.
         return static_cast<colorcv_t>( ( rgbcolor >> 16 ) & 0xff );
     }
+
+    // Return the green value in the specified rgbcolor.
     constexpr colorcv_t
     getg4rgb (color_t rgbcolor) {
-    // Return the green value in the specified rgbcolor.
         return static_cast<colorcv_t>( ( rgbcolor >>  8 ) & 0xff );
     }
+
+    // Return the blue value in the specified rgbcolor.
     constexpr colorcv_t
     getb4rgb (color_t rgbcolor) {
-    // Return the blue value in the specified rgbcolor.
         return static_cast<colorcv_t>(   rgbcolor         & 0xff );
     }
-    
+
+    // Return the alpha value in the specified hslcolor.
     constexpr colorcv_t
     geta4hsl (color_t hslcolor) {
-    // Return the alpha value in the specified hslcolor.
         return geta4rgb (hslcolor);
     }
+
+    // Return the hue value in the specified hslcolor.
     constexpr colorcv_t
     geth4hsl (color_t hslcolor) {
-    // Return the hue value in the specified hslcolor.
         return getr4rgb (hslcolor);
     }
+
+    // Return the saturation value in the specified hslcolor.
     constexpr colorcv_t
     gets4hsl (color_t hslcolor) {
-    // Return the saturation value in the specified hslcolor.
         return getg4rgb (hslcolor);
     }
+
+    // Return the lightness value in the specified hslcolor.
     constexpr colorcv_t
     getl4hsl (color_t hslcolor) {
-    // Return the lightness value in the specified hslcolor.
         return getb4rgb (hslcolor);
     }
-    
+
+    // Return the alpha value in the specified hsvcolor.
     constexpr colorcv_t
     geta4hsv (color_t hsvcolor) {
-    // Return the alpha value in the specified hsvcolor.
         return geta4rgb (hsvcolor);
     }
+
+    // Return the hue value in the specified hsvcolor.
     constexpr colorcv_t
     geth4hsv (color_t hsvcolor) {
-    // Return the hue value in the specified hsvcolor.
         return getr4rgb (hsvcolor);
     }
+
+    // Return the saturation value in the specified hsvcolor.
     constexpr colorcv_t
     gets4hsv (color_t hsvcolor) {
-    // Return the saturation value in the specified hsvcolor.
         return getg4rgb (hsvcolor);
     }
+
+    // Return the brightness value in the specified hslcolor.
     constexpr colorcv_t
     getv4hsv (color_t hsvcolor) {
-    // Return the brightness value in the specified hslcolor.
         return getb4rgb (hsvcolor);
     }
+
+    // Return the gray value in the specified graycolor.
     constexpr colorcv_t
     getg4gray (color_t graycolor) {
-    // Return the gray value in the specified graycolor.
         return getb4rgb (graycolor);
     }
-    
+
+    // Change the alpha value in the specified rgbcolor.
     constexpr color_t
     seta4rgb (colorcv_t alpha, color_t rgbcolor) {
-    // Change the alpha value in the specified rgbcolor.
         return ( static_cast<color_t>(alpha) << 24 ) | ( rgbcolor & 0x00ffffff );
     }
+
+    // Change the red value in the specified rgbcolor.
     constexpr color_t
     setr4rgb (colorcv_t red  , color_t rgbcolor) {
-    // Change the red value in the specified rgbcolor.
         return ( static_cast<color_t>(red)   << 16 ) | ( rgbcolor & 0xff00ffff );
     }
+
+    // Change the green value in the specified rgbcolor.
     constexpr color_t
     setg4rgb (colorcv_t green, color_t rgbcolor) {
-    // Change the green value in the specified rgbcolor.
         return ( static_cast<color_t>(green) << 8  ) | ( rgbcolor & 0xffff00ff );
     }
+
+    // Change the blue value in the specified rgbcolor.
     constexpr color_t
     setb4rgb (colorcv_t blue, color_t rgbcolor) {
-    // Change the blue value in the specified rgbcolor.
         return ( static_cast<color_t>(blue)        ) | ( rgbcolor & 0xffffff00 );
     }
-    
+
+    // Change the alpha value in the specified hslcolor.
     constexpr color_t
     seta4hsl (colorcv_t alpha, color_t hslcolor) {
-    // Change the alpha value in the specified hslcolor.
         return seta4rgb (alpha, hslcolor);
     }
+
+    // Change the hue value in the specified hslcolor.
     constexpr color_t
     seth4hsl (colorcv_t hue, color_t hslcolor) {
-    // Change the hue value in the specified hslcolor.
         return setr4rgb (hue, hslcolor);
     }
+
+    // Change the saturation value in the specified hslcolor.
     constexpr color_t
     sets4hsl (colorcv_t saturation, color_t hslcolor) {
-    // Change the saturation value in the specified hslcolor.
         return setg4rgb (saturation, hslcolor);
     }
+
+    // Change the lightness value in the specified hslcolor.
     constexpr color_t
     setl4hsl (colorcv_t lightness, color_t hslcolor) {
-    // Change the lightness value in the specified hslcolor.
         return setb4rgb (lightness, hslcolor);
     }
-    
+
+    // Change the alpha value in the specified hsvcolor.
     constexpr color_t
     seta4hsv (colorcv_t alpha, color_t hsvcolor) {
-    // Change the alpha value in the specified hsvcolor.
         return seta4rgb (alpha, hsvcolor);
     }
+
+    // Change the hue value in the specified hsvcolor.
     constexpr color_t
     seth4hsv (colorcv_t hue, color_t hsvcolor) {
-    // Change the hue value in the specified hsvcolor.
         return setr4rgb (hue, hsvcolor);
     }
+
+    // Change the saturation value in the specified hsvcolor.
     constexpr color_t
     sets4hsv (colorcv_t saturation, color_t hsvcolor) {
-    // Change the saturation value in the specified hsvcolor.
         return setg4rgb (saturation, hsvcolor);
     }
+
+    // Change the brightness value in the specified hsvcolor.
     constexpr color_t
     setv4hsv (colorcv_t value, color_t hsvcolor) {
-    // Change the brightness value in the specified hsvcolor.
         return setb4rgb (value, hsvcolor);
     }
-    
+
+    // Swap colors in red and blue.
     constexpr color_t
     cvtrgb2bgr (color_t rgbcolor) {
-    // Swap colors in red and blue.
         return ( (rgbcolor & 0xff    ) << 16 )
             |  ( (rgbcolor & 0xff0000) >> 16 )
             |  (  rgbcolor & 0xff00ff00);
     }
+
+    // Convert the rgbcolor to grayscale.
     constexpr color_t
     cvtrgb2gray (color_t rgbcolor) {
-    // Convert the rgbcolor to grayscale.
         return makgray (static_cast<colorcv_t>(
             getr4rgb (rgbcolor) * 0.299f + getg4rgb (rgbcolor) * 0.587f
             + getb4rgb (rgbcolor) * 0.114f + .5f ), geta4rgb (rgbcolor) );
     }
-    
-    color_t cvtrgb2hsl (color_t rgbcolor);
+
     // Convert the rgbcolor to the hslcolor.
-    
-    color_t cvthsl2hsv (color_t hslcolor);
+    color_t cvtrgb2hsl (color_t rgbcolor);
+
     // Convert the hslcolor to the hsvcolor.
-    
-    color_t cvthsv2rgb (color_t hsvcolor);
+    color_t cvthsl2hsv (color_t hslcolor);
+
     // Convert the hsvcolor to the rgbcolor.
-    
-    color_t cvtrgb2hsv (color_t rgbcolor);
+    color_t cvthsv2rgb (color_t hsvcolor);
+
     // Convert the rgbcolor to the hsvcolor.
-    
-    color_t cvthsv2hsl (color_t hsvcolor);
+    color_t cvtrgb2hsv (color_t rgbcolor);
+
     // Convert the hsvcolor to the hslcolor.
-    
-    color_t cvthsl2rgb (color_t hslcolor);
+    color_t cvthsv2hsl (color_t hsvcolor);
+
     // Convert the hslcolor to the rgbcolor.
+    color_t cvthsl2rgb (color_t hslcolor);
     
 }  // namespace
 

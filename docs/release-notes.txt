@@ -1,4 +1,4 @@
-# mclib v0.5.1-debug.3462
+# mclib v0.5.1-Debug.3462-2
 
 Release notes for Mclib
 --------------------------------
@@ -6,6 +6,7 @@ Release notes for Mclib
 .3462     April 20th 2022
   |  
   |  [ IMPROVE  ]    Use class instead of enum.
+  |  [  ADDED   ]    Add surface.h .
   |
   |
   |

@@ -43,28 +43,20 @@ mcl {
     
    /**
     * @class mcl_mixer_t
-    * @brief Module for loading and playing sounds
+    * @brief Module for loading and playing sounds.
     * 
     * @ingroup mixer
     * @ingroup mclib
-    * @{
     */
     class
-    mcl_mixer_t { public:
-        
-        class mcl_music_t;
-        static mcl_music_t music;
+    mcl_mixer_t {
+    public:
+        // Module for controlling streamed audio.
+        class mcl_music_t; 
+        // Module for controlling streamed audio.
+        static mcl_music_t music; 
     };
-   /** @}  */
-
-
-  /**
-   * @name Mclib Music Playing Objects
-   * @{
-   */
-    extern mcl_mixer_t mixer;
-    
-/** @}  */
+    extern mcl_mixer_t mixer; // Module for loading and playing sounds.
     
 } // namespace
 

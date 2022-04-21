@@ -38,6 +38,9 @@
 namespace
 mcl {
     
+    // Small module containing version information
+    mcl_version_t version;
+
     char const* const mcl_version_t::
         ver_a  = mcl_simpletls_ns::mcl_version_number_a ();
     wchar_t const* const mcl_version_t::

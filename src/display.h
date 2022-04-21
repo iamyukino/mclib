@@ -57,7 +57,7 @@ mcl {
     
    /**
     * @enum class mcl_dflags_t <src/display.h>
-    * @brief flags that controls which type of display you want
+    * @brief Flags that controls which type of display you want.
     * 
     * @ingroup display
     * @ingroup mclib
@@ -68,24 +68,25 @@ mcl {
     public:
         using type = unsigned long;
 
+        // Window is opened in visible mode (default)
         static type constexpr Shown      = 0x0;
-            // window is opened in visible mode (default)
+        // Window is opened in hidden mode
         static type constexpr Hidden     = 0x1;
-            // window is opened in hidden mode
+        // Create an iconified display
         static type constexpr Minimize   = 0x2;
-            // create an iconified display
-        static type constexpr Maximize   = 0x4;  
-            // create an maximized display
+        // Create an maximized display
+        static type constexpr Maximize   = 0x4;
+        // Display window should be movable
         static type constexpr Movable       = 0x10;
-            // display window should be movable
+        // Display window will have no border or controls
         static type constexpr NoFrame       = 0x20;
-            // display window will have no border or controls
+        // Display window will disable minimizing
         static type constexpr NoMinimizeBox = 0x40;
-            // display window will disable minimizing
     
     };
-    using dflags_t = mcl_dflags_t::type;
-    extern mcl_dflags_t dflags;
+    using dflags_t = mcl_dflags_t::type; // Display flags type for mcl::display.init() 
+    extern mcl_dflags_t dflags; // Enum class of display flags.
+
 
 
    /**
@@ -151,7 +152,6 @@ mcl {
     * 
     * @ingroup display
     * @ingroup mclib
-    * @{
     */
     class
     mcl_display_t { public:
@@ -160,42 +160,81 @@ mcl {
                          ~mcl_display_t ()                         = default;
                           mcl_display_t (mcl_display_t const& rhs) = delete;
         mcl_display_t&    operator=     (mcl_display_t const& rhs) = delete;
-        operator          void*         () const noexcept;              // Same as is_init()
-        bool              operator!     () const noexcept;
 
-        mcl_display_t&    init             () noexcept;                 // Initialize the window
-        bool              is_init          () const noexcept;           // Returns true if the window has been created
-        mcl_display_t&    uninit           () noexcept;                 // Uninitialize the window. NOT end the program
-        dflags_t          get_flags        () const noexcept;           // Get dpm_flags for set_mode
-        inline mcl_display_t& set_mode     (void* = 0) noexcept{ return init (); }
-        inline mcl_display_t& set_mode     (void*, dflags_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
-        mcl_display_t&    set_mode         (point2d_t size, dflags_t dpm_flags) noexcept;
-        mcl_display_t&    set_mode         (point2d_t size) noexcept;   // Initialize a window or screen for display
-        char const*       get_driver_a     () const noexcept;           // Get the name of the pygame display backend.  This is always 'windows' at present.
-        wchar_t const*    get_driver       () const noexcept;           // Get the name of the pygame display backend.  This is always 'windows' at present.
-        mcl_display_t&    set_caption      (char    const* caption = nullptr) noexcept; 
-        mcl_display_t&    set_caption      (wchar_t const* caption = nullptr) noexcept; 
-                                                                        // Set the current window caption
-        wchar_t const*    get_caption      () const noexcept;           // Get the current window caption
-//      surface&          get_surface      () const noexcept;
-//      mcl_display_t&    flip             () noexcept;
-//      mcl_display_t&    update           () noexcept;
-        size_t            get_num_displays () const noexcept;           // Return the number of available displays. This is always 1 at present. 
-        bool              set_allow_screensaver (bool b_allow = true) noexcept;  // Set whether the screensaver may run
-        bool              is_allow_screensaver  () const noexcept;      // Return whether the screensaver is allowed to run
-        mcl_display_t&    hide             (bool b_hide = true) noexcept;        // Make the window invisible
-        mcl_display_t&    toggle_fullscreen() noexcept;                 // Switch between fullscreen and windowed displays
-        bool              is_fullscreen    () const noexcept;           // Return true if full screen mode is set.
-        mcl_display_t&    iconify          () noexcept;                 // Iconify the display surface
-        mcl_display_t&    maximize         () noexcept;                 // Maximize the display surface
-        point2d_t         get_window_pos   () const noexcept;           // Get position of desktop 
-        point2d_t         get_window_size  () const noexcept;           // Return the size of the window or screen
-        point2d_t         get_desktop_size () const noexcept;           // Get size of desktop 
-        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept;       // Set WS_EX_LAYERED on this window.
-        wmi_dict_t        get_wm_info      () const noexcept;           // Get information about the current windowing system
-        bool              is_active        () const noexcept;           // Returns true when the display is active on the screen and may be visible to the user
+        // Returns true if the window has been created
+        bool              is_init       () const noexcept;
+        // Same as is_init()
+        operator          void*         () const noexcept;
+        // Contrary to the result of is_init()
+        bool              operator!     () const noexcept;
+        
+        // Initialize the window
+        mcl_display_t&    init          () noexcept;
+        // Initialize a default window or screen for display
+        inline mcl_display_t& set_mode  (void* = 0) noexcept{ return init (); }
+        // Initialize a window or screen with display flags for display
+        inline mcl_display_t& set_mode  (void*, dflags_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
+        // Initialize a window or screen with size and display flags for display
+        mcl_display_t&    set_mode      (point2d_t size, dflags_t dpm_flags) noexcept;
+        // Initialize a window or screen of specified size for display
+        mcl_display_t&    set_mode      (point2d_t size) noexcept;
+        
+        // Get dpm_flags for set_mode
+        dflags_t          get_flags     () const noexcept;
+        // Returns true when the display is active on the screen and may be visible to the user
+        bool              is_active     () const noexcept;
+        
+        // Uninitialize the window. NOT end the program
+        mcl_display_t&    uninit        () noexcept;
+
+        // Get the name of the pygame display backend.  This is always "windows" at present.
+        char const*       get_driver_a  () const noexcept;
+        // Get the name of the pygame display backend.  This is always L"windows" at present.
+        wchar_t const*    get_driver    () const noexcept;
+
+        // Set the current window caption
+        mcl_display_t&    set_caption   (char    const* caption = nullptr) noexcept;
+        // Set the current window caption
+        mcl_display_t&    set_caption   (wchar_t const* caption = nullptr) noexcept;
+        // Get the current window caption
+        wchar_t const*    get_caption   () const noexcept;
+
+        // Set whether the screensaver may run
+        bool              set_allow_screensaver (bool b_allow = true) noexcept; 
+        // Return whether the screensaver is allowed to run
+        bool              is_allow_screensaver () const noexcept;
+
+        // Switch between fullscreen and windowed displays
+        mcl_display_t&    toggle_fullscreen () noexcept;
+        // Return true if full screen mode is set.
+        bool              is_fullscreen () const noexcept;
+
+        // Make the window invisible
+        mcl_display_t&    hide          (bool b_hide = true) noexcept;
+        // Iconify the display surface
+        mcl_display_t&    iconify       () noexcept;
+        // Maximize the display surface
+        mcl_display_t&    maximize      () noexcept;
+
+        // Return the number of available displays. This is always 1 at present.
+        size_t            get_num_displays () const noexcept;
+        // Get position of desktop 
+        point2d_t         get_window_pos () const noexcept;
+        // Return the size of the window or screen
+        point2d_t         get_window_size () const noexcept;
+        // Get size of desktop 
+        point2d_t         get_desktop_size () const noexcept;
+
+        // Set WS_EX_LAYERED on this window.
+        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept;
+
+        // Get information about the current windowing system
+        wmi_dict_t        get_wm_info   () const noexcept;           
     
     };
+    extern mcl_display_t display; // Module for controling the display.
+
+
     
    /** 
     * @class wmi_dict_t <src/display.h>
@@ -240,21 +279,6 @@ mcl {
         constexpr iterator<wmi_dict_t>  begin () noexcept{ return iterator<wmi_dict_t> {0ul};               }
         inline iterator<wmi_dict_t>  end   () noexcept{ return iterator<wmi_dict_t> {len (wmi_dict_t{})}; }
     }; 
-    
-/** @}  */
-
-
-   /**
-    * @name Mclib Display Control Objects
-    * @brief 
-    *   The &lt;display&gt; header declares the two <em>standard display
-    *   control objects</em>.  For more information, see the section of
-    *   the manual linked to above.
-    * @{
-    */
-    extern mcl_display_t display;
-    
-/** @}  */
 
 } // namespace
 

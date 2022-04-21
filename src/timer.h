@@ -43,7 +43,7 @@ mcl {
 
    /**
     * @class mcl_time_t <src/timer.h>
-    * @brief class for monitoring time
+    * @brief module for monitoring time
     * 
     * @ingroup time
     * @ingroup mclib
@@ -60,8 +60,11 @@ mcl {
         operator       void*      () const noexcept;
         bool           operator!  () const noexcept; 
         
-        long long get_ticks    () noexcept;
-        long long get_ticks_us () noexcept;
+        // Get the time in milliseconds
+        long long get_ticks    () noexcept; 
+        // Get the time in microseconds
+        long long get_ticks_us () noexcept; 
+
     //    mcl::time.get_ticks()
     //    mcl::time.get_ticks_us()
     //      get the time in milliseconds / microseconds
@@ -72,7 +75,9 @@ mcl {
     //      mcl::display.init() was called. Before display is initialized
     //      this will always be 0. 
 
+        // Sleep for an amount of millseconds
         long long wait (long millseconds) noexcept;
+
     //    mcl::time.wait()
     //      pause the program for an amount of time
     //      wait(millseconds) -> time_milliseconds
@@ -82,7 +87,9 @@ mcl {
     //
     //      This returns the actual number of milliseconds used.
 
+        // Pause the program for an amount of time.
         long long delay (long millseconds, long microsecond = 0) noexcept;
+
     //    mcl::time.delay()
     //      pause the program for an amount of time
     //      delay(milliseconds) -> time_microseconds
@@ -95,17 +102,7 @@ mcl {
     //      This returns the actual number of microseconds used.
     
     };
-    
-/** @}  */
-
-
-   /**
-    * @name Mclib Module for Monitoring Time 
-    * @{
-    */
-    extern mcl_time_t time;
-    
-/** @}  */
+    extern mcl_time_t time; // Module for monitoring time.
 
 } // namespace
 

@@ -37,6 +37,7 @@
 namespace
 mcl {
     
+    // Module for monitoring time.
     mcl_time_t time;
     
     mcl_time_t::operator void* () const

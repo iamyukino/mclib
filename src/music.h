@@ -46,7 +46,7 @@ mcl {
     
    /**
     * @class mcl_mixer_t::mcl_music_t <src/music.h>
-    * @brief Module for controlling streamed audio
+    * @brief Module for controlling streamed audio.
     * 
     * @ingroup mixer
     * @ingroup mclib
@@ -61,26 +61,40 @@ mcl {
         operator     void*       () const noexcept;
         bool         operator!   () const noexcept; 
         
+        // Load a music file for playback.
         bool         load        (char    const* filename) noexcept;
+        // Load a music file for playback.
         bool         load        (wchar_t const* filename) noexcept;
-                                                                  // Load a music file for playback.
+        // Queue a sound file to follow the current.
         bool         queue       (char    const* filename, int loops = 0) noexcept;
+        // Queue a sound file to follow the current.
         bool         queue       (wchar_t const* filename, int loops = 0) noexcept;
-                                                                  // Queue a sound file to follow the current.
-        bool         unload      () noexcept;                     // Unload the currently loaded music to free up resources.
+        // Unload the currently loaded music to free up resources.
+        bool         unload      () noexcept;
+        // Start the playback of the music stream.
         bool         play        (int loops = 0, float start_s = .0f, float fadein_s = .0f) noexcept;
-                                                                  // Start the playback of the music stream.
-        bool         rewind      () noexcept;                     // Restart music.
-        bool         stop        () noexcept;                     // Stop the music playback.
-        bool         pause       () noexcept;                     // Temporarily stop music playback.
-        bool         unpause     () noexcept;                     // Resume paused music.
-        bool         fadeout     (float fadeout_s) noexcept;      // Stop music playback after fading out.
-        bool         set_volume  (float volume) noexcept;         // Set the music volume.
-        float        get_volume  () noexcept;                     // Get the music volume.
-        float        get_pos     () noexcept;                     // Get the music play time.
-        bool         set_pos     (float pos_s) noexcept;          // Set the music play time.
-        float        get_length  () noexcept;                     // Get the music length.
-        bool         is_busy     () noexcept;                     // Returns true if the music stream is playing.
+        // Restart music.
+        bool         rewind      () noexcept;                     
+        // Stop the music playback.
+        bool         stop        () noexcept;                     
+        // Temporarily stop music playback.
+        bool         pause       () noexcept;           
+        // Resume paused music.
+        bool         unpause     () noexcept;
+        // Stop music playback after fading out.
+        bool         fadeout     (float fadeout_s) noexcept;
+        // Set the music volume.
+        bool         set_volume  (float volume) noexcept;
+        // Get the music volume.
+        float        get_volume  () noexcept;
+        // Get the music play time.
+        float        get_pos     () noexcept;
+        // Set the music play time.
+        bool         set_pos     (float pos_s) noexcept;
+        // Get the music length.
+        float        get_length  () noexcept;
+        // Returns true if the music stream is playing.
+        bool         is_busy     () noexcept;
     };
    /** @}  */
     

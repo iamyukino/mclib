@@ -149,16 +149,20 @@ mcl {
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return -1; } // lhs reaches the end first, then rhs is larger
     
+    // Compare between tuples of defferent types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<sizeof...(lhs_t) && !sizeof...(rhs_t), int>::type
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return 1; } // rhs reaches the end first, then lhs is larger
     
+    // Compare between tuples of defferent types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<!sizeof...(lhs_t) && !sizeof...(rhs_t), int>::type
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return 0; } // lhs and rhs reaches the end at the same time, this means two tuples
                   // are exactly equal.
+
+    // Compare between tuples of defferent types
     template <typename lhsf, typename rhsf, typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<
         !(std::is_same<lhsf, rhsf>::value
@@ -169,6 +173,8 @@ mcl {
             : ( std::is_arithmetic<rhsf>::value ? 1 : (sizeof (lhsf) > sizeof (rhsf)) );
     } // The end is not reached and the first element type is different. Compare the type,
       // and the number type is smaller. Otherwise, press sizeof for comparison.
+    
+    // Compare between tuples of defferent types
     template <typename lhsf, typename rhsf, typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<
         (std::is_same<lhsf, rhsf>::value
@@ -183,12 +189,12 @@ mcl {
       // first element of two tuples is equal. If it is not equal, the comparison result is
       // returned, and if it is equal, the next element is compared recursively.
     
-    // get the length of tuple
+    // Get the length of tuple
     template <typename... T> 
     constexpr size_t len (std::tuple<T...> const&) noexcept 
     { return sizeof... (T); }
     
-    // class like tuple in python
+    // Class like tuple in python
     template <typename... T>
     class pytuple
     : public std::tuple<T...> {
@@ -336,6 +342,7 @@ mcl {
         { return cmp (*this, rhs) >= 0; }
     };
     
+    // Construct a pytuple object.
     template <typename... Ts>
     constexpr pytuple<typename std::decay<typename std::remove_reference<Ts>::type>::type...> 
     maktuple (Ts&&... agv) noexcept {

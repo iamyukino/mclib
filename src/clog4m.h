@@ -80,7 +80,7 @@ mcl {
     public:
         struct type { unsigned value; };
         
-        static type constexpr All{ 0 };
+        static type constexpr All{ 0 };       // opening all logs
           // For opening all logs
        
         static type constexpr Int{ 1 };       // internal (buffered)
@@ -115,11 +115,11 @@ mcl {
           // An irreversible error has occurred and the
           // system cannot work normally.
         
-        static type constexpr Off{ 8 };
+        static type constexpr Off{ 8 };       // closing all logs
           // For closing all logs    
     };
-    using cll4m_t = mcl_cll4m_t::type;
-    extern mcl_cll4m_t cll4m;
+    using cll4m_t = mcl_cll4m_t::type; // Type of log level for clog4m.
+    extern mcl_cll4m_t cll4m;          // Enum class of log level for clog4m.
     
     
     
@@ -163,8 +163,10 @@ mcl {
         bool       operator!  () const noexcept; 
         clog4m_t&  operator[] (cll4m_t logLevel) noexcept;
         
-        clog4m_t&  depth_incr () noexcept; 
-        clog4m_t&  depth_decr () noexcept; 
+        // Change line indent
+        clog4m_t&  depth_incr () noexcept; // Increase line indent.
+        clog4m_t&  depth_decr () noexcept; // Decrease line indent.
+
         int        putchar    (int ch) noexcept;
         wint_t     putwchar   (wchar_t ch) noexcept;
         int        puts       (char const* str) noexcept;
@@ -247,7 +249,7 @@ mcl {
         cll4m_t get_event_level    () noexcept;
     
     };
-    extern mcl_clog4m_t clog4m;
+    extern mcl_clog4m_t clog4m; // Module for loging.
     
 } // namespace
 

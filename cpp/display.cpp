@@ -50,7 +50,9 @@
 namespace
 mcl {
     
+    // Enum class of display flags.
     mcl_dflags_t dflags;
+    // Module for controling the display.
     mcl_display_t display;
 
     dflags_t constexpr mcl_dflags_t::Shown;

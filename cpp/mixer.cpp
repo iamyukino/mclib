@@ -37,6 +37,7 @@
 namespace
 mcl {
     
+    // Module for loading and playing sounds.
     mcl_mixer_t mixer;
     
     

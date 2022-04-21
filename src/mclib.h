@@ -62,20 +62,17 @@
 //  This header is for mclib standard log output stream.
 #   include "clog4m.h"
 
-//  This header is for color models. See also mclfwd.h
+//  This header is for color models.
 #   include "colors.h"
+
+//  This header is for representing any image.
+#   include "surface.h"
 
 //  This header is for mclib standard graphics control.
 #   include "display.h"
 
-//  This header is for interacting with events and queues.
-#   include "event.h"
-
 //  This header is for loading and playing sounds.
 #   include "mixer.h"
-
-//  This header is for working with the mouse.
-#   include "mouse.h"
 
 //  This header is for monitoring time.
 #   include "timer.h"
@@ -101,24 +98,35 @@ mcl {
     * @ingroup mclib
     * @{
     */
+    // Initialize all mclib modules
     pytuple<int, int> init    () noexcept;
+
+    // Uninitialize all mclib modules. 
     void              quit    () noexcept;
+
+    // Returns True if any mclib module is currently initialized
     bool              is_init () noexcept;
-    
+
+    // Register a function of any type to be called when mclib quits.
+    // This function is defined elsewhere in this file.
+//  bool              register_quit (function, parms...) noexcept;
+
+    // Small module containing version information
     struct mcl_version_t {
         static char const* const            ver_a;
         static wchar_t const* const         ver;
         static pytuple<int, int, int> const vernum;
         static int const                    rev;
     };
-    constexpr mcl_version_t version;
+    extern mcl_version_t version; // Small module containing version information
     
-//  bool register_quit (function, parms...) noexcept;
 
     bool mcl_register_quit (std::function<void()>) noexcept;
+    // Register a function of any type to be called when mclib quits.
     template<class Fun, typename... Args>
     bool constexpr register_quit (Fun&& f, Args&&... args) noexcept
     { return mcl_register_quit ([&f, &args...]{ f (args...); }); }
+    // Register a member function of any type to be called when mclib quits.
     template<class Cls, class Fun, typename... Args>
     bool constexpr register_quit (Fun&& f, Cls& c, Args&&... args) noexcept
     { return mcl_register_quit ([&f, &c, &args...]{ (c.*f) (args...); }); }

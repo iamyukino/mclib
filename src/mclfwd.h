@@ -73,25 +73,22 @@ mcl {
     class mcl_clog4m_t;
     
     // type for basic color models.  see colors.h
-    using color_t = unsigned long;
+    using color_t = unsigned long; // type of color parameters
     using colorcv_t = unsigned char; // components of color models
     
-    // class for graphics interface control.  see display.h
+    // module for graphics interface control.  see display.h
     class mcl_display_t;
     class wmi_dict_t;
+
+    // class for representing any image.  see surface.h
+    using point1d_t = long;  // Coordinates that drawn to scale
+    class point2d_t { public: point1d_t x, y; }; // Coordinate pair that drawn to scale
+    class surface_t;
     
-    // class for interacting with events and queues.  see event.h
-    class mcl_event_t;
-    
-    // class for loading and playing sounds.  see mixer.h
+    // module for loading and playing sounds.  see mixer.h
     class mcl_mixer_t;
     
-    // class for working with the mouse.  see mouse.h
-    using point1d_t = long;  // coordinates that drawn to scale
-    class point2d_t { public: point1d_t x, y; };
-    class mcl_mouse_t;    
-    
-    // class for monitoring time.  see timer.h
+    // module for monitoring time.  see timer.h
     class mcl_time_t;
         
 /** @}  */
