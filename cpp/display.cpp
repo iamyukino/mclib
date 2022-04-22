@@ -78,7 +78,7 @@ mcl {
         return !mcl_control_obj.bIsReady;
     }
     bool mcl_display_t::
-    is_init () const noexcept{
+    get_init () const noexcept{
         return static_cast<bool>(mcl_control_obj.bIsReady);
     }
     
@@ -217,7 +217,7 @@ mcl {
     mcl_init_window (point2d_t* ptrsize, dflags_t dpm_flags = 0) noexcept{
     // Create Window & Start Message Loop.
         // Initialize window parameters.
-        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_; ml_[cll4m.Int];
         if (bopen) ml_
            << L"mcl::display::init  | window settings reset:\n"
@@ -320,7 +320,7 @@ mcl {
                    L"mode [-display-window-togglefullscreen]\n";
                 return *this;
             }
-            bool bopen = clog4m.is_init ()
+            bool bopen = clog4m.get_init ()
                          && clog4m.get_event_level ().value <= cll4m.Int.value;
             clog4m_t ml_; ml_[cll4m.Int];
             mcl_set_size (&size);
@@ -351,7 +351,7 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (mcl_control_obj.bIsReady) {
         // change form style only
-            bool bopen = clog4m.is_init ()
+            bool bopen = clog4m.get_init ()
                          && clog4m.get_event_level ().value <= cll4m.Int.value;
             clog4m_t ml_; ml_[cll4m.Int];
             mcl_set_size (&size);
@@ -577,12 +577,12 @@ mcl {
     }
     
    /**
-    * @function mcl_display_t::is_allow_screensaver <src/display.h>
+    * @function mcl_display_t::get_allow_screensaver <src/display.h>
     * @brief Return whether the screensaver is allowed to run.
     * @return {bool} b_allow: whether the screensaver is allowed to run
     */
     bool mcl_display_t::
-    is_allow_screensaver () const noexcept{
+    get_allow_screensaver () const noexcept{
         BOOL b_allow = 0;
         ::SystemParametersInfoW (SPI_GETSCREENSAVEACTIVE, 0, &b_allow, 0);
         return b_allow;
@@ -596,7 +596,7 @@ mcl {
     mcl_display_t& mcl_display_t::
     toggle_fullscreen () noexcept{
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
-        if (is_active ()) {
+        if (get_active ()) {
             static LONG_PTR last_exstyle;
             static point1d_t last_x, last_y, last_w, last_h;
             
@@ -788,21 +788,21 @@ mcl {
     }
 
    /**
-    * @function mcl_display_t::is_active <src/display.h>
+    * @function mcl_display_t::get_active <src/display.h>
     * @brief 
     *    Returns True when the display is active on the screen
     *    Returns True when the display Surface is considered actively renderable
     *    on the screen and may be visible to the user.
     *  Note:  This function returning True is unrelated to whether the application
     *    has input focus.  Please see APIs related to input focus.
-    * @return {bool} is_visible 
+    * @return {bool} is_active
     */
-    bool mcl_display_t::is_active () const noexcept{
+    bool mcl_display_t::get_active() const noexcept{
         if (!mcl_control_obj.bIsReady) return false;
         LONG_PTR last_style = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
         return !(last_style & WS_MINIMIZE) && (last_style & WS_VISIBLE) && mcl_control_obj.bIsReady;
     }
-    bool mcl_display_t::is_fullscreen () const noexcept{
+    bool mcl_display_t::get_fullscreen () const noexcept{
         return mcl_control_obj.b_fullscreen && mcl_control_obj.bIsReady;
     }
 

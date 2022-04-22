@@ -94,7 +94,7 @@ mcl {
         // Get the music length.
         float        get_length  () noexcept;
         // Returns true if the music stream is playing.
-        bool         is_busy     () noexcept;
+        bool         get_busy    () noexcept;
     };
    /** @}  */
     

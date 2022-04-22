@@ -153,12 +153,12 @@ mcl {
     */
     mcl_mixer_t::mcl_music_t::
     operator void* () const noexcept{
-        return music.is_busy () ?
+        return music.get_busy () ?
             const_cast<mcl_mixer_t::mcl_music_t*>(this) : nullptr; 
     } 
     bool mcl_mixer_t::mcl_music_t::
     operator! () const noexcept{
-        return !music.is_busy (); 
+        return !music.get_busy();
     } 
     
 /**
@@ -888,7 +888,7 @@ mcl {
  *  @return {bool}: true if the music stream is playing
  */
     bool mcl_mixer_t::mcl_music_t::
-    is_busy () noexcept {
+    get_busy() noexcept {
         return MCI_PLAY == mcl_music_base.dwStatus;
     }
     

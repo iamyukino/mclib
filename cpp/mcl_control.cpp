@@ -85,7 +85,7 @@ mcl {
         if (::InterlockedCompareExchange (&bIsReady, 0, 1) == 0)
             return 0u;
 
-        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_;
         if (bopen) {
             ml_[cll4m.Int] << L"\n"
@@ -236,7 +236,7 @@ mcl {
     threadMessageLoop (void* _parm_flags) {
     // Message loop
         { // <- sub for exit
-        bool bopen = clog4m.is_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
+        bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_; ml_[cll4m.Int];
         
         WNDCLASSEXW wc; // A properties struct of our window

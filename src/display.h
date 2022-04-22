@@ -162,10 +162,10 @@ mcl {
         mcl_display_t&    operator=     (mcl_display_t const& rhs) = delete;
 
         // Returns true if the window has been created
-        bool              is_init       () const noexcept;
-        // Same as is_init()
+        bool              get_init      () const noexcept;
+        // Same as get_init()
         operator          void*         () const noexcept;
-        // Contrary to the result of is_init()
+        // Contrary to the result of get_init()
         bool              operator!     () const noexcept;
         
         // Initialize the window
@@ -182,7 +182,7 @@ mcl {
         // Get dpm_flags for set_mode
         dflags_t          get_flags     () const noexcept;
         // Returns true when the display is active on the screen and may be visible to the user
-        bool              is_active     () const noexcept;
+        bool              get_active    () const noexcept;
         
         // Uninitialize the window. NOT end the program
         mcl_display_t&    uninit        () noexcept;
@@ -202,12 +202,12 @@ mcl {
         // Set whether the screensaver may run
         bool              set_allow_screensaver (bool b_allow = true) noexcept; 
         // Return whether the screensaver is allowed to run
-        bool              is_allow_screensaver () const noexcept;
+        bool              get_allow_screensaver () const noexcept;
 
         // Switch between fullscreen and windowed displays
         mcl_display_t&    toggle_fullscreen () noexcept;
         // Return true if full screen mode is set.
-        bool              is_fullscreen () const noexcept;
+        bool              get_fullscreen () const noexcept;
 
         // Make the window invisible
         mcl_display_t&    hide          (bool b_hide = true) noexcept;

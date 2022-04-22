@@ -71,8 +71,8 @@ mcl {
     * @return bool
     */
     bool
-    is_init () noexcept{
-        return display.is_init () || mixer.music.is_busy ();
+    get_init () noexcept{
+        return display.get_init () || mixer.music.get_busy ();
     }
     
    /**

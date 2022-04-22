@@ -2,20 +2,20 @@
     color.h     ok
     display.h   ok
     draw.h      X
-    event.h     X   <- TODO 
+    event.h     X
     font.h      X
     image.h     X
     key.h       X
-    locals.h    X
     mixer.h     X
     mouse.h     X
-    Rect.h      X
-    Surface.h   X
-    time.h      ok
+    rect.h      X
+    surface.h   X   <- TODO 
+    timer.h     ok
     music.h     ok
     mclib.h     ok
 
     pyobj.h
+    clog4m.h
     mcl_base.h
     mcl_control.h
 */

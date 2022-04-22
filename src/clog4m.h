@@ -243,7 +243,7 @@ mcl {
         mcl_clog4m_t& init         (char const* directory_path) noexcept;
         mcl_clog4m_t& init         (wchar_t const* directory_path = nullptr) noexcept;
         mcl_clog4m_t& uninit       () noexcept;
-        inline mcl_clog4m_t& is_init () noexcept{ return *this; }
+        inline mcl_clog4m_t& get_init () noexcept{ return *this; }
         
         cll4m_t enable_event_level (cll4m_t logLevel) noexcept;
         cll4m_t get_event_level    () noexcept;

@@ -105,7 +105,7 @@ mcl {
     void              quit    () noexcept;
 
     // Returns True if any mclib module is currently initialized
-    bool              is_init () noexcept;
+    bool              get_init () noexcept;
 
     // Register a function of any type to be called when mclib quits.
     // This function is defined elsewhere in this file.

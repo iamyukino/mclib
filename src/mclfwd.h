@@ -81,8 +81,8 @@ mcl {
     class wmi_dict_t;
 
     // class for representing any image.  see surface.h
-    using point1d_t = long;  // Coordinates that drawn to scale
-    class point2d_t { public: point1d_t x, y; }; // Coordinate pair that drawn to scale
+    using point1d_t = long;  // Coordinates that drawn to scale.
+    struct point2d_t { point1d_t x, y; }; // Coordinate pair that drawn to scale.
     class surface_t;
     
     // module for loading and playing sounds.  see mixer.h

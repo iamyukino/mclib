@@ -83,7 +83,7 @@ mcl {
     mcl_tuple_visitor (size_t, std::tuple<> const&, void*) { return 0; }
     
     template <typename lhs_t, typename rhs_t>
-    constexpr typename std::enable_if<!std::is_convertible<rhs_t, lhs_t>::value, void>::type
+    [[noreturn]] constexpr typename std::enable_if<!std::is_convertible<rhs_t, lhs_t>::value, void>::type
     mcl_copy (lhs_t* , rhs_t* ) // The specified subscript element type cannot be
     { throw std::bad_cast (); } // implicitly converted to the target type
     
