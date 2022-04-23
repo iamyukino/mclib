@@ -18,6 +18,7 @@ Thank you for making use of this graphics library. As is customary, the code wil
 mclib is obviously strongly dependent on Windows API and C++.  
 Dependency versions:
 * C++ standard >= 201103L
+* GCC version >= 4.9.2
 * Windows version >= Windows 2000 Professional  
 
 mclib guarantees that no warning will appear under the C++11 or later standards using GCC/MSVC. You can add the following commands (GCC) when calling the compiler or set warning level 4 (MSVC) to test:  

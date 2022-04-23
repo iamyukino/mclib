@@ -38,7 +38,7 @@ namespace
 mcl {
     
     // Module for monitoring time.
-    mcl_time_t time;
+    mcl_time_t timer;
     
     mcl_time_t::operator void* () const
         noexcept{ return const_cast<mcl_time_t*>(this); } 
@@ -55,21 +55,21 @@ mcl {
     */
     long long mcl_time_t::
     get_ticks () noexcept{
-        if (!mcl_control_obj.time) return 0ll;
+        if (!mcl_control_obj.timer) return 0ll;
         LARGE_INTEGER stopCount;
         ::QueryPerformanceCounter (&stopCount);
         stopCount.QuadPart =
-            (stopCount.QuadPart - mcl_control_obj.time) * 1000ll / mcl_base_obj.frequency;
-        return mcl_control_obj.time ? stopCount.QuadPart : 0ll;
+            (stopCount.QuadPart - mcl_control_obj.timer) * 1000ll / mcl_base_obj.frequency;
+        return mcl_control_obj.timer ? stopCount.QuadPart : 0ll;
     }
     long long mcl_time_t::
     get_ticks_us () noexcept{
-        if (!mcl_control_obj.time) return 0ll;
+        if (!mcl_control_obj.timer) return 0ll;
         LARGE_INTEGER stopCount;
         ::QueryPerformanceCounter (&stopCount);
         stopCount.QuadPart =
-            (stopCount.QuadPart - mcl_control_obj.time) * 1000000ll / mcl_base_obj.frequency;
-        return mcl_control_obj.time ? stopCount.QuadPart : 0ll;
+            (stopCount.QuadPart - mcl_control_obj.timer) * 1000000ll / mcl_base_obj.frequency;
+        return mcl_control_obj.timer ? stopCount.QuadPart : 0ll;
     }
 
 

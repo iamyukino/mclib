@@ -249,10 +249,10 @@ mcl {
             ml_ << L"caption = \"" << mcl_control_obj.windowtext
                 << L"\"\n" << std::flush;
         
-        // Set time.
+        // Set timer.
         LARGE_INTEGER tickCount;
         ::QueryPerformanceCounter (&tickCount);
-        mcl_control_obj.time = tickCount.QuadPart;
+        mcl_control_obj.timer = tickCount.QuadPart;
         
         // Start thread. 
 #       ifdef _MSC_VER
@@ -280,7 +280,7 @@ mcl {
         if (mcl_control_obj.bErrorCode) {
             if (bopen) ml_.separator ();
             mcl_control_obj.bErrorCode = 0;
-            mcl_control_obj.time = 0;
+            mcl_control_obj.timer = 0;
             ::InterlockedExchange (&mcl_control_obj.bIsReady, 0);
         }
         return ;

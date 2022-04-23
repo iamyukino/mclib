@@ -143,26 +143,26 @@ mcl {
         // specified subscripts through recursion at run time
     
     
-    // Compare between tuples of defferent types
+    // Compare between tuples of different types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<!sizeof...(lhs_t) && sizeof...(rhs_t), int>::type
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return -1; } // lhs reaches the end first, then rhs is larger
     
-    // Compare between tuples of defferent types
+    // Compare between tuples of different types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<sizeof...(lhs_t) && !sizeof...(rhs_t), int>::type
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return 1; } // rhs reaches the end first, then lhs is larger
     
-    // Compare between tuples of defferent types
+    // Compare between tuples of different types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<!sizeof...(lhs_t) && !sizeof...(rhs_t), int>::type
     cmp (std::tuple<lhs_t...> const& , std::tuple<rhs_t...> const& ) noexcept
     { return 0; } // lhs and rhs reaches the end at the same time, this means two tuples
                   // are exactly equal.
 
-    // Compare between tuples of defferent types
+    // Compare between tuples of different types
     template <typename lhsf, typename rhsf, typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<
         !(std::is_same<lhsf, rhsf>::value
@@ -174,7 +174,7 @@ mcl {
     } // The end is not reached and the first element type is different. Compare the type,
       // and the number type is smaller. Otherwise, press sizeof for comparison.
     
-    // Compare between tuples of defferent types
+    // Compare between tuples of different types
     template <typename lhsf, typename rhsf, typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<
         (std::is_same<lhsf, rhsf>::value

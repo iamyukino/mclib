@@ -125,7 +125,7 @@ mcl {
         inst          = nullptr;
         taskhandle    = nullptr;       // switchs
         windowtext[0] = '\0';          b_fullscreen  = false;
-        time          = 0;             b_maximize    = false;
+        timer         = 0;             b_maximize    = false;
         
         // switchs
         if (b_allow_screensaver_before != 2) {

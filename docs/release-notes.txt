@@ -1,4 +1,4 @@
-# mclib v0.5.1-Debug.3462-2
+# mclib v0.5.1-Debug.3462
 
 Release notes for Mclib
 --------------------------------
@@ -7,6 +7,8 @@ Release notes for Mclib
   |  
   |  [ IMPROVE  ]    Use class instead of enum.
   |  [  ADDED   ]    Add surface.h .
+  |  [  ADDED   ]    Add CSS-style color function .
+  |  [ IMPROVE  ]    Rename is_*() to get_*().
   |
   |
   |

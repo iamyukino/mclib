@@ -175,7 +175,7 @@ mcl {
                0, 0, ':', 0, 0, ':', 0, 0, '.', 0, 0, 0, ']' };
         static ULONGLONG mcl_tickcnt_dw = 0;
 
-        // time
+        // timer
         ULONGLONG new_tick = MCL_GETTICKCOUNT ();
             // 'GetTickCount' runs faster than 'GetLocalTime' so much.
         if (new_tick != mcl_tickcnt_dw) {

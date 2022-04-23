@@ -69,7 +69,7 @@ mcl {
         HINSTANCE inst      = nullptr;
         HANDLE   taskhandle = nullptr;    // thread handle
         wchar_t  windowtext[_MAX_FNAME];  // caption
-        LONGLONG time      = 0ll;
+        LONGLONG timer     = 0ll;
 
     public:   // positions
         point1d_t bufw  = 0;              // screen size

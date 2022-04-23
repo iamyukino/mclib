@@ -18,6 +18,7 @@ mclib
 毋庸置疑，mclib 基于并且强烈依赖 Windows API 和 C++。  
 最低支持版本:
 * C++ 标准 >= 201103L
+* GCC 版本 >= 4.9.2
 * Windows 系统版本 >= Windows 2000 Professional  
 
 mclib 保证在 C++11 或更晚的标准版本下，使用 GCC 或 MSVC 进行编译不会产生任何警告信息。您可以在编译时添加以下或更多的编译选项来测试（MSVC 可以将警告等级设置为等级 4）：

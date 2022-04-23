@@ -47,7 +47,7 @@ mcl {
     * 
     * @ingroup time
     * @ingroup mclib
-    " @ingroup display
+    * @ingroup display
     * @{
     */
     class
@@ -65,8 +65,8 @@ mcl {
         // Get the time in microseconds
         long long get_ticks_us () noexcept; 
 
-    //    mcl::time.get_ticks()
-    //    mcl::time.get_ticks_us()
+    //    mcl::timer.get_ticks()
+    //    mcl::timer.get_ticks_us()
     //      get the time in milliseconds / microseconds
     //      get_ticks() -> time_milliseconds
     //      get_ticks_us() -> time_microseconds
@@ -78,7 +78,7 @@ mcl {
         // Sleep for an amount of millseconds
         long long wait (long millseconds) noexcept;
 
-    //    mcl::time.wait()
+    //    mcl::timer.wait()
     //      pause the program for an amount of time
     //      wait(millseconds) -> time_milliseconds
     //
@@ -90,19 +90,19 @@ mcl {
         // Pause the program for an amount of time.
         long long delay (long millseconds, long microsecond = 0) noexcept;
 
-    //    mcl::time.delay()
+    //    mcl::timer.delay()
     //      pause the program for an amount of time
     //      delay(milliseconds) -> time_microseconds
     //      delay(milliseconds, microseconds) -> time_microseconds
     // 
     //      Will pause for a sum of given numbers of milliseconds and microseconds.
     //      This function will use the processor (rather than sleeping) in order
-    //      to make the delay more accurate than mcl::time.wait()
+    //      to make the delay more accurate than mcl::timer.wait()
     //
     //      This returns the actual number of microseconds used.
     
     };
-    extern mcl_time_t time; // Module for monitoring time.
+    extern mcl_time_t timer; // Module for monitoring time.
 
 } // namespace
 

@@ -789,7 +789,7 @@ mcl {
     }
     
 /**
- * Get the music play time
+ * Get the music play time.
  *  @param {void}
  *  @return {float}: the number of milliseconds that the music has been playing for.
  */
