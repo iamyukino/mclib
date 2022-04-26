@@ -30,23 +30,65 @@
     This is a C++11 implementation file for useful tools.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/mclib.h"
 #include "../src/clog4m.h"
 #include "mcl_control.h"
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
+
+#include <exception>
 
 namespace mcl
 {
     
     mcl_base_t mcl_base_obj;
     
+    [[noreturn]] static void
+    mcl_term_func () noexcept{
+        clog4m[cll4m.Fatal].println("::abort() was called.");
+        clog4m.uninit (-1);
+        ::abort ();
+    }
+    void
+    mcl_quick_exit_func () noexcept{
+        clog4m[cll4m.Info].println("::quick_exit() was called.");
+        clog4m.uninit (-2);
+    }
+
+    struct mcl_do_is_atquickexit_exist {
+        template <typename T, typename = decltype(at_quick_exit(*static_cast<T*>(0)))>
+            static std::integral_constant<bool, true> test(int); // only declaration
+        template <typename>
+            static std::integral_constant<bool, false> test(...);
+    };
+    template<typename T>
+    struct mcl_is_atquickexit_exist
+        : public mcl_do_is_atquickexit_exist {
+        typedef decltype(test<T>(0)) type;
+    };
+    template <typename Ret>
+    inline typename std::enable_if<mcl_is_atquickexit_exist<Ret()>::type::value, void>::type
+        mcl_atquickexit(Ret(*fun)() noexcept) { at_quick_exit(fun); }
+    template <typename Ret>
+    inline typename std::enable_if<!mcl_is_atquickexit_exist<Ret()>::type::value, void>::type
+        mcl_atquickexit(Ret(*)() noexcept) { }
+
    /**
     * @function mcl_base_t::mcl_base_t <cpp/mcl_base.h>
     * @brief Constructor.
     * @return nothing
     */
     mcl_base_t::mcl_base_t () noexcept {
-        atexit (quit);
+        std::set_terminate (mcl_term_func);
+        ::atexit (quit);
+        mcl_atquickexit (mcl_quick_exit_func);
         // Returns the number of performance counter ticks per second
         LARGE_INTEGER tickCount;
         ::QueryPerformanceFrequency (&tickCount);

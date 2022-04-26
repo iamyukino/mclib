@@ -31,10 +31,18 @@
     windows.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/display.h"
 #include "../src/clog4m.h"
 #include "mcl_control.h"
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #include <cerrno>     // for errno
 #include <cstring>    // for strerrno

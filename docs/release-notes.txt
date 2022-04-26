@@ -3,12 +3,13 @@
 Release notes for Mclib
 --------------------------------
   |
-.3462     April 20th 2022
+.3462     April 20th 2022 - April 26th 2022
   |  
   |  [ IMPROVE  ]    Use class instead of enum.
   |  [  ADDED   ]    Add surface.h .
   |  [  ADDED   ]    Add CSS-style color function .
   |  [ IMPROVE  ]    Rename is_*() to get_*().
+  |  [ IMPROVE  ]    Register at_quick_exit & set_terminate function for clog4m.
   |
   |
   |

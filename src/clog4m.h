@@ -122,6 +122,10 @@ mcl {
     extern mcl_cll4m_t cll4m;          // Enum class of log level for clog4m.
     
     
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4820)
+# endif // C4820: 'X' bytes padding added after data member.
     
    /**
     * @class clog4m_t <src/clog4m.h>
@@ -182,11 +186,13 @@ mcl {
         clog4m_t&  separator  () noexcept;
         
     private:
-        char m_data_[1];
         void* m_dataplus_;
+        char m_data_[1];
     };
-    
-    
+
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
     
     
    /**
@@ -242,7 +248,7 @@ mcl {
         
         mcl_clog4m_t& init         (char const* directory_path) noexcept;
         mcl_clog4m_t& init         (wchar_t const* directory_path = nullptr) noexcept;
-        mcl_clog4m_t& uninit       () noexcept;
+        mcl_clog4m_t& uninit       (int code = 0) noexcept;
         inline mcl_clog4m_t& get_init () noexcept{ return *this; }
         
         cll4m_t enable_event_level (cll4m_t logLevel) noexcept;

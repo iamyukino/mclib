@@ -20,7 +20,6 @@
     mcl_control.h
 */
 
-
 #include "../src/mclib.h"
 // #include <windows.h>
 using namespace mcl;
@@ -32,7 +31,7 @@ int main()
 
     register_quit([] { display.toggle_fullscreen(); timer.delay(1000); });
     register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
-
+    
     // mcl::timer.delay(10000);
     return 0;
 }

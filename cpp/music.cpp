@@ -31,9 +31,17 @@
     audio.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/mixer.h"
 #include "mcl_base.h"
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #include <mmsystem.h>
 #include <limits>
@@ -72,14 +80,14 @@ mcl {
         ~mcl_music_base_t () noexcept { free_lib (); }
         
     public: 
-        typename mcl_simpletls_ns::mcl_spinlock_t::
-        lock_t         ldlib_lock = 0u;
         HINSTANCE      hInsWinmm  = nullptr;
         MCIERROR       load_lib (MCIDEVICEID mciId,
                             UINT uMsg, DWORD_PTR dwParam1,
                             DWORD_PTR dwParam2) noexcept;
         void           free_lib () noexcept;
-        HANDLE         handle     = nullptr; 
+        HANDLE         handle     = nullptr;
+        typename mcl_simpletls_ns::mcl_spinlock_t::
+        lock_t         ldlib_lock = 0u; 
         
     public:  // mci info
         MCIDEVICEID    nDeviceID  = ~1u+1u;
@@ -95,12 +103,11 @@ mcl {
         bool           load_thread ();
         DWORD          post_      = mNotReady;
         float          f_ret_     = .0f;
-        bool           b_ret_     = false;
+        int            iparam_    = 0;
         wchar_t const* sparam_    = nullptr;
         float          fparam_    = .0f;
         float          fparam2_   = .0f;
-        int            iparam_    = 0;
-    
+
     public:  // fade
         enum: DWORD{ fadeNull = ~2ul+1ul,
             fadeIn = ~1ul+1ul, fadeOutMax = ~3ul+1ul };
@@ -111,7 +118,11 @@ mcl {
         DWORD          fade_      = fadeNull; 
         LONGLONG       fadeTickSt = 0ll;
         DWORD          fadeMsLast = 0ul;
-        
+
+    public:
+        bool           b_ret_ = false;
+        char : 8; char : 8; char : 8;
+
     public:
         enum: DWORD{ mNoMsg, mNotReady, mExit, mLoad, mUnload,
                      mPlay, mRewind, mStop, mPause, mUnpause,
@@ -224,7 +235,7 @@ mcl {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 4191)
-#       endif
+#       endif // C4191: 'Function cast' : unsafe conversion.
                 mci_sendstring_f = reinterpret_cast<mci_pfun_t>(
                     ::GetProcAddress (hInsWinmm, "mciSendCommandW"));
 #       ifdef _MSC_VER
@@ -712,7 +723,7 @@ mcl {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 4191)
-#       endif
+#       endif // C4191: 'Function cast' : unsafe conversion.
                 wav_getvolume_f = reinterpret_cast<wav_pfun_t> (
                     ::GetProcAddress (mcl_music_base.hInsWinmm, "waveOutGetVolume"));
 #       ifdef _MSC_VER
@@ -757,7 +768,7 @@ mcl {
 # ifdef _MSC_VER
 #   pragma warning(push)
 #   pragma warning(disable: 4191)
-# endif
+# endif // C4191: 'Function cast' : unsafe conversion.
         if (!wav_setvolume_f) wav_setvolume_f = reinterpret_cast<wav_pfun_t> (
             ::GetProcAddress (mcl_music_base.hInsWinmm, "waveOutSetVolume"));
 # ifdef _MSC_VER

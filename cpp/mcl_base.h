@@ -34,11 +34,15 @@
 #ifndef MCL_MCLBASE
 # define MCL_MCLBASE
 
-// include
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4464)
+# endif // Relative paths include ".."
 
 # include "../src/mclfwd.h"
 
-# ifdef _MSC_VER
+#ifdef _MSC_VER
+#  pragma warning(pop)
 #  pragma warning(push)
 #  pragma warning(disable: 4365 5039)
 # endif
@@ -49,6 +53,7 @@
 # include <windows.h>
 # include <windowsx.h>
 # include <process.h>
+# undef WIN32_LEAN_AND_MEAN
 
 # ifdef _MSC_VER
 #  pragma warning(pop)
@@ -116,6 +121,8 @@ namespace mcl
         mcl_spinlock_t& operator= (mcl_spinlock_t&) = delete;
         ~mcl_spinlock_t () noexcept;
     private: lock_t& lk_; bool islock_;
+           char : 8; char : 8; char : 8; char : 8; char : 8;
+           char : 8; char : 8;
     };
     
     
@@ -208,8 +215,9 @@ namespace mcl
         mcl_base_t () noexcept;
         long long frequency;
     public:
-        unsigned mcl_threadid_after_exit = 0;
         void* mcl_clog4m_after_exit = nullptr;
+        unsigned mcl_threadid_after_exit = 0;
+        char : 8; char : 8; char : 8; char : 8;
     public:
         size_t atquit_registered = 0;
         size_t atquit_table_size = 0;

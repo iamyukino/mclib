@@ -51,6 +51,8 @@
 # pragma warning(pop)
 #endif
 
+# include "mclfwd.h"
+
 namespace
 mcl {
     

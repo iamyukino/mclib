@@ -31,9 +31,17 @@
     mclib package.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/mclib.h"
 #include "mcl_base.h" 
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 namespace
 mcl {

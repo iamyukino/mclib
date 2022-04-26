@@ -30,9 +30,17 @@
     This is a C++11 implementation file for monitoring time.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/timer.h"
 #include "mcl_control.h"
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 namespace
 mcl {

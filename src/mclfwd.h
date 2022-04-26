@@ -53,6 +53,10 @@
 
 # else
 
+# ifdef _MSC_VER
+#  pragma warning(disable: 4514)
+# endif // C4514: Unreferenced inline function has been removed.
+
 # include <cstdlib>
 
 namespace

@@ -36,8 +36,6 @@
 
 # include "mcl_base.h"
 
-// no define
-
 namespace
 mcl {
 
@@ -57,19 +55,14 @@ mcl {
         LRESULT OnSize      (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnMove      (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
-    public:   // state quantities
-        unsigned bIsReady = 0ul;          // whether message loop starts
-        unsigned bIsExit = 0ul;
-        bool bErrorCode = false;          // successful flag
-
     public:   // window properties
-        unsigned threaddr   = 0u;         // thread id
         HWND     threadhwnd = nullptr;    // window handle
         HDC      windowhdc  = nullptr;
         HINSTANCE inst      = nullptr;
         HANDLE   taskhandle = nullptr;    // thread handle
+        LONGLONG timer      = 0ll;
+        unsigned threaddr   = 0u;         // thread id
         wchar_t  windowtext[_MAX_FNAME];  // caption
-        LONGLONG timer     = 0ll;
 
     public:   // positions
         point1d_t bufw  = 0;              // screen size
@@ -83,6 +76,13 @@ mcl {
         unsigned  b_allow_screensaver_before = 2;
         bool      b_fullscreen               = false;
         bool      b_maximize                 = false;
+
+    public:   // state quantities
+        bool bErrorCode = false;          // successful flag
+        char : 8;
+        unsigned bIsReady = 0ul;          // whether message loop starts
+        unsigned bIsExit  = 0ul;
+        char : 8; char : 8; char : 8; char : 8;
     };
     
     extern mcl_window_info_t mcl_control_obj;

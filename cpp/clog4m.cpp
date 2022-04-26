@@ -30,9 +30,17 @@
     This is a C++11 implementation file for logging.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/clog4m.h"
 #include "mcl_base.h" // for spinlock
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 #include <streambuf>  // for basic_streambuf
 #include <cstdio>     // for vsnprintf
@@ -47,6 +55,7 @@ mcl {
     // Module for loging.
     mcl_clog4m_t clog4m; 
 
+#if __cplusplus < 201703L
     cll4m_t constexpr mcl_cll4m_t::All;
     cll4m_t constexpr mcl_cll4m_t::Int;
     cll4m_t constexpr mcl_cll4m_t::Trace;
@@ -56,6 +65,7 @@ mcl {
     cll4m_t constexpr mcl_cll4m_t::Error;
     cll4m_t constexpr mcl_cll4m_t::Fatal;
     cll4m_t constexpr mcl_cll4m_t::Off;
+#endif
     
    /**
     * @class mcl_logbuf_t <src/clog4m.cpp>
@@ -73,14 +83,17 @@ mcl {
         virtual int sync () override;
         
     private:
-        // Work in buffer mode. It is also possible to work without buffer.
-        enum { buf_size = 64 };
-        char_type Cbuf_[buf_size];
         // The flag that prepares for the next character to be printed or
         // displayed on the next line
         // Output stream
-        bool bf_fail_ = false;
         cll4m_t log_level_;
+        
+        // Work in buffer mode. It is also possible to work without buffer.
+        enum { buf_size = 64 };
+        char_type Cbuf_[buf_size];
+        bool bf_fail_ = false;
+        char : 8; char : 8; char : 8;
+
         friend class clog4m_t;
         friend class mcl_clog4m_t;
         
@@ -140,24 +153,27 @@ mcl {
     * @brief Information of logger. 
     */ 
     struct mcl_logf_t {
-        bool b_newl = true;
-            // line feed identifier
-            // (to ensure that the current time is output at the
-            //  beginning of the line)
+        FILE* f_u8log = nullptr;
+            // ptr to log file 
         typename mcl_simpletls_ns::mcl_spinlock_t::
         lock_t nrtlock_obj = 0u;
             // non-reentrant spinlock ( to ensure orderly writing
             //  of log files)
+        DWORD dw_lastthread_id = 0ul;
+        unsigned long dw_cnt = 0;
+            // object counter
         unsigned u_level = cll4m.All.value;
             // log level
-        FILE* f_u8log = nullptr;
-            // ptr to log file 
         size_t dw_indent = 0ul;
             // number of indents on the beginning of each line
         bool b_console = false;
             // whether console is used
-        DWORD dw_lastthread_id = 0ul; 
-        unsigned long dw_cnt = 0;
+        bool b_newl = true;
+            // line feed identifier
+            // (to ensure that the current time is output at the
+            //  beginning of the line)
+        char : 8; char : 8; char : 8; char : 8; char : 8;
+        char : 8;
     };
     static mcl_logf_t mcl_logf_obj;
     
@@ -344,7 +360,7 @@ mcl {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 4191)
-#       endif
+#       endif // C4191: 'Function cast' : unsafe conversion.
             pfRtlGetNtVersionNumbers =
                 reinterpret_cast<pfRTLGETNTVERSIONNUMBERS>(
                     ::GetProcAddress (hModNtdll, "RtlGetNtVersionNumbers"));
@@ -382,7 +398,7 @@ mcl {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 4191)
-#       endif
+#       endif // C4191: 'Function cast' : unsafe conversion.
             fnGetNativeSystemInfo =
                 reinterpret_cast<LPFN_GetNativeSystemInfo>(
                     ::GetProcAddress (hModKernel32 , "GetNativeSystemInfo"));
@@ -404,7 +420,7 @@ mcl {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 4191)
-#       endif
+#       endif // C4191: 'Function cast' : unsafe conversion.
             fnGetDynamicTimeZoneInformation =
                 reinterpret_cast<LPFN_GetDynamicTimeZoneInformation>(
                     ::GetProcAddress (hModKernel32 , "GetDynamicTimeZoneInformation"));
@@ -533,7 +549,7 @@ mcl {
     * @return mcl_clog4m_t&
     */
     mcl_clog4m_t& mcl_clog4m_t::
-    uninit () noexcept{
+    uninit (int code) noexcept{
         if (!mcl_logf_obj.f_u8log) return *this;
             
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
@@ -544,10 +560,18 @@ mcl {
         mcl_ptnewline (cll4m.Off);
         ::fputwc ('\n', mcl_logf_obj.f_u8log);
         mcl_ptnewline (cll4m.Off);
-        ::fwrite (L"mcl::clog4m::uninit  | LoggerCloseFile {\"code\":\"0\", \"debug\":\"\"}\n",
-            sizeof (wchar_t), 64, mcl_logf_obj.f_u8log);
-        // string:  1234567890123456789012345678901234567890112345667889001233456789901122344
-        // string: 0         1         2         3         4             5           6
+        ::fwrite (L"mcl::clog4m::uninit  | LoggerCloseFile ",
+            sizeof (wchar_t), 39, mcl_logf_obj.f_u8log);
+        // string:  123456789012345678901234567890123456789
+        // string: 0         1         2         3         
+        wchar_t const* exp = nullptr;
+        switch (code) {
+            case 0:  exp = L"successful"; break;
+            case -1: exp = L"abnormal termination"; break;
+            case -2: exp = L"quick exit without resource clean-up"; break;
+            default: exp = L"unknown code"; break;
+        }
+        ::fwprintf (mcl_logf_obj.f_u8log, L"{\"code\":\"%d\", \"debug\":\"%ls\"}\n", code, exp);
 
         unsigned long cnt = mcl_logf_obj.dw_cnt;
         if (cnt) {

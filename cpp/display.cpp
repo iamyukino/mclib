@@ -31,12 +31,17 @@
     window and screen.
 */
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
 
 #include "../src/display.h" 
 #include "../src/clog4m.h"
 #include "mcl_control.h"
 
 #ifdef _MSC_VER
+# pragma warning(pop)
 # pragma warning(push)
 # pragma warning(disable: 4365)
 #endif
@@ -55,6 +60,7 @@ mcl {
     // Module for controling the display.
     mcl_display_t display;
 
+#if __cplusplus < 201703L
     dflags_t constexpr mcl_dflags_t::Shown;
     dflags_t constexpr mcl_dflags_t::Hidden;
     dflags_t constexpr mcl_dflags_t::Minimize;
@@ -62,6 +68,7 @@ mcl {
     dflags_t constexpr mcl_dflags_t::Movable;
     dflags_t constexpr mcl_dflags_t::NoFrame;
     dflags_t constexpr mcl_dflags_t::NoMinimizeBox;
+#endif
     
    /**
     * @function mcl_display_t::operator void* <src/display.h>
