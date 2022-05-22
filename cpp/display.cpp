@@ -65,16 +65,11 @@ mcl {
     dflags_t constexpr mcl_dflags_t::Hidden;
     dflags_t constexpr mcl_dflags_t::Minimize;
     dflags_t constexpr mcl_dflags_t::Maximize;
-    dflags_t constexpr mcl_dflags_t::Movable;
+    dflags_t constexpr mcl_dflags_t::Resizable;
     dflags_t constexpr mcl_dflags_t::NoFrame;
     dflags_t constexpr mcl_dflags_t::NoMinimizeBox;
 #endif
     
-   /**
-    * @function mcl_display_t::operator void* <src/display.h>
-    * @brief Tells whether the window is open.
-    * @return void*
-    */
     mcl_display_t::
     operator void* () const noexcept{
         return mcl_control_obj.bIsReady ?
@@ -84,23 +79,24 @@ mcl {
     operator! () const noexcept{
         return !mcl_control_obj.bIsReady;
     }
+
+   /**
+    * @function mcl_display_t::get_init <src/display.h>
+    * @brief Tells whether the window is open.
+    *     Returns True if the display module is currently initialized.
+    * @return void*
+    */
     bool mcl_display_t::
     get_init () const noexcept{
         return static_cast<bool>(mcl_control_obj.bIsReady);
     }
     
-   /**
-    * @function mcl_display_t::set_caption <src/display.h>
-    * @brief Set the current window caption
-    * @param wchar_t const*
-    * @return mcl_display_t&
-    */
     static void
     mcl_set_caption (wchar_t const* caption) noexcept 
     {
         if (caption) {
         // caption title is given
-            MCL_WCSNCPY (mcl_control_obj.windowtext, caption, _MAX_FNAME);
+            MCL_WCSNCPY (mcl_control_obj.window_caption, caption, _MAX_FNAME);
             return ;
         }
         
@@ -108,7 +104,7 @@ mcl {
         DWORD ret = ::GetModuleFileNameW (nullptr, lpFileRealName, MAX_PATH);
         if (ret) {
         // succeeded. then get the file name
-            MCL_WGETFILENAME ( lpFileRealName, mcl_control_obj.windowtext );
+            MCL_WGETFILENAME ( lpFileRealName, mcl_control_obj.window_caption );
             return ;
         }
         
@@ -116,23 +112,35 @@ mcl {
         clog4m[cll4m.Warn] <<
            L"title = \nerror:  Failed to get module path "
            L"[-Wdisplay-winapi-" << ::GetLastError () << L"]\n, default ";
-        if (!mcl_control_obj.windowtext[0])
-            ::memcpy (mcl_control_obj.windowtext, L"mclib", 6 * sizeof (wchar_t));
+        if (!mcl_control_obj.window_caption[0])
+            ::memcpy (mcl_control_obj.window_caption, L"mclib", 6 * sizeof (wchar_t));
     }
     
+   /**
+    * @function mcl_display_t::set_caption <src/display.h>
+    * @brief Set the current window caption
+    * @param {wchar_t const*}
+    * @return mcl_display_t&
+    */
     mcl_display_t& mcl_display_t::
     set_caption (wchar_t const* caption) noexcept
     {
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         mcl_set_caption (caption);
         if (mcl_control_obj.bIsReady) {
-            ::SetWindowTextW ( mcl_control_obj.threadhwnd,
-                               mcl_control_obj.windowtext );
-            ::UpdateWindow   ( mcl_control_obj.threadhwnd );  // for vc6
+            ::SetWindowTextW ( mcl_control_obj.hwnd,
+                               mcl_control_obj.window_caption );
+            ::UpdateWindow   ( mcl_control_obj.hwnd );  // for vc6
         }
         return *this;
     }
     
+   /**
+    * @function mcl_display_t::set_caption <src/display.h>
+    * @brief Set the current window caption
+    * @param {char const*}
+    * @return mcl_display_t&
+    */
     mcl_display_t& mcl_display_t::
     set_caption (char const* caption) noexcept{
         if (!caption) caption = "";
@@ -147,7 +155,7 @@ mcl {
     */
     wchar_t const* mcl_display_t::
     get_caption () const noexcept{
-        return mcl_control_obj.windowtext;
+        return mcl_control_obj.window_caption;
     }
     
    /**
@@ -163,14 +171,14 @@ mcl {
         if (!ptrsize || (!ptrsize -> x && !ptrsize -> y)) {
         // size parameter is not provided
         // the appropriate size is used based on the screen size
-            if (mcl_control_obj.bufh > mcl_control_obj.bufw) {
-                mcl_control_obj.realw =  mcl_control_obj.bufw  >> 1;
-                mcl_control_obj.realh = (mcl_control_obj.bufw
-                                       + mcl_control_obj.bufh) >> 2;
+            if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
+                mcl_control_obj.dc_w =  mcl_control_obj.base_w  >> 1;
+                mcl_control_obj.dc_h = (mcl_control_obj.base_w
+                                       + mcl_control_obj.base_h) >> 2;
             } else {
-                mcl_control_obj.realh =  mcl_control_obj.bufh  >> 1;
-                mcl_control_obj.realw = (mcl_control_obj.bufw
-                                       + mcl_control_obj.bufh) >> 2;
+                mcl_control_obj.dc_h =  mcl_control_obj.base_h  >> 1;
+                mcl_control_obj.dc_w = (mcl_control_obj.base_w
+                                       + mcl_control_obj.base_h) >> 2;
             }
             return ;
         }
@@ -178,47 +186,47 @@ mcl {
         // calculated according to the screen scale
         int cxmin = ::GetSystemMetrics (SM_CXMIN); 
         if (!ptrsize -> x) {
-            if (mcl_control_obj.bufh > mcl_control_obj.bufw) {
+            if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
                 ptrsize -> x =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> y) * (
-                            static_cast<float>( mcl_control_obj.bufw) / 
-                            static_cast<float>((mcl_control_obj.bufw +
-                                                mcl_control_obj.bufh) >> 1)
+                            static_cast<float>( mcl_control_obj.base_w) / 
+                            static_cast<float>((mcl_control_obj.base_w +
+                                                mcl_control_obj.base_h) >> 1)
                     ) + .5f);
             } else {
                 ptrsize -> x =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> y) * (
-                            static_cast<float>((mcl_control_obj.bufw +
-                                                mcl_control_obj.bufh) >> 1) / 
-                            static_cast<float>( mcl_control_obj.bufh)
+                            static_cast<float>((mcl_control_obj.base_w +
+                                                mcl_control_obj.base_h) >> 1) / 
+                            static_cast<float>( mcl_control_obj.base_h)
                     ) + .5f);
             }
         } else if (!ptrsize -> y) {
-            if (mcl_control_obj.bufh > mcl_control_obj.bufw) {
+            if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
                 ptrsize -> y =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> x) * (
-                            static_cast<float>((mcl_control_obj.bufw +
-                                                mcl_control_obj.bufh) >> 1) / 
-                            static_cast<float>( mcl_control_obj.bufw)
+                            static_cast<float>((mcl_control_obj.base_w +
+                                                mcl_control_obj.base_h) >> 1) / 
+                            static_cast<float>( mcl_control_obj.base_w)
                     ) + .5f);
             } else {
                 ptrsize -> y =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> x) * (
-                            static_cast<float>( mcl_control_obj.bufh) / 
-                            static_cast<float>((mcl_control_obj.bufw +
-                                                mcl_control_obj.bufh) >> 1)
+                            static_cast<float>( mcl_control_obj.base_h) / 
+                            static_cast<float>((mcl_control_obj.base_w +
+                                                mcl_control_obj.base_h) >> 1)
                     ) + .5f);
             }
         }
         
         if (ptrsize -> x < cxmin) ptrsize -> x = cxmin;
         if (ptrsize -> y < 1)     ptrsize -> y = 1;
-        mcl_control_obj.realw = ptrsize -> x;
-        mcl_control_obj.realh = ptrsize -> y;
+        mcl_control_obj.dc_w = ptrsize -> x;
+        mcl_control_obj.dc_h = ptrsize -> y;
     }
     static void
     mcl_init_window (point2d_t* ptrsize, dflags_t dpm_flags = 0) noexcept{
@@ -229,31 +237,31 @@ mcl {
         if (bopen) ml_
            << L"mcl::display::init  | window settings reset:\n"
               L"  base resolution:   ";
-        mcl_control_obj.bufw = ::GetSystemMetrics (SM_CXSCREEN);
-        mcl_control_obj.bufh = ::GetSystemMetrics (SM_CYSCREEN);
-        if (!mcl_control_obj.bufw || !mcl_control_obj.bufh) {
+        mcl_control_obj.base_w = ::GetSystemMetrics (SM_CXSCREEN);
+        mcl_control_obj.base_h = ::GetSystemMetrics (SM_CYSCREEN);
+        if (!mcl_control_obj.base_w || !mcl_control_obj.base_h) {
             if (bopen) ml_ << std::endl
                 << L"error:  Failed to get base resolution [-Wdisplay-winapi-"
                 << ::GetLastError () <<    L"]\n, default resolution = ";
-            mcl_control_obj.bufw = 1920; mcl_control_obj.bufh = 1080;
+            mcl_control_obj.base_w = 1920; mcl_control_obj.base_h = 1080;
         }
         if (bopen)
-            ml_ << mcl_control_obj.bufw << 'x' << mcl_control_obj.bufh
+            ml_ << mcl_control_obj.base_w << 'x' << mcl_control_obj.base_h
                 << std::endl << L"  output resolution: ";
         mcl_set_size (ptrsize); 
         if (bopen)
-            ml_ << mcl_control_obj.realw << 'x' << mcl_control_obj.realh
+            ml_ << mcl_control_obj.dc_w << 'x' << mcl_control_obj.dc_h
                 << std::endl << L"  output 0: pos = (";
-        mcl_control_obj.x_pos = (mcl_control_obj.bufw - mcl_control_obj.realw) >> 1;
-        mcl_control_obj.y_pos = (mcl_control_obj.bufh - mcl_control_obj.realh) >> 1;
+        mcl_control_obj.x_pos = (mcl_control_obj.base_w - mcl_control_obj.dc_w) >> 1;
+        mcl_control_obj.y_pos = (mcl_control_obj.base_h - mcl_control_obj.dc_h) >> 1;
         if (bopen) ml_ << mcl_control_obj.x_pos << L", "
                        << mcl_control_obj.y_pos << L"), " << std::flush;
         
         // Process title string.
-        if (!mcl_control_obj.windowtext[0])
+        if (!mcl_control_obj.window_caption[0])
             mcl_set_caption (nullptr);
         if (bopen)
-            ml_ << L"caption = \"" << mcl_control_obj.windowtext
+            ml_ << L"caption = \"" << mcl_control_obj.window_caption
                 << L"\"\n" << std::flush;
         
         // Set timer.
@@ -297,7 +305,9 @@ mcl {
     * @function mcl_display_t::init <src/display.h>
     * @brief 
     *   Create and initialize a window, and then create a thread
-    *   to process window messages.
+    *   to process window messages. The display module cannot do
+    *   most thing until it is initialized. This is usually handled
+    *   for you automatically when you call the higher level mcl::init().
     * @return mcl_display_t
     */
     mcl_display_t& mcl_display_t::
@@ -335,18 +345,18 @@ mcl {
             // adjust windows rect for style
             if (bopen)
                 ml_.wprintln (L"mcl.display.set_mode({%ld, %ld})",
-                              mcl_control_obj.realw, mcl_control_obj.realh );
-            LONG_PTR new_style   = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
-            LONG_PTR new_exstyle = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_EXSTYLE);
+                              mcl_control_obj.dc_w, mcl_control_obj.dc_h );
+            LONG_PTR new_style   = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+            LONG_PTR new_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
             RECT wr = { mcl_control_obj.x_pos, mcl_control_obj.y_pos,
-                        mcl_control_obj.x_pos + mcl_control_obj.realw,
-                        mcl_control_obj.y_pos + mcl_control_obj.realh };
+                        mcl_control_obj.x_pos + mcl_control_obj.dc_w,
+                        mcl_control_obj.y_pos + mcl_control_obj.dc_h };
             ::AdjustWindowRectEx ( &wr, static_cast<DWORD>(new_style),
                                    FALSE, static_cast<DWORD>(new_exstyle) );
-            ::SetWindowPos       ( mcl_control_obj.threadhwnd, nullptr,
+            ::SetWindowPos       ( mcl_control_obj.hwnd, nullptr,
                                    wr.left, wr.top, wr.right - wr.left,
                                    wr.bottom - wr.top, SWP_FRAMECHANGED );
-            ::UpdateWindow       (mcl_control_obj.threadhwnd);  // for vc6
+            ::UpdateWindow       (mcl_control_obj.hwnd);  // for vc6
         } else 
             mcl_init_window (&size); 
         
@@ -364,54 +374,54 @@ mcl {
             mcl_set_size (&size);
             
             LONG_PTR last_style =
-                ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
             LONG_PTR last_exstyle;
             if (bopen)
                 ml_.wprintf (L"mcl.display.set_mode({%ld, %ld}, 0x%08lx)\n"
                              L"  Setting styles... 0x%08lx -> ",
-                             mcl_control_obj.realw, mcl_control_obj.realh,
+                             mcl_control_obj.dc_w, mcl_control_obj.dc_h,
                              dpm_flags, last_style );
             
             if (!mcl_control_obj.b_fullscreen) {
                 // set window form style
                 if (dpm_flags & dflags.NoFrame)       last_style &= ~WS_CAPTION, last_style |= WS_POPUP;
                 else                                  last_style |= WS_CAPTION,  last_style &= ~WS_POPUP;
-                if (dpm_flags & dflags.Movable)       last_style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
+                if (dpm_flags & dflags.Resizable)     last_style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
                 else                                  last_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
                 if (dpm_flags & dflags.NoMinimizeBox) last_style &= ~WS_MINIMIZEBOX;
                 else                                  last_style |= WS_MINIMIZEBOX;
                 
                 last_exstyle = ::GetWindowLongPtrW (
-                                   mcl_control_obj.threadhwnd, GWL_EXSTYLE );
+                                   mcl_control_obj.hwnd, GWL_EXSTYLE );
                 RECT wr = { mcl_control_obj.x_pos, mcl_control_obj.y_pos,
-                            mcl_control_obj.x_pos + mcl_control_obj.realw,
-                            mcl_control_obj.y_pos + mcl_control_obj.realh };
+                            mcl_control_obj.x_pos + mcl_control_obj.dc_w,
+                            mcl_control_obj.y_pos + mcl_control_obj.dc_h };
                 ::AdjustWindowRectEx ( &wr, static_cast<DWORD>(last_style),
                                        FALSE, static_cast<DWORD>(last_exstyle) );
-                ::SetWindowLongPtrW  ( mcl_control_obj.threadhwnd,
+                ::SetWindowLongPtrW  ( mcl_control_obj.hwnd,
                                        GWL_STYLE, static_cast<DWORD>(last_style) );
-                ::SetWindowPos       ( mcl_control_obj.threadhwnd, nullptr,
+                ::SetWindowPos       ( mcl_control_obj.hwnd, nullptr,
                                        wr.left, wr.top, wr.right - wr.left,
                                        wr.bottom - wr.top, SWP_FRAMECHANGED ); 
             }
             
             // Handle flags related to ShowWindow 
             if (dpm_flags & dflags.Hidden)
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_HIDE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_HIDE);
             else if (!(last_style & WS_VISIBLE))
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_SHOW);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
             
             if (dpm_flags & dflags.Maximize)
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_MAXIMIZE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_MAXIMIZE);
             if (dpm_flags & dflags.Minimize)
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_MINIMIZE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_MINIMIZE);
             
             // Update window
-            ::UpdateWindow (mcl_control_obj.threadhwnd);
+            ::UpdateWindow (mcl_control_obj.hwnd);
             last_style =
-                ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
             if ((last_style & WS_VISIBLE) && !(last_style & WS_MINIMIZE))
-                ::SetFocus (mcl_control_obj.threadhwnd);
+                ::SetFocus (mcl_control_obj.hwnd);
             
             // log final style
             if (bopen) {
@@ -437,7 +447,7 @@ mcl {
     get_flags () const noexcept {
     // get dpm_flags from form style
         LONG_PTR style =
-            ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         LONG_PTR last_style = mcl_control_obj.b_fullscreen ?
             mcl_fullscreen_last_style () : style;
         dflags_t flags = dflags.Hidden | dflags.NoFrame | dflags.NoMinimizeBox;
@@ -446,8 +456,14 @@ mcl {
         if (mcl_control_obj.b_maximize) flags |=  dflags.Maximize;
         if (last_style & WS_CAPTION)    flags &= ~dflags.NoFrame;
         if (last_style & WS_MINIMIZEBOX)flags &= ~dflags.NoMinimizeBox;
-        if (last_style & WS_THICKFRAME) flags |=  dflags.Movable;
+        if (last_style & WS_THICKFRAME) flags |=  dflags.Resizable;
         return flags;
+    }
+
+    surface_t& mcl_display_t::get_surface() const noexcept {
+    // Return a reference to the currently set display Surface.
+    // If no display mode has been set this will return None.
+        return *mcl_control_obj.cur_surface;
     }
 
    /**
@@ -463,11 +479,11 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (mcl_control_obj.bIsReady) {
         // hide/show window if inited
-            ::ShowWindow ( mcl_control_obj.threadhwnd,
+            ::ShowWindow ( mcl_control_obj.hwnd,
                            b_hide ? SW_HIDE : SW_SHOW );
             if (!b_hide) {
-                ::UpdateWindow (mcl_control_obj.threadhwnd);
-                ::SetFocus (mcl_control_obj.threadhwnd);
+                ::UpdateWindow (mcl_control_obj.hwnd);
+                ::SetFocus (mcl_control_obj.hwnd);
             }
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
@@ -484,18 +500,18 @@ mcl {
     iconify () noexcept{ 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         LONG_PTR last_style =
-            ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
             if (!(last_style & WS_VISIBLE))
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_SHOW);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
             
             if (last_style & WS_MINIMIZE) {
-                ::ShowWindow (mcl_control_obj.threadhwnd, 
+                ::ShowWindow (mcl_control_obj.hwnd, 
                     mcl_control_obj.b_maximize ? SW_MAXIMIZE : SW_NORMAL);
-                ::UpdateWindow (mcl_control_obj.threadhwnd); // for vc6
-                ::SetFocus (mcl_control_obj.threadhwnd);
+                ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
+                ::SetFocus (mcl_control_obj.hwnd);
             } else
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_MINIMIZE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_MINIMIZE);
         
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
@@ -512,20 +528,20 @@ mcl {
     maximize () noexcept{ 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         LONG_PTR last_style =
-            ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
             if (!(last_style & WS_VISIBLE))
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_SHOW);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
             
             if (mcl_control_obj.b_fullscreen)
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_MAXIMIZE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_MAXIMIZE);
             else if (last_style & WS_MINIMIZE || !mcl_control_obj.b_maximize)
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_MAXIMIZE);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_MAXIMIZE);
             else
-                ::ShowWindow (mcl_control_obj.threadhwnd, SW_NORMAL);
+                ::ShowWindow (mcl_control_obj.hwnd, SW_NORMAL);
                 
-            ::UpdateWindow (mcl_control_obj.threadhwnd); // for vc6
-            ::SetFocus (mcl_control_obj.threadhwnd);
+            ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
+            ::SetFocus (mcl_control_obj.hwnd);
 
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
@@ -534,16 +550,21 @@ mcl {
     }
 
    /**
-    * @function mcl_display_t::uninit <src/display.h>
-    * @brief Uninitialize the window. NOT end the program
+    * @function mcl_display_t::quit <src/display.h>
+    * @brief Uninitialize the window. NOT end the program.
+    *   This will shut down the entire display module. This means
+    *   any active displays will be closed. This will also be handled
+    *   automatically when the program exits.
+    *   It is harmless to call this more than once, repeated calls
+    *   have no effect.
     * @return mcl_display_t&
     */
     mcl_display_t& mcl_display_t::
-    uninit () noexcept{
+    quit () noexcept{
         if (!mcl_control_obj.bIsReady) return *this;
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (!mcl_control_obj.bIsReady) return *this; 
-        ::PostMessage (mcl_control_obj.threadhwnd, WM_CLOSE, 2, 0);
+        ::PostMessage (mcl_control_obj.hwnd, WM_CLOSE, 2, 0);
         DWORD ret = ::WaitForSingleObject (mcl_control_obj.taskhandle, 1024);
         if (ret) clog4m[cll4m.Warn].wprintln (
            L"failed to wait for thread to end, return: 0x%08lu", ret);
@@ -607,28 +628,28 @@ mcl {
             static LONG_PTR last_exstyle;
             static point1d_t last_x, last_y, last_w, last_h;
             
-            ::ShowWindow (mcl_control_obj.threadhwnd, SW_SHOW);
+            ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
             LONG_PTR& last_style = mcl_fullscreen_last_style ();
-            LONG_PTR  lstyle     = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+            LONG_PTR  lstyle     = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
             
             if (!mcl_control_obj.b_fullscreen) {
                 // full screen
                 last_x       = mcl_control_obj.x_pos;
                 last_y       = mcl_control_obj.y_pos;
-                last_w       = mcl_control_obj.realw;
-                last_h       = mcl_control_obj.realh;
+                last_w       = mcl_control_obj.dc_w;
+                last_h       = mcl_control_obj.dc_h;
                 last_style   = lstyle;
-                last_exstyle = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_EXSTYLE);
+                last_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
                 
                 LONG_PTR new_style   = (last_style & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
                 LONG_PTR new_exstyle = last_exstyle | WS_EX_CLIENTEDGE;
                 
-                RECT wr = {-1, -1, mcl_control_obj.bufw + 1, mcl_control_obj.bufh + 1};
+                RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),
                                        FALSE, static_cast<DWORD>(new_exstyle) );
-                ::SetWindowLongPtrW  (mcl_control_obj.threadhwnd, GWL_STYLE,   new_style);
-                ::SetWindowLongPtrW  (mcl_control_obj.threadhwnd, GWL_EXSTYLE, new_exstyle);
-                ::SetWindowPos       (mcl_control_obj.threadhwnd, HWND_TOPMOST, wr.left, wr.top,
+                ::SetWindowLongPtrW  (mcl_control_obj.hwnd, GWL_STYLE,   new_style);
+                ::SetWindowLongPtrW  (mcl_control_obj.hwnd, GWL_EXSTYLE, new_exstyle);
+                ::SetWindowPos       (mcl_control_obj.hwnd, HWND_TOPMOST, wr.left, wr.top,
                                        wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
                 
                 mcl_control_obj.b_fullscreen = true;
@@ -637,24 +658,24 @@ mcl {
                 // windowed displays
                 if (last_style & WS_POPUP) last_style |= lstyle;
                 else                      (last_style |= lstyle) &= ~WS_POPUP;
-                last_exstyle |= ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_EXSTYLE);
+                last_exstyle |= ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
                 
                 mcl_control_obj.b_fullscreen = false;
                 
                 RECT wr = {0, 0, last_w, last_h};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(last_style),
                                        FALSE, static_cast<DWORD>(last_exstyle));
-                ::SetWindowLongPtrW  (mcl_control_obj.threadhwnd,
+                ::SetWindowLongPtrW  (mcl_control_obj.hwnd,
                                        GWL_STYLE, static_cast<DWORD>(last_style));
-                ::SetWindowLongPtrW  (mcl_control_obj.threadhwnd,
+                ::SetWindowLongPtrW  (mcl_control_obj.hwnd,
                                        GWL_EXSTYLE, static_cast<DWORD>(last_exstyle));
-                ::SetWindowPos       (mcl_control_obj.threadhwnd, HWND_NOTOPMOST,
+                ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST,
                                        wr.left + last_x, wr.top + last_y,
                                        wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
                 
             }
-            ::UpdateWindow (mcl_control_obj.threadhwnd); // for vc6
-        } else clog4m[cll4m.Info] <<
+            ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
+        } else clog4m[cll4m.Debug] <<
             L"warning:  try to toggle fullscreen with no active display. [-Wdisplay-window-notactive]\n";
         return *this;
     }
@@ -671,9 +692,9 @@ mcl {
         if (mcl_control_obj.bIsReady) {
             if (f_alpha > 1.f)      f_alpha = 1.f;
             else if (f_alpha < 0.f) f_alpha = 0.f;
-            ::SetWindowLong (mcl_control_obj.threadhwnd, GWL_EXSTYLE, 
-                ::GetWindowLong (mcl_control_obj.threadhwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
-            ::SetLayeredWindowAttributes (mcl_control_obj.threadhwnd,
+            ::SetWindowLong (mcl_control_obj.hwnd, GWL_EXSTYLE, 
+                ::GetWindowLong (mcl_control_obj.hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+            ::SetLayeredWindowAttributes (mcl_control_obj.hwnd,
                 0, static_cast<BYTE>(255.f * (1.f - f_alpha)), LWA_ALPHA);
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created [-Wdisplay-window-uninitialized]\n";
@@ -684,7 +705,7 @@ mcl {
     * @function mcl_display_t::get_wm_info <src/display.h>
     * @brief 
     *   Get information about the current windowing system.
-    *   See also https://github.com/pygame/pygame/blob/main/test/display_test.py#L106-L121
+    *   See also https://github.com/pygame/pygame/blob/main/test/display_test.py#L178-L211
     * @param key
     * @return void*
     */
@@ -692,15 +713,15 @@ mcl {
         get_wm_info () const noexcept{ return wmi_dict_t{}; }
     
 #   define MCL_MAKRGB(R, G, B) \
-          ( (static_cast<color_t>(R) << 4) | (static_cast<color_t>(G) << 2) | (static_cast<color_t>(B)) )
+          ( (static_cast<color_t>(R) << 16) | (static_cast<color_t>(G) << 8) | (static_cast<color_t>(B)) )
 
     MCL_NODISCARD_CXX17 static void* mcl_get_wm_info (char const* key) noexcept{
         if (!(key && key[0] && key[1] && key[2])) return nullptr;
         switch (MCL_MAKRGB(key[0], key[1], key[2])) {
-          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.windowhdc;
-          case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.inst; 
+          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.dc;
+          case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.instance; 
           case MCL_MAKRGB('t','a','s'):  return mcl_control_obj.taskhandle;
-          case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.threadhwnd;
+          case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.hwnd;
           default:                       break;
         }                                return nullptr;
     }
@@ -708,10 +729,10 @@ mcl {
     MCL_NODISCARD_CXX17 static void* mcl_get_wm_info (wchar_t const* key) noexcept{
         if (!(key && key[0] && key[1] && key[2])) return nullptr;
         switch (MCL_MAKRGB(key[0], key[1], key[2])) {
-          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.windowhdc;
-          case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.inst; 
+          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.dc;
+          case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.instance; 
           case MCL_MAKRGB('t','a','s'):  return mcl_control_obj.taskhandle;
-          case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.threadhwnd;
+          case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.hwnd;
           default:                       break;
         }                                return nullptr;
     }
@@ -730,19 +751,19 @@ mcl {
     
     std::string str_a (wmi_dict_t const) noexcept{  
         std::ostringstream oss;
-        oss << "{'hdc': "      << mcl_control_obj.windowhdc  << ", "
-               "'hinstance': " << mcl_control_obj.inst       << ", "
+        oss << "{'hdc': "      << mcl_control_obj.dc         << ", "
+               "'hinstance': " << mcl_control_obj.instance   << ", "
                "'taskhandle': "<< mcl_control_obj.taskhandle << ", "
-               "'window': "    << mcl_control_obj.threadhwnd << "}";
+               "'window': "    << mcl_control_obj.hwnd       << "}";
         return oss.str ();
     }
     
     std::wstring str (wmi_dict_t const) noexcept{ 
         std::wostringstream oss;
-        oss << L"{'hdc': "      << mcl_control_obj.windowhdc  << L", "
-               L"'hinstance': " << mcl_control_obj.inst       << L", "
+        oss << L"{'hdc': "      << mcl_control_obj.dc         << L", "
+               L"'hinstance': " << mcl_control_obj.instance   << L", "
                L"'taskhandle': "<< mcl_control_obj.taskhandle << L", "
-               L"'window': "    << mcl_control_obj.threadhwnd << L"}";
+               L"'window': "    << mcl_control_obj.hwnd       << L"}";
         return oss.str ();
     }
     
@@ -780,7 +801,7 @@ mcl {
     point2d_t mcl_display_t::
     get_window_size  () const noexcept{
         return mcl_control_obj.b_fullscreen ? get_desktop_size() :
-                point2d_t{ mcl_control_obj.realw, mcl_control_obj.realh };
+                point2d_t{ mcl_control_obj.dc_w, mcl_control_obj.dc_h };
     }
     point2d_t mcl_display_t::
     get_window_pos   () const noexcept{
@@ -790,7 +811,7 @@ mcl {
     point2d_t mcl_display_t::
     get_desktop_size () const noexcept{
         return mcl_control_obj.bIsReady ?
-                point2d_t{ mcl_control_obj.bufw,  mcl_control_obj.bufh } :
+                point2d_t{ mcl_control_obj.base_w,  mcl_control_obj.base_h } :
                 point2d_t{::GetSystemMetrics (SM_CXSCREEN), ::GetSystemMetrics (SM_CYSCREEN)};
     }
 
@@ -806,7 +827,7 @@ mcl {
     */
     bool mcl_display_t::get_active() const noexcept{
         if (!mcl_control_obj.bIsReady) return false;
-        LONG_PTR last_style = ::GetWindowLongPtrW (mcl_control_obj.threadhwnd, GWL_STYLE);
+        LONG_PTR last_style = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         return !(last_style & WS_MINIMIZE) && (last_style & WS_VISIBLE) && mcl_control_obj.bIsReady;
     }
     bool mcl_display_t::get_fullscreen () const noexcept{

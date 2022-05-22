@@ -65,162 +65,170 @@ mcl {
     mcl_colors_enum
     : color_t {
             
-        clrLightPink    =  0xffffb6c1,  
-        clrGirlPowder   =  0xffe8b5b5,  
-        clrPink         =  0xffffc0cb,  
-        clrCrimson      =  0xffdc143c,  
-        clrLavenderBlush=  0xfffff0f5,  
-        clrPaleVioletRed=  0xffdb7093,  
-        clrHotPink      =  0xffff69b4,  
-        clrDeepPink     =  0xffff1493,  
-        clrLightMagenta =  0xfffc54fc,  
-        clrMediumVioletRed=0xffc71585,  
-        clrOrchid       =  0xffda70d6,  
-        clrThistle      =  0xffd8b0d8,  
-        clrPlum         =  0xffdda0dd,  
-        clrMagenta      =  0xffa800a8,  
-        clrLightRed     =  0xfffc5454,  
-        clrViolet       =  0xffee82ee,  
-        
-        clrFuchsia      =  0xffff00ff,  
-        clrDarkMagenta  =  0xff8b008b,  
-        clrPurple       =  0xff800080,  
-        clrMediumOrchid =  0xffba55d3,  
-        clrDarkViolet   =  0xff8b008b,  
-        clrDarkOrchid   =  0xff9932cc,  
-        clrIndigo       =  0xff4b0082,  
-        clrBlueViolet   =  0xff8a2be2,  
-        clrMediumPurple =  0xff9370db,  
-        clrMediumSlateBlue=0xff7b68ee,  
-        clrSlateBlue    =  0xff6a5acd,  
-        clrDarkSlateBlue=  0xff483d8b,  
-        clrLavender     =  0xffe6e6fa,  
-        clrGhostWhite   =  0xfff8f8ff,  
-        clrMediumBlue   =  0xff0000cd,  
-        clrBlue         =  0xff0000a8,  
-        
-        clrMidnightBlue =  0xff191970,  
-        clrDarkBlue     =  0xff00008b,  
-        clrNavy         =  0xff000080,  
-        clrRoyalBlue    =  0xff4169e1,  
-        clrCornflowerBlue= 0xff6495ed,  
-        clrLightSteelBlue= 0xffb0c4de,  
-        clrLightSlateBlue= 0xff778899,  
-        clrSlateGray    =  0xff708090,  
-        clrDodgerBlue   =  0xff1e90ff,  
         clrAliceBlue    =  0xff0000cd,  
-        clrSteelBlue    =  0xff4682b4,  
-        clrLightSkyBlue =  0xff87cefa,  
-        clrSkyBlue      =  0xff87ceeb,  
-        clrDeepSkyBlue  =  0xff00bfff,  
-        clrLightBlue    =  0xffadd8e6,  
-        clrPowderBlue   =  0xffb0e0e6,  
-         
-        clrCadetBlue    =  0xff5f9ea0,  
-        clrAzure        =  0xfff0ffff,  
-        clrLightCyan    =  0xffe0ffff,  
-        clrPaleTurquoise=  0xffafeeee,  
-        clrCyan         =  0xff00ffff,  
-        clrAqua         =  0xff00ffff,  
-        clrDarkTurquoise=  0xff00ced1,  
-        clrDarkSlateGray=  0xff2f4f4f,  
-        clrDarkCyan     =  0xff008b8b,  
-        clrTeal         =  0xff008080,  
-        clrMediumTurquoise=0xff48d1cc,  
-        clrLightSeaGreen=  0xff20b2aa,  
-        clrTurquoise    =  0xff40e0d0,  
-        clrAquamarine   =  0xff7fffd4,  
-        clrMediumAquamarine=0xff66cdaa, 
-        clrMediumSpringGreen=0xff00fa9a,
-        
-        clrMintCream    =  0xfff5fffa,  
-        clrSpringGreen  =  0xff00ff7f,  
-        clrMediumSeaGreen= 0xff3cb371,  
-        clrSeaGreen     =  0xff2e8b57,  
-        clrHoneydew     =  0xfff0fff0,  
-        clrLightGreen   =  0xff90ee90,  
-        clrPaleGreen    =  0xff98fb98,  
-        clrDarkSeaGreen =  0xff8fbc8f,  
-        clrLimeGreen    =  0xff32cd32,  
-        clrLime         =  0xff00ff00,  
-        clrForestGreen  =  0xff228b22,  
-        clrGreen        =  0xff008000,  
-        clrDarkGreen    =  0xff006400,  
-        clrChartreuse   =  0xff7fff00,  
-        clrLawnGreen    =  0xff7cfc00,  
-        clrGreenYellow  =  0xffadff2f,  
-        
-        clrDarkOliveGreen= 0xff556b2f,  
-        clrYellowGreen  =  0xff9acd32,  
-        clrOliveDrab    =  0xff6b8e23,  
-        clrBeige        =  0xfff5f5dc,  
-        clrLightGoldenrodYellow=0xfffafad2,
-        clrIvory        =  0xfffffff0,  
-        clrLightYellow  =  0xffffffe0,  
-        clrYellow       =  0xffffff00,  
-        clrOlive        =  0xff808000,  
-        clrDarkKhaki    =  0xffbdb76b,  
-        clrLemonChiffon =  0xfffffacd,  
-        clrPaleGoldenrod=  0xffeee8aa,  
-        clrKhaki        =  0xfff0e68c,  
-        clrGold         =  0xffffd700,  
-        clrCornsilk     =  0xfffff8dc,  
-        clrGoldenrod    =  0xffdaa520,  
-        
-        clrDarkGoldenrod=  0xffb8860b,  
-        clrfloralWhite  =  0xfffffaf0,  
-        clrOldLace      =  0xfffdf5e6,  
-        clrWheat        =  0xfff5deb3,  
-        clrMoccasin     =  0xffffe4b5,  
-        clrOrange       =  0xffffa500,  
-        clrPapayaWhip   =  0xffffefd5,  
-        clrBlanchedAlmond= 0xffffebcd,  
-        clrNavajoWhite  =  0xffffdead,  
         clrAntiqueWhite =  0xfffaebd7,  
-        clrTan          =  0xffd2b48c,  
-        clrBurlyWood    =  0xffdeb887,  
+        clrAqua         =  0xff00ffff,  
+        clrAquamarine   =  0xff7fffd4,  
+        clrAzure        =  0xfff0ffff,  
+        clrBeige        =  0xfff5f5dc,  
         clrBisque       =  0xffffe4c4,  
-        clrDarkOrange   =  0xffff8c00,  
-        clrLinen        =  0xfffaf0e6,  
-        clrPeru         =  0xffcd853f,  
-        
-        clrPeachPuff    =  0xffffdab9,  
-        clrSandyBrown   =  0xfff4a460,  
+        clrBlack        =  0xff000000, 
+        clrBlanchedAlmond= 0xffffebcd,  
+        clrBlue         =  0xff0000a8,  
+
+        clrBlueViolet   =  0xff8a2be2,  
+        clrBrown        =  0xffa52a2a,  
+        clrBurlyWood    =  0xffdeb887,  
+        clrCadetBlue    =  0xff5f9ea0,  
+        clrChartreuse   =  0xff7fff00,  
         clrChocolate    =  0xffd2691e,  
+        clrCoral        =  0xffff7f50,  
+        clrCornflowerBlue= 0xff6495ed,  
+        clrCornsilk     =  0xfffff8dc,  
+        clrCrimson      =  0xffdc143c,  
+
+        clrCyan         =  0xff00ffff,  
+        clrDarkBlue     =  0xff00008b,  
+        clrDarkCyan     =  0xff008b8b,  
+        clrDarkGoldenrod=  0xffb8860b,  
+        clrDarkGray     =  0xffa9a9a9,  
+        clrDarkGreen    =  0xff006400,  
+        clrDarkGrey     =  0xffa9a9a9,  
+        clrDarkKhaki    =  0xffbdb76b,  
+        clrDarkMagenta  =  0xff8b008b,  
+        clrDarkOliveGreen= 0xff556b2f,  
+
+        clrDarkOrange   =  0xffff8c00,  
+        clrDarkOrchid   =  0xff9932cc,  
+        clrDarkRed      =  0xff8b0000,  
+        clrDarkSalmon   =  0xffe9967a,  
+        clrDarkSeaGreen =  0xff8fbc8f,  
+        clrDarkSlateBlue=  0xff483d8b,  
+        clrDarkSlateGray=  0xff2f4f4f,  
+        clrDarkTurquoise=  0xff00ced1,  
+        clrDarkViolet   =  0xff8b008b,  
+        clrDeepPink     =  0xffff1493,  
+
+        clrDeepSkyBlue  =  0xff00bfff,  
+        clrDimGray      =  0xff696969,  
+        clrDimGrey      =  0xff696969,  
+        clrDodgerBlue   =  0xff1e90ff,  
+        clrFireBrick    =  0xffb22222,  
+        clrFloralWhite  =  0xfffffaf0,  
+        clrForestGreen  =  0xff228b22,  
+        clrFuchsia      =  0xffff00ff,  
+        clrGainsboro    =  0xffdcdcdc,  
+        clrGhostWhite   =  0xfff8f8ff,  
+
+        clrGirlPowder   =  0xffe8b5b5,  
+        clrGold         =  0xffffd700,  
+        clrGoldenrod    =  0xffdaa520,  
+        clrGray         =  0xff808080,   
+        clrGreen        =  0xff008000,  
+        clrGreenYellow  =  0xffadff2f,  
+        clrGrey         =  0xff808080,  
+        clrHoneydew     =  0xfff0fff0,  
+        clrHotPink      =  0xffff69b4,  
+        clrIndianRed    =  0xffcd5c5c,  
+
+        clrIndigo       =  0xff4b0082,  
+        clrIvory        =  0xfffffff0,  
+        clrKhaki        =  0xfff0e68c,  
+        clrLavender     =  0xffe6e6fa,  
+        clrLavenderBlush=  0xfffff0f5,  
+        clrLawnGreen    =  0xff7cfc00,  
+        clrLemonChiffon =  0xfffffacd,  
+        clrLightBlue    =  0xffadd8e6,  
+        clrLightCoral   =  0xfff08080,  
+        clrLightCyan    =  0xffe0ffff,  
+
+        clrLightGoldenrodYellow=0xfffafad2,
+        clrLightGray    =  0xffa8a8a8,  
+        clrLightGreen   =  0xff90ee90,  
+        clrLightGrey    =  0xffd3d3d3,  
+        clrLightMagenta =  0xfffc54fc,  
+        clrLightPink    =  0xffffb6c1,  
+        clrLightRed     =  0xfffc5454,  
+        clrLightSalmon  =  0xffffa07a,  
+        clrLightSeaGreen=  0xff20b2aa,  
+        clrLightSkyBlue =  0xff87cefa,  
+
+        clrLightSlateBlue= 0xff778899,  
+        clrLightSteelBlue= 0xffb0c4de,  
+        clrLightYellow  =  0xffffffe0,  
+        clrLime         =  0xff00ff00,  
+        clrLimeGreen    =  0xff32cd32,  
+        clrLinen        =  0xfffaf0e6,  
+        clrMagenta      =  0xffa800a8,  
+        clrMaroon       =  0xff800000,  
+        clrMediumAquamarine=0xff66cdaa, 
+        clrMediumBlue   =  0xff0000cd,  
+
+        clrMediumOrchid =  0xffba55d3,  
+        clrMediumPurple =  0xff9370db,  
+        clrMediumSeaGreen= 0xff3cb371,  
+        clrMediumSlateBlue=0xff7b68ee,  
+        clrMediumSpringGreen=0xff00fa9a,
+        clrMediumTurquoise=0xff48d1cc,  
+        clrMediumVioletRed=0xffc71585,  
+        clrMidnightBlue =  0xff191970,  
+        clrMintCream    =  0xfff5fffa,  
+        clrMistyRose    =  0xffffe4e1,  
+
+        clrMoccasin     =  0xffffe4b5,  
+        clrNavajoWhite  =  0xffffdead,  
+        clrNavy         =  0xff000080,  
+        clrOldLace      =  0xfffdf5e6,  
+        clrOlive        =  0xff808000,  
+        clrOliveDrab    =  0xff6b8e23,  
+        clrOrange       =  0xffffa500,  
+        clrOrangeRed    =  0xffff4500,  
+        clrOrchid       =  0xffda70d6,  
+        clrPaleGoldenrod=  0xffeee8aa,  
+
+        clrPaleGreen    =  0xff98fb98,  
+        clrPaleTurquoise=  0xffafeeee,  
+        clrPaleVioletRed=  0xffdb7093,  
+        clrPapayaWhip   =  0xffffefd5,  
+        clrPeachPuff    =  0xffffdab9,  
+        clrPeru         =  0xffcd853f,  
+        clrPink         =  0xffffc0cb,  
+        clrPlum         =  0xffdda0dd,  
+        clrPowderBlue   =  0xffb0e0e6,  
+        clrPurple       =  0xff800080,  
+
+        clrRed          =  0xffff0000,  
+        clrRosyBrown    =  0xffbc8f8f,  
+        clrRoyalBlue    =  0xff4169e1,  
         clrSaddleBrown  =  0xff8b4513,  
+        clrSalmon       =  0xfffa8072,  
+        clrSandyBrown   =  0xfff4a460,  
+        clrSeaGreen     =  0xff2e8b57,  
         clrSeashell     =  0xfffff5ee,  
         clrSienna       =  0xffa0522d,  
-        clrLightSalmon  =  0xffffa07a,  
-        clrCoral        =  0xffff7f50,  
-        clrOrangeRed    =  0xffff4500,  
-        clrDarkSalmon   =  0xffe9967a,  
-        clrTomato       =  0xffff6347,  
-        clrMistyRose    =  0xffffe4e1,  
-        clrSalmon       =  0xfffa8072,  
+        clrSilver       =  0xffc0c0c0,  
+
+        clrSkyBlue      =  0xff87ceeb,  
+        clrSlateBlue    =  0xff6a5acd,  
+        clrSlateGray    =  0xff708090,  
         clrSnow         =  0xfffffafa,  
-        clrLightCoral   =  0xfff08080,  
-        clrRosyBrown    =  0xffbc8f8f,  
-        
-        clrIndianRed    =  0xffcd5c5c,  
-        clrRed          =  0xffff0000,  
-        clrBrown        =  0xffa52a2a,  
-        clrFireBrick    =  0xffb22222,  
-        clrDarkRed      =  0xff8b0000,  
-        clrMaroon       =  0xff800000,  
+        clrSpringGreen  =  0xff00ff7f,  
+        clrSteelBlue    =  0xff4682b4,  
+        clrTan          =  0xffd2b48c,  
+        clrTeal         =  0xff008080,  
+        clrThistle      =  0xffd8b0d8,  
+        clrTomato       =  0xffff6347,  
+        clrTurquoise    =  0xff40e0d0,  
+
+        clrViolet       =  0xffee82ee,  
+        clrWheat        =  0xfff5deb3,  
         clrWhite        =  0xffffffff,  
         clrWhiteSmoke   =  0xfff5f5f5,  
-        clrGainsboro    =  0xffdcdcdc,  
-        clrLightGray    =  0xffa8a8a8,  
-        clrLightGrey    =  0xffd3d3d3,  
-        clrSilver       =  0xffc0c0c0,  
-        clrDarkGray     =  0xffa9a9a9,  
-        clrDimGray      =  0xff696969,  
-        clrBlack        =  0xff000000, 
-        clrGray         =  0xff808080,   
-        clrGrey         =  0xff808080,   
+        clrYellow       =  0xffffff00,  
+        clrYellowGreen  =  0xff9acd32,  
 
         clrTransparent  =  0x00000000,  
-        clrCurrentcolor =  0x00ffffff,
+        clrCurrentColor =  0x00ffffff,
     };
     
     // Synthesize colors with red, green, and blue components.
@@ -445,39 +453,11 @@ mcl {
 
 /**
  * To make it easier to use colors, mclib also introduces
- * the colour functions in CSS.
+ * the color functions in CSS.
  */
 
 namespace
 mcl {
-
-    constexpr color_t black   = 0xff000000;
-    constexpr color_t silver  = 0xffc0c0c0;
-    constexpr color_t gray    = 0xff808080;
-    constexpr color_t white   = 0xffffffff;
-    constexpr color_t maroon  = 0xff800000;
-
-    constexpr color_t red     = 0xffff0000;
-    constexpr color_t purple  = 0xff800080;
-    constexpr color_t fuchsia = 0xffff00ff;
-    constexpr color_t green   = 0xff008000;
-    constexpr color_t lime    = 0xff00ff00;
-
-    constexpr color_t olive   = 0xff808000;
-    constexpr color_t yellow  = 0xffffff00;
-    constexpr color_t navy    = 0xff000080;
-    constexpr color_t blue    = 0xff0000ff;
-    constexpr color_t teal    = 0xff008080;
-
-    constexpr color_t aqua    = 0xff00ffff;
-    constexpr color_t orange  = 0xffffa500;
-    constexpr color_t transparent  = 0x00000000;
-    constexpr color_t currentcolor = 0x00ffffff;
-
-    constexpr color_t grey    = gray;
-    constexpr color_t cyan    = aqua;
-    constexpr color_t magenta = fuchsia;
-
 
    /**
     * @function rgb <src/colors.h>
@@ -503,7 +483,7 @@ mcl {
     constexpr color_t
     rgba (color_t byRed, color_t byGreen, color_t byBlue, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? transparent :
+        return byAlpha < .001960785f ? clrTransparent :
             (static_cast<color_t>(byAlpha * 255.f + .5f) << 24)
             | (byRed << 16) | (byGreen << 8) | byBlue;
     }
@@ -536,7 +516,7 @@ mcl {
     inline color_t
     hsla (color_t byHue, float bySaturation, float byLightness, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? transparent :
+        return byAlpha < .001960785f ? clrTransparent :
             cvthsl2rgb (makrgb (
                 static_cast<colorcv_t>(byAlpha      * 255.f + .5f),
                 static_cast<colorcv_t>(static_cast<float>(
@@ -574,7 +554,7 @@ mcl {
     inline color_t
     hsva (color_t byHue, float bySaturation, float byValue, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? transparent :
+        return byAlpha < .001960785f ? clrTransparent :
             cvthsv2rgb (makrgb (
                 static_cast<colorcv_t>(byAlpha      * 255.f + .5f),
                 static_cast<colorcv_t>(static_cast<float>(

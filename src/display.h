@@ -76,8 +76,8 @@ mcl {
         static type constexpr Minimize   = 0x2;
         // Create an maximized display
         static type constexpr Maximize   = 0x4;
-        // Display window should be movable
-        static type constexpr Movable       = 0x10;
+        // Display window should be resizable
+        static type constexpr Resizable     = 0x10;
         // Display window will have no border or controls
         static type constexpr NoFrame       = 0x20;
         // Display window will disable minimizing
@@ -183,9 +183,11 @@ mcl {
         dflags_t          get_flags     () const noexcept;
         // Returns true when the display is active on the screen and may be visible to the user
         bool              get_active    () const noexcept;
-        
+        // Get a reference to the currently set display surface
+        surface_t&        get_surface   () const noexcept;
+
         // Uninitialize the window. NOT end the program
-        mcl_display_t&    uninit        () noexcept;
+        mcl_display_t&    quit          () noexcept;
 
         // Get the name of the pygame display backend.  This is always "windows" at present.
         char const*       get_driver_a  () const noexcept;
@@ -243,7 +245,7 @@ mcl {
     * @code
     * // example (keys are all lowercase): 
     *     HDC       hdc  = mcl::display.get_wm_info()["hdc"];
-    *     HINSTANCE inst = mcl::display.get_wm_info()["hinstance"];
+    *     HINSTANCE instance = mcl::display.get_wm_info()["hinstance"];
     *     HANDLE    th   = mcl::display.get_wm_info()["taskhandle"];
     *     HWND      hwnd = mcl::display.get_wm_info()["window"];
     * @endcode

@@ -56,9 +56,6 @@
 # else
 
 // @{
-//  This header contains types in python.
-#   include "pyobj.h"
-
 //  This header is for mclib standard log output stream.
 #   include "clog4m.h"
 
@@ -71,11 +68,17 @@
 //  This header is for mclib standard graphics control.
 #   include "display.h"
 
+//  This header is for drawing shapes.
+#   include "draw.h"
+
 //  This header is for loading and playing sounds.
 #   include "mixer.h"
 
 //  This header is for monitoring time.
 #   include "timer.h"
+
+//  This header is for mclib standard log output stream.
+#   include "pyobj.h"
 // @}
 
 

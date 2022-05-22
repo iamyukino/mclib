@@ -48,11 +48,13 @@ mcl {
     // Module for monitoring time.
     mcl_time_t timer;
     
-    mcl_time_t::operator void* () const
-        noexcept{ return const_cast<mcl_time_t*>(this); } 
+    mcl_time_t::operator void* () const noexcept{
+        return mcl_control_obj.timer ?
+            const_cast<mcl_time_t*>(this) : 0;
+    }
     
     bool mcl_time_t::operator! () const
-        noexcept{ return false; } 
+        noexcept{ return !mcl_control_obj.timer; }
 
    /**
     * @function mcl_time_t::get_ticks <src/timer.h> 

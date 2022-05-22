@@ -80,14 +80,20 @@ mcl {
     using color_t = unsigned long; // type of color parameters
     using colorcv_t = unsigned char; // components of color models
     
+    // type for coordinates
+    using point1d_t = long;  // Coordinates that drawn to scale.
+    struct point2d_t { point1d_t x, y; }; // Coordinate pair that drawn to scale.
+    struct rect_t { point1d_t x, y, w, h; }; // Rectangular coordinates.
+    
     // module for graphics interface control.  see display.h
     class mcl_display_t;
     class wmi_dict_t;
 
     // class for representing any image.  see surface.h
-    using point1d_t = long;  // Coordinates that drawn to scale.
-    struct point2d_t { point1d_t x, y; }; // Coordinate pair that drawn to scale.
     class surface_t;
+
+    // module for drawing shapes.  see draw.h
+    class mcl_draw_t;
     
     // module for loading and playing sounds.  see mixer.h
     class mcl_mixer_t;

@@ -151,7 +151,7 @@ mcl {
         } 
         
         // Uninit all modules
-        display.uninit ();
+        display.quit ();
         mixer.music.unload ();
         clog4m.uninit ();
     }

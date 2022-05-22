@@ -52,17 +52,23 @@ mcl {
     public:
         explicit   surface_t (void* = 0, bool b_srcalpha = false) noexcept;
         explicit   surface_t (point2d_t size, bool b_srcalpha = false) noexcept;
-                   surface_t (surface_t const& rhs, bool b_srcalpha = false) noexcept;
-                   surface_t (surface_t&& rhs, bool b_srcalpha = false) noexcept;
                   ~surface_t () noexcept;
-        surface_t& operator= (surface_t const& rhs) noexcept;
-        surface_t& operator= (surface_t&& rhs) noexcept;
+
+//                   surface_t (surface_t const& rhs, bool b_srcalpha = false) noexcept;
+//                   surface_t (surface_t&& rhs, bool b_srcalpha = false) noexcept;
+
+//        surface_t& operator= (surface_t const& rhs) noexcept;
+//        surface_t& operator= (surface_t&& rhs) noexcept;
 
         operator   void*     () const noexcept;
         bool       operator! () const noexcept;
 
     private:
         void* m_dataplus_;
+        char m_data_[1];
+
+        char : 8; char : 8; char : 8; char : 8;
+        char : 8; char : 8; char : 8;
     };
 
 } // namespace

@@ -210,7 +210,11 @@ mcl {
             std::tuple<pt...> const& m_ptr;
             size_t index;
             constexpr proxy_t (std::tuple<pt...> const& m, size_t i) noexcept
-                : m_ptr (m), index (i) { } 
+                : m_ptr (m), index (i) { }
+            constexpr proxy_t (proxy_t const&) = default;
+            constexpr proxy_t (proxy_t&&) = default;
+            proxy_t& operator= (proxy_t const&) = default;
+            proxy_t& operator= (proxy_t&&) = default;
             
         public:
             template<typename cv>
@@ -232,18 +236,19 @@ mcl {
         };
         
     public:
-        constexpr pytuple () = default;
-        constexpr pytuple (const pytuple<T...>&) = default;
+        constexpr pytuple (pytuple<T...> const&) = default;
         constexpr pytuple (pytuple&&) = default;
+        constexpr pytuple (std::tuple<T...> const& tp)
+            : std::tuple<T...>(tp) { }
+        constexpr pytuple (T&&... parms)
+            : std::tuple<T...>(std::make_tuple(std::forward<T>(parms)...)) { }
+
         pytuple<T...>& operator= (pytuple<T...> const&) = default;
         pytuple<T...>& operator= (pytuple<T...>&&) = default;
-        
-        constexpr pytuple (std::tuple<T...> const& tp)
-        : std::tuple<T...> (tp) { }
-        
-        constexpr pytuple (T&&... parms)
-        : std::tuple<T...> (std::make_tuple (std::forward<T>(parms)...)) { }
-        
+
+        constexpr bool operator! () { return !sizeof...(T); }
+        constexpr operator void* () { return sizeof...(T) ? const_cast<pytuple<T...>*>(this) : 0; }
+
         constexpr proxy_t<T...> operator[] (long long index) const noexcept
         { return proxy_t <T...>(*this, index >= 0 ? index : sizeof...(T) + index); }
         

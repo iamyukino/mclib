@@ -43,7 +43,7 @@ mcl {
     mcl_window_info_t {
     public:
         mcl_window_info_t () {
-            windowtext[0] = '\0';
+            window_caption[0] = '\0';
         }
         unsigned threadMessageLoop (void* title);
         LRESULT CALLBACK wndProc          // callback
@@ -54,22 +54,24 @@ mcl {
         LRESULT OnNCHitTest (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnSize      (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnMove      (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnPaint     (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:   // window properties
-        HWND     threadhwnd = nullptr;    // window handle
-        HDC      windowhdc  = nullptr;
-        HINSTANCE inst      = nullptr;
-        HANDLE   taskhandle = nullptr;    // thread handle
-        LONGLONG timer      = 0ll;
-        unsigned threaddr   = 0u;         // thread id
-        wchar_t  windowtext[_MAX_FNAME];  // caption
+        HDC       dc        = nullptr;
+        HINSTANCE instance  = nullptr;
+        HWND      hwnd      = nullptr;
+        HANDLE    taskhandle = nullptr;    // thread handle
+        HICON     window_hicon = nullptr;
+        LONGLONG  timer      = 0ll;
+        unsigned  threaddr   = 0u;         // thread id
+        wchar_t   window_caption[_MAX_FNAME];
 
     public:   // positions
-        point1d_t bufw  = 0;              // screen size
-        point1d_t bufh  = 0;
-        point1d_t realw = 0;              // window size
-        point1d_t realh = 0;
-        point1d_t x_pos = 0;              // window position 
+        point1d_t base_w  = 0;             // screen size
+        point1d_t base_h  = 0;
+        point1d_t dc_w = 0;                // window size
+        point1d_t dc_h = 0;
+        point1d_t x_pos = 0;               // window position 
         point1d_t y_pos = 0;
         
     public:   // switchs
@@ -78,15 +80,57 @@ mcl {
         bool      b_maximize                 = false;
 
     public:   // state quantities
-        bool bErrorCode = false;          // successful flag
+        bool      bErrorCode = false;      // successful flag
         char : 8;
-        unsigned bIsReady = 0ul;          // whether message loop starts
-        unsigned bIsExit  = 0ul;
+        unsigned  bIsReady = 0ul;          // whether message loop starts
+        unsigned  bIsExit  = 0ul;
         char : 8; char : 8; char : 8; char : 8;
+    
+    public:   // surface
+        surface_t* cur_surface = nullptr;
     };
     
     extern mcl_window_info_t mcl_control_obj;
     void mcl_report_sysexception (wchar_t const* what);
+
+
+
+
+   /**
+    * @class mcl_imagebuf_t <src/surface.cpp>
+    * @brief The buffer for surface_t.
+    */
+    class mcl_imagebuf_t {
+    public:
+        explicit mcl_imagebuf_t (point1d_t width, point1d_t height) noexcept;
+                ~mcl_imagebuf_t () noexcept;
+        bool     init           () noexcept;
+        void     uninit         () noexcept;
+        void     cleardevice    () noexcept;
+
+    public:
+        color_t*  m_pbuffer  = nullptr;
+        HDC       m_hdc      = nullptr;
+        HBITMAP   m_hbmp     = nullptr;
+        point1d_t m_width;
+        point1d_t m_height;
+
+    public:
+        typename mcl_simpletls_ns::mcl_spinlock_t::lock_t m_nrtlock = 0ul;
+
+    public:
+        color_t m_bkcolor = 0xff000000;
+        color_t m_color   = 0xffb3b3b3;
+        color_t m_flcolor = 0xff000000;
+    };
+
+    inline mcl_imagebuf_t* mcl_get_surface_dataplus (surface_t* s) {
+        return *reinterpret_cast<mcl_imagebuf_t**>(s);
+    }
+
+    inline char* mcl_get_surface_data (surface_t* s) {
+        return reinterpret_cast<char*>(*reinterpret_cast<mcl_imagebuf_t**>(s) + 1);
+    }
 
 } // namespace
 

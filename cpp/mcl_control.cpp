@@ -37,6 +37,7 @@
 #endif // Relative paths include ".."
 
 #include "../src/display.h"
+#include "../src/surface.h"
 #include "../src/clog4m.h"
 #include "mcl_control.h"
 
@@ -68,7 +69,7 @@ mcl {
             | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
             nullptr, eif, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
             LPWSTR (&lpMsgBuf), 0, nullptr );
-        clog4m[cll4m.Warn] << L"\n"
+        clog4m[cll4m.Fatal] << L"\n"
            L"SYSTEM EXCEPTION: " << what << L"\n"
            L"- type:  "    "mcl::win32api_error\n"
            L"- value: " << eif      << L"\n"
@@ -108,31 +109,32 @@ mcl {
             default: if (bopen) ml_ << L"unknown"; bIsExit = 4ul; break;
         }
         if (bopen) ml_ << "\"}\n" << L"Reseting..." << std::endl;
-        ::ShowWindow (threadhwnd, SW_HIDE);
+        ::ShowWindow (hwnd, SW_HIDE);
         // if (bopen) ml_ << L"  Releasing device contexts..." << std::endl;
-        if (!::ReleaseDC (threadhwnd, windowhdc)) {
+        if (!::ReleaseDC (hwnd, dc)) {
             mcl_report_sysexception (L"Failed to release device contexts.");
             bErrorCode = true;
         }
         // if (bopen) ml_ << L"  Destroying window..." << std::endl;
-        if (!::DestroyWindow (threadhwnd)) {
+        if (!::DestroyWindow (hwnd)) {
             mcl_report_sysexception (L"Failed to destroy window.");
             bErrorCode = true;
         }
         // if (bopen) ml_ << L"  Unregistering class..." << std::endl;
-        if (!::UnregisterClassW (L"mclibTclass", inst)) {
+        if (!::UnregisterClassW (L"mclibTclass", instance)) {
             mcl_report_sysexception (L"Failed to unregister class.");
             bErrorCode = true;
         }
-        // if (bopen) ml_ << L"  Reseting..." << std::endl;
-        
+        // if (bopen) ml_ << L"  Reseting..." << std::endl;        
+        delete cur_surface;
+
         // window properties           // positions
-        threaddr      = 0;             bufw    = bufh      = 0;
-        threadhwnd    = nullptr;       realw   = realh     = 0;
-        windowhdc     = nullptr;       x_pos   = y_pos     = 0;
-        inst          = nullptr;
+        threaddr      = 0;             base_w  = base_h   = 0;
+        hwnd          = nullptr;       dc_w    = dc_h     = 0;
+        dc            = nullptr;       x_pos   = y_pos    = 0;
+        instance      = nullptr;
         taskhandle    = nullptr;       // switchs
-        windowtext[0] = '\0';          b_fullscreen  = false;
+        window_caption[0] = '\0';          b_fullscreen  = false;
         timer         = 0;             b_maximize    = false;
         
         // switchs
@@ -165,15 +167,15 @@ mcl {
         
         // new_width
         int cxmin = ::GetSystemMetrics (SM_CXMIN);
-        this -> realw = GET_X_LPARAM(lParam);
-        if(this -> realw < cxmin)
-            this -> realw = cxmin;
+        this -> dc_w = GET_X_LPARAM(lParam);
+        if(this -> dc_w < cxmin)
+            this -> dc_w = cxmin;
         
         // new_height
-        this -> realh = GET_Y_LPARAM(lParam);
-        if(this -> realh < 1)
-            this -> realh = 1;
-            
+        this -> dc_h = GET_Y_LPARAM(lParam);
+        if(this -> dc_h < 1)
+            this -> dc_h = 1;
+        
         // maximize
         if (wParam == SIZE_MAXIMIZED) {
             this -> b_maximize = true;
@@ -183,7 +185,7 @@ mcl {
                 llstyle = (llstyle & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
                 exstyle = exstyle | WS_EX_CLIENTEDGE;
                 
-                RECT wr = {-1, -1, bufw + 1, bufh + 1};
+                RECT wr = {-1, -1, base_w + 1, base_h + 1};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(llstyle),
                                         FALSE, static_cast<DWORD>(exstyle));
                 
@@ -209,6 +211,22 @@ mcl {
         }
         return 0;
     }
+
+    LRESULT mcl_window_info_t::
+    OnPaint (HWND hWnd, WPARAM , LPARAM ) {
+        PAINTSTRUCT ps;
+        HDC hdc = ::BeginPaint (hWnd, &ps);
+        
+        mcl_imagebuf_t* buf = mcl_get_surface_dataplus (mcl_control_obj.cur_surface);
+        if (buf) {
+            mcl_simpletls_ns::mcl_spinlock_t lock (buf -> m_nrtlock);
+            ::BitBlt (hdc, 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h,
+                buf -> m_hdc, 0, 0, SRCCOPY);
+        }
+        
+        ::EndPaint (hWnd, &ps);
+        return 0;
+    }
     
    /**
     * @function mcl_window_info_t::wndProc <cpp/mcl_control.cpp>
@@ -228,6 +246,8 @@ mcl {
             case WM_NCHITTEST:  return OnNCHitTest   (hWnd, wParam, lParam);    break;
             case WM_SIZE:       return OnSize        (hWnd, wParam, lParam);    break;
             case WM_MOVE:       return OnMove        (hWnd, wParam, lParam);    break;
+            case WM_PAINT:      return OnPaint       (hWnd, wParam, lParam);    break;
+        //  case WM_ERASEBKGND:                                                 break;
             case WM_DESTROY:           ::PostQuitMessage (0);                   break; 
             default:            return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
         }
@@ -264,27 +284,27 @@ mcl {
 #        define MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_()   \
         ml_ << L"Reseting..." << std::endl;                         \
         threaddr      = 0;                                          \
-        threadhwnd    = nullptr;                                    \
-        windowhdc     = nullptr;                                    \
-        bufw  = bufh  = 0;                                          \
-        realw = realh = 0;                                          \
+        hwnd          = nullptr;                                    \
+        dc            = nullptr;                                    \
+        base_w  = base_h  = 0;                                          \
+        dc_w = dc_h = 0;                                          \
         x_pos = y_pos = 0;                                          \
-        ml_[cll4m.Warn]                                                \
+        ml_[cll4m.Info]                                             \
             << L"threadMessageLoop initialization terminated.\n";   \
         bErrorCode = true;                                          \
         ::InterlockedExchange (&bIsReady, 1);
         
 #        define MCL_UNREGISTERING_WINDOW_()                         \
-        if (!::UnregisterClassW (L"mclibTclass", inst))             \
+        if (!::UnregisterClassW (L"mclibTclass", instance))         \
             mcl_report_sysexception (L"Failed to unregister class.")
         
 #        define MCL_DESTROY_WINDOW_()                               \
         ml_ << L"Destroying window..." << std::endl;                \
-        if (!::DestroyWindow (threadhwnd))                          \
+        if (!::DestroyWindow (hwnd))                                \
             mcl_report_sysexception (L"Failed to destroy window.")
             
 #        define MCL_RELEASE_HDC_()                                  \
-        if (!::ReleaseDC (threadhwnd, windowhdc))                   \
+        if (!::ReleaseDC (hwnd, dc))                                \
             mcl_report_sysexception (L"Failed to release "          \
                      L"device contexts.");
         
@@ -300,14 +320,14 @@ mcl {
         bool     fvisi  = true;
         // if (bopen) ml_.println ("  Setting styles... flags: 0x%08lx", flags);
         if (flags & dflags.NoFrame)       fstyle &= ~WS_CAPTION, fstyle |= WS_POPUP;
-        if (!(flags & dflags.Movable))    fstyle &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
+        if (!(flags & dflags.Resizable))  fstyle &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
         if (flags & dflags.NoMinimizeBox) fstyle &= ~WS_MINIMIZEBOX;
         if (flags & dflags.Hidden)        fstyle &= ~WS_VISIBLE, fvisi = false;
         if (flags & dflags.Minimize)      fstyle |= WS_MINIMIZE, fvisi = false;
         if (flags & dflags.Maximize)      fstyle |= WS_MAXIMIZE;
         
         // Adjusting window rect
-        RECT wr = {0, 0, realw, realh};
+        RECT wr = {0, 0, dc_w, dc_h};
         if (!::AdjustWindowRectEx (&wr,
                 static_cast<DWORD>(fstyle), FALSE, WS_EX_CLIENTEDGE)) {
             mcl_report_sysexception (L"Failed to adjust window rect.");
@@ -317,17 +337,17 @@ mcl {
         }
         
         if (bopen) ml_.wprintln (L"Creating window... {\"flags\":\"0x%08lx\"}", flags).flush ();
-        threadhwnd = ::CreateWindowExW(
+        hwnd = ::CreateWindowExW(
             WS_EX_CLIENTEDGE,
             LPCWSTR(wc.lpszClassName),
-            LPCWSTR(windowtext),
+            LPCWSTR(window_caption),
             static_cast<DWORD>(fstyle),
             wr.left + x_pos, // CW_USEDEFAULT
             wr.top + y_pos, // CW_USEDEFAULT
             wr.right - wr.left, wr.bottom - wr.top,
             nullptr, nullptr, nullptr, nullptr
         );
-        if (!threadhwnd) {
+        if (!hwnd) {
             mcl_report_sysexception (L"Failed to create window.");
             MCL_UNREGISTERING_WINDOW_ ();
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_ ();
@@ -335,24 +355,35 @@ mcl {
         }
         
         // if (bopen) ml_ << L"  Loading device contexts..." << std::endl;
-        windowhdc = ::GetDC(threadhwnd);
-        if (!windowhdc) {
+        dc = ::GetDC(hwnd);
+        if (!dc) {
             mcl_report_sysexception (L"Failed to get device contexts.");
             MCL_DESTROY_WINDOW_ ();
             MCL_UNREGISTERING_WINDOW_ ();
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_ ();
             return 0;
         }
-        inst = ::GetModuleHandleW (nullptr);
+
+        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, false);
+        if (!cur_surface || !*cur_surface) {
+            ml_[cll4m.Fatal] << "Failed to create surface." << std::endl;
+            MCL_RELEASE_HDC_();
+            MCL_DESTROY_WINDOW_();
+            MCL_UNREGISTERING_WINDOW_();
+            MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_();
+            return 0;
+        }
+
+        instance = ::GetModuleHandleW (nullptr);
         if (b_allow_screensaver_before == 2)
             display.set_allow_screensaver (false);
         
         // for vc6
         if (fvisi) {
             if (!b_maximize)
-                ::ShowWindow (threadhwnd, SW_SHOWDEFAULT); 
-            ::UpdateWindow (threadhwnd);
-            ::SetFocus (mcl_control_obj.threadhwnd);
+                ::ShowWindow (hwnd, SW_SHOWDEFAULT); 
+            ::UpdateWindow (hwnd);
+            ::SetFocus (mcl_control_obj.hwnd);
         }
     
 #        undef MCL_RELEASE_HDC_

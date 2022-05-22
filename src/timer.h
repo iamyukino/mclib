@@ -36,8 +36,6 @@
 
 # include "mclfwd.h"
 
-// no define
-
 namespace
 mcl {
 
