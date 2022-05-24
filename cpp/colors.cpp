@@ -45,6 +45,9 @@
 namespace
 mcl {
 
+#define MCL_FRGB(tor, tog, tob, fc) \
+    ((static_cast<color_t>(tor) << 16) | (static_cast<color_t>(tog) << 8) | \
+      static_cast<color_t>(tob) | ((fc) & 0xff000000))
 
    /**
     * @function cvtrgb2hsl <src/colors.h>
@@ -56,9 +59,9 @@ mcl {
     cvtrgb2hsl (color_t rgbcolor) {
     
         float toh, tos, tol, cMax, cMin, del_Max,
-            frr = getr4rgb (rgbcolor) / 255.f,
-            frg = getg4rgb (rgbcolor) / 255.f,
-            frb = getb4rgb (rgbcolor) / 255.f;
+            frr = static_cast<float>(getr4rgb (rgbcolor)) / 255.f,
+            frg = static_cast<float>(getg4rgb (rgbcolor)) / 255.f,
+            frb = static_cast<float>(getb4rgb (rgbcolor)) / 255.f;
         cMax = frr > frg ? frr : frg;  cMax = cMax > frb ? cMax : frb;
         cMin = frr < frg ? frr : frg;  cMin = cMin < frb ? cMin : frb;
         del_Max = cMax - cMin;
@@ -80,8 +83,8 @@ mcl {
             // final lightness
             tol += .5f;
         }
-        return makhsl (static_cast<colorcv_t>(toh), static_cast<colorcv_t>(tos),
-            static_cast<colorcv_t>(tol), geta4rgb (rgbcolor));
+        return MCL_FRGB (toh, tos, tol, rgbcolor);
+
     }
     
    /**
@@ -93,8 +96,8 @@ mcl {
     color_t
     cvthsl2hsv (color_t hslcolor) {
         
-        float frs = gets4hsl (hslcolor),
-              frl = getl4hsl (hslcolor);
+        float frs = static_cast<float>(getg4rgb (hslcolor)),
+              frl = static_cast<float>(getb4rgb (hslcolor));
         float tos, tov;
         if (frl == 0.f)
             tos = tov = 0;
@@ -105,8 +108,8 @@ mcl {
             tov = frs +  frl - frs * frl / 240.f  + .5f;
             tos = frs * (480.f - 2.f * frl) / tov + .5f;
         }
-        return makhsv (geth4hsl (hslcolor), static_cast<colorcv_t>(tos),
-            static_cast<colorcv_t>(tov), geta4hsl (hslcolor));
+        return MCL_FRGB ((hslcolor >> 16) & 0xff, tos, tov, hslcolor);
+
     }
     
    /**
@@ -118,12 +121,12 @@ mcl {
     color_t
     cvthsv2rgb (color_t hsvcolor) {
     
-        colorcv_t h     = geth4hsv (hsvcolor);
-        colorcv_t tempH = h / 40ul;
+        color_t h     = getr4rgb(hsvcolor);
+        color_t tempH = h / 40ul;
         float tor, tog, tob;
-        float frh = h / 40.f - tempH,
-              frs = gets4hsv (hsvcolor) / 240.f,
-              frv = getv4hsv (hsvcolor) / 240.f * 255.f;
+        float frh = static_cast<float>(h) / 40.f - static_cast<float>(tempH),
+              frs = static_cast<float>(getg4rgb(hsvcolor)) / 240.f,
+              frv = static_cast<float>(getb4rgb(hsvcolor)) / 240.f * 255.f;
         float cv1 = frv + .5f,
               cv2 = frv * (1.f - frs) + .5f,
               cv3 = frv * (1.f - frh  * frs) + .5f,
@@ -137,8 +140,8 @@ mcl {
             case 5:  tor = cv1; tog = cv2; tob = cv3; break;
             default: tor =  0 ; tog =  0 ; tob =  0 ; break;
         }
-        return makrgb (static_cast<colorcv_t>(tor), static_cast<colorcv_t>(tog),
-            static_cast<colorcv_t>(tob), geta4hsl (hsvcolor));
+        return MCL_FRGB (tor, tog, tob, hsvcolor);
+
     }
     
    /**
@@ -151,9 +154,9 @@ mcl {
     cvtrgb2hsv (color_t rgbcolor) {
         
         float toh, tos, tov, cMax, cMin, del_Max,
-            frr = getr4rgb (rgbcolor) / 255.f,
-            frg = getg4rgb (rgbcolor) / 255.f,
-            frb = getb4rgb (rgbcolor) / 255.f;
+            frr = static_cast<float>(getr4rgb(rgbcolor)) / 255.f,
+            frg = static_cast<float>(getg4rgb(rgbcolor)) / 255.f,
+            frb = static_cast<float>(getb4rgb(rgbcolor)) / 255.f;
         cMin = frr < frg ? frr : frg;  cMin = cMin < frb ? cMin : frb;
         cMax = frr > frg ? frr : frg;  cMax = cMax > frb ? cMax : frb;
         del_Max = cMax - cMin;
@@ -172,8 +175,8 @@ mcl {
             // final saturation
             tos = del_Max * 240.f / cMax + .5f;
         }
-        return makhsv (static_cast<colorcv_t>(toh), static_cast<colorcv_t>(tos),
-            static_cast<colorcv_t>(tov), geta4rgb (rgbcolor));
+        return MCL_FRGB (toh, tos, tov, rgbcolor);
+
     }
     
    /**
@@ -184,8 +187,8 @@ mcl {
     */
     color_t cvthsv2hsl (color_t hsvcolor) {
         
-        float frs = gets4hsv (hsvcolor),
-              frv = getv4hsv (hsvcolor);
+        float frs = static_cast<float>(getg4rgb(hsvcolor)),
+              frv = static_cast<float>(getb4rgb(hsvcolor));
         float tos, tol;
         if (frv == 0.f)
             tos = tol = 0;
@@ -196,8 +199,8 @@ mcl {
             tos = frv * frs / (480.f + frv * (frs - 480.f) / 240.f) + .5f;
             tol = frv * (1.f - frs / 480.f)                         + .5f;
         }
-        return makhsl (geth4hsv (hsvcolor), static_cast<colorcv_t>(tos),
-            static_cast<colorcv_t>(tol), geta4hsv (hsvcolor));
+        return MCL_FRGB ((hsvcolor >> 16) & 0xff, tos, tol, hsvcolor);
+
     }
     
    /**
@@ -209,13 +212,14 @@ mcl {
     color_t
     cvthsl2rgb (color_t hslcolor) {
         
-        colorcv_t fra = geta4rgb (hslcolor);
         float q, p, tor, tog, tob,
-              frh = geth4hsl (hslcolor) / 240.f,
-              frs = gets4hsl (hslcolor) / 240.f,
-              frl = getl4hsl (hslcolor) / 240.f;
-        if (frs == 0.f)
-            return makgray (static_cast<colorcv_t>(frl * 255.f + .5f), fra);
+              frh = static_cast<float>(getr4rgb(hslcolor)) / 240.f,
+              frs = static_cast<float>(getg4rgb(hslcolor)) / 240.f,
+              frl = static_cast<float>(getb4rgb(hslcolor)) / 240.f;
+        if (frs == 0.f) {
+            frl = frl * 255.f + .5f;
+            return MCL_FRGB (frl, frl, frl, hslcolor);
+        }
         if (frl < .5f) q = frl * (1.f + frs);
         else           q = frl + frs - frl * frs;
         p = 2.f * frl - q;
@@ -231,8 +235,10 @@ mcl {
         tor = (color[0] > 1.f ? 1.f : (color[0] < 0.f ? 0.f : color[0])) * 255.f + .5f;
         tog = (color[1] > 1.f ? 1.f : (color[1] < 0.f ? 0.f : color[1])) * 255.f + .5f;
         tob = (color[2] > 1.f ? 1.f : (color[2] < 0.f ? 0.f : color[2])) * 255.f + .5f;
-        return makrgb (static_cast<colorcv_t>(tor), static_cast<colorcv_t>(tog),
-            static_cast<colorcv_t>(tob), fra);
+        return MCL_FRGB (tor, tog, tob, hslcolor);
+
     }
+
+#undef MCL_FRGB
 
 }

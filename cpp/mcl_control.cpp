@@ -36,6 +36,7 @@
 # pragma warning(disable: 4464)
 #endif // Relative paths include ".."
 
+#include "../src/mclfwd.h"
 #include "../src/display.h"
 #include "../src/surface.h"
 #include "../src/clog4m.h"
@@ -76,6 +77,47 @@ mcl {
            L"- msg:   " << lpMsgBuf;
         ::LocalFree (lpMsgBuf);
     }
+
+    unsigned long
+    mcl_set_dbi_awareness (bool awareness) noexcept {
+    // Get windows system version
+        HMODULE hModShcoredll = ::LoadLibraryW(L"Shcore.dll");
+        bool    ret = false;
+
+        typedef enum tagPROCESS_DPI_AWARENESS {
+            PROCESS_DPI_UNAWARE = 0,
+            PROCESS_SYSTEM_DPI_AWARE = 1,
+            PROCESS_PER_MONITOR_DPI_AWARE = 2
+        } PROCESS_DPI_AWARENESS;
+        
+        if (hModShcoredll) {
+            using pfSETPROCESSDPIAWARENESS =
+                HRESULT (*) (PROCESS_DPI_AWARENESS);
+            pfSETPROCESSDPIAWARENESS pfSetProcessDpiAwareness;
+#       ifdef _MSC_VER
+#           pragma warning(push)
+#           pragma warning(disable: 4191)
+#       endif // C4191: 'Function cast' : unsafe conversion.
+            pfSetProcessDpiAwareness =
+                reinterpret_cast<pfSETPROCESSDPIAWARENESS>(
+                    ::GetProcAddress (hModShcoredll, "SetProcessDpiAwareness"));
+#       ifdef _MSC_VER
+#           pragma warning(pop)
+#       endif
+
+#       ifdef _MSC_VER
+#           pragma warning(push)
+#           pragma warning(disable: 26812)
+#       endif
+            if (pfSetProcessDpiAwareness)
+                pfSetProcessDpiAwareness (awareness ? PROCESS_DPI_UNAWARE : PROCESS_PER_MONITOR_DPI_AWARE);
+#       ifdef _MSC_VER
+#           pragma warning(pop)
+#       endif
+            ::FreeLibrary (hModShcoredll);
+        }
+        return ret ? 0ul : ::GetLastError ();
+    } 
     
    /**
     * @function mcl_window_info_t::OnClose <cpp/mcl_control.cpp>
@@ -134,7 +176,7 @@ mcl {
         dc            = nullptr;       x_pos   = y_pos    = 0;
         instance      = nullptr;
         taskhandle    = nullptr;       // switchs
-        window_caption[0] = '\0';          b_fullscreen  = false;
+        window_caption[0] = '\0';      b_fullscreen  = false;
         timer         = 0;             b_maximize    = false;
         
         // switchs
@@ -143,6 +185,7 @@ mcl {
                 (static_cast<bool>(b_allow_screensaver_before));
             b_allow_screensaver_before = 2;
         }
+        mcl_set_dbi_awareness (true);
         
         if (bopen) ml_ << std::endl;
         return 0ul;
@@ -215,13 +258,15 @@ mcl {
     LRESULT mcl_window_info_t::
     OnPaint (HWND hWnd, WPARAM , LPARAM ) {
         PAINTSTRUCT ps;
+        RECT rect{0, 0, 0, 0};
+        ::GetUpdateRect (hWnd, &rect, FALSE);
         HDC hdc = ::BeginPaint (hWnd, &ps);
-        
+
         mcl_imagebuf_t* buf = mcl_get_surface_dataplus (mcl_control_obj.cur_surface);
         if (buf) {
             mcl_simpletls_ns::mcl_spinlock_t lock (buf -> m_nrtlock);
-            ::BitBlt (hdc, 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h,
-                buf -> m_hdc, 0, 0, SRCCOPY);
+            ::BitBlt (hdc, rect.left, rect.top, rect.right, rect.bottom,
+                buf -> m_hdc, rect.left, rect.top, SRCCOPY);
         }
         
         ::EndPaint (hWnd, &ps);
@@ -247,13 +292,13 @@ mcl {
             case WM_SIZE:       return OnSize        (hWnd, wParam, lParam);    break;
             case WM_MOVE:       return OnMove        (hWnd, wParam, lParam);    break;
             case WM_PAINT:      return OnPaint       (hWnd, wParam, lParam);    break;
-        //  case WM_ERASEBKGND:                                                 break;
+        //  case WM_ERASEBKGND: return true;                                    break;
             case WM_DESTROY:           ::PostQuitMessage (0);                   break; 
             default:            return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
         }
         return 0;
     }
-    
+
    /**
     * @function mcl_window_info_t::threadMessageLoop <cpp/mcl_control.cpp>
     * @brief Thread to process window messages independently.
@@ -283,12 +328,12 @@ mcl {
         
 #        define MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_()   \
         ml_ << L"Reseting..." << std::endl;                         \
-        threaddr      = 0;                                          \
-        hwnd          = nullptr;                                    \
-        dc            = nullptr;                                    \
-        base_w  = base_h  = 0;                                          \
-        dc_w = dc_h = 0;                                          \
-        x_pos = y_pos = 0;                                          \
+        threaddr         = 0;                                       \
+        hwnd             = nullptr;                                 \
+        dc               = nullptr;                                 \
+        base_w = base_h  = 0;                                       \
+        dc_w   = dc_h    = 0;                                       \
+        x_pos  = y_pos   = 0;                                       \
         ml_[cll4m.Info]                                             \
             << L"threadMessageLoop initialization terminated.\n";   \
         bErrorCode = true;                                          \
@@ -363,8 +408,8 @@ mcl {
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_ ();
             return 0;
         }
-
-        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, false);
+        instance = ::GetModuleHandleW (nullptr);
+        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, true);
         if (!cur_surface || !*cur_surface) {
             ml_[cll4m.Fatal] << "Failed to create surface." << std::endl;
             MCL_RELEASE_HDC_();
@@ -374,7 +419,6 @@ mcl {
             return 0;
         }
 
-        instance = ::GetModuleHandleW (nullptr);
         if (b_allow_screensaver_before == 2)
             display.set_allow_screensaver (false);
         
@@ -382,7 +426,6 @@ mcl {
         if (fvisi) {
             if (!b_maximize)
                 ::ShowWindow (hwnd, SW_SHOWDEFAULT); 
-            ::UpdateWindow (hwnd);
             ::SetFocus (mcl_control_obj.hwnd);
         }
     

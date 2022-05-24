@@ -37,6 +37,7 @@
 
 #include "../src/surface.h"
 #include "../src/clog4m.h"
+#include "../src/colors.h"
 #include "mcl_control.h"
 
 #ifdef _MSC_VER
@@ -53,10 +54,11 @@ mcl {
      */
     bool mcl_imagebuf_t::
     init () noexcept {
+        mcl_simpletls_ns::mcl_spinlock_t lock(m_nrtlock);
         // get global dc
         HDC refdc = nullptr;
         if (mcl_control_obj.bIsReady)
-            refdc = ::GetDC (mcl_control_obj.hwnd);
+            refdc = mcl_control_obj.dc;
 
         // create a new dc
         m_hdc = ::CreateCompatibleDC (refdc);
@@ -64,8 +66,6 @@ mcl {
             clog4m[cll4m.Warn] << L"surface.init()\n"
                 L"    warning:  CreateCompatibleDC Failed. [-Wsurface-winapi-"
                 << ::GetLastError() << L"]\n";
-            if (refdc)
-                ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return false;
         }
         
@@ -105,6 +105,7 @@ mcl {
 
     void mcl_imagebuf_t::
     uninit () noexcept {
+        mcl_simpletls_ns::mcl_spinlock_t lock(m_nrtlock);
         m_width = 0;
         ::DeleteDC (m_hdc);
         ::DeleteObject (m_hbmp);
@@ -120,7 +121,7 @@ mcl {
         for (color_t* p = m_pbuffer,
             *e = m_pbuffer + static_cast<long long>(m_width) * m_height;
             p != e; ++p) {
-                *p = m_bkcolor;
+                *p = black;
         }
     }
 

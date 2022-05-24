@@ -45,6 +45,7 @@
 
 # include <string>
 # include <ostream>
+# include <initializer_list>
 
 # ifdef _MSC_VER
 #  pragma warning(pop)
@@ -161,8 +162,6 @@ mcl {
                           mcl_display_t (mcl_display_t const& rhs) = delete;
         mcl_display_t&    operator=     (mcl_display_t const& rhs) = delete;
 
-        // Returns true if the window has been created
-        bool              get_init      () const noexcept;
         // Same as get_init()
         operator          void*         () const noexcept;
         // Contrary to the result of get_init()
@@ -170,6 +169,11 @@ mcl {
         
         // Initialize the window
         mcl_display_t&    init          () noexcept;
+        // Uninitialize the window. NOT end the program
+        mcl_display_t&    quit          () noexcept;
+        // Returns true if the window has been created
+        bool              get_init      () const noexcept;
+
         // Initialize a default window or screen for display
         inline mcl_display_t& set_mode  (void* = 0) noexcept{ return init (); }
         // Initialize a window or screen with display flags for display
@@ -178,21 +182,25 @@ mcl {
         mcl_display_t&    set_mode      (point2d_t size, dflags_t dpm_flags) noexcept;
         // Initialize a window or screen of specified size for display
         mcl_display_t&    set_mode      (point2d_t size) noexcept;
-        
         // Get dpm_flags for set_mode
         dflags_t          get_flags     () const noexcept;
-        // Returns true when the display is active on the screen and may be visible to the user
-        bool              get_active    () const noexcept;
+        
+        
         // Get a reference to the currently set display surface
         surface_t&        get_surface   () const noexcept;
-
-        // Uninitialize the window. NOT end the program
-        mcl_display_t&    quit          () noexcept;
+        // Update the full display Surface to the screen
+        mcl_display_t&    flip          () noexcept;
+        // Update portions of the screen for software displays
+        mcl_display_t&    update        (rect_t recta) noexcept;
+        // Update portions of the screen for software displays
+        mcl_display_t&    update        (std::initializer_list<rect_t>&& rects) noexcept;
 
         // Get the name of the pygame display backend.  This is always "windows" at present.
         char const*       get_driver_a  () const noexcept;
         // Get the name of the pygame display backend.  This is always L"windows" at present.
         wchar_t const*    get_driver    () const noexcept;
+        // Get information about the current windowing system
+        wmi_dict_t        get_wm_info   () const noexcept;     
 
         // Set the current window caption
         mcl_display_t&    set_caption   (char    const* caption = nullptr) noexcept;
@@ -211,6 +219,8 @@ mcl {
         // Return true if full screen mode is set.
         bool              get_fullscreen () const noexcept;
 
+        // Returns true when the display is active on the screen and may be visible to the user
+        bool              get_active    () const noexcept;
         // Make the window invisible
         mcl_display_t&    hide          (bool b_hide = true) noexcept;
         // Iconify the display surface
@@ -228,10 +238,7 @@ mcl {
         point2d_t         get_desktop_size () const noexcept;
 
         // Set WS_EX_LAYERED on this window.
-        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept;
-
-        // Get information about the current windowing system
-        wmi_dict_t        get_wm_info   () const noexcept;           
+        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept;      
     
     };
     extern mcl_display_t display; // Module for controling the display.
@@ -278,8 +285,8 @@ mcl {
           constexpr bool     operator!= (iterator const& rhs) const noexcept{ return this->iter_ != rhs.iter_; }
           inline iterator&   operator++ () noexcept{ ++ iter_; return *this; }  };
     public:
-        constexpr iterator<wmi_dict_t>  begin () noexcept{ return iterator<wmi_dict_t> {0ul};               }
-        inline iterator<wmi_dict_t>  end   () noexcept{ return iterator<wmi_dict_t> {len (wmi_dict_t{})}; }
+        constexpr iterator<wmi_dict_t> begin () noexcept{ return iterator<wmi_dict_t> {0ul};                }
+        inline iterator<wmi_dict_t>    end   () noexcept{ return iterator<wmi_dict_t> {len (wmi_dict_t{})}; }
     }; 
 
 } // namespace

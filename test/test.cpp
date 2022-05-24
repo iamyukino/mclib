@@ -30,8 +30,11 @@ int main()
            .set_window_alpha(.3);
     register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
 
-    draw.rect(display.get_surface(), { 20, 100, 100, 500 });
+    auto r1 = draw.rect(display.get_surface(), rgba(0, 255, 255, .6f), { 280, 100, -300, 150 });
+    auto r2 = draw.rect(display.get_surface(), rgba(255, 181, 181, .5f), { 80, 150, 300, 150 }, 0, 30, -1, 10);
+    auto r3 = draw.rect(display.get_surface(), rgba(181, 144, 0, .2f), { 100, 80, 300, 150 });
+    display.update({ r1, r2, r3 });
 
-    timer.delay(10000);
+    while (1) timer.wait (1);
     return 0;
 }

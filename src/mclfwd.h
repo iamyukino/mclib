@@ -78,7 +78,6 @@ mcl {
     
     // type for basic color models.  see colors.h
     using color_t = unsigned long; // type of color parameters
-    using colorcv_t = unsigned char; // components of color models
     
     // type for coordinates
     using point1d_t = long;  // Coordinates that drawn to scale.

@@ -91,6 +91,7 @@ mcl {
     };
     
     extern mcl_window_info_t mcl_control_obj;
+    unsigned long mcl_set_dbi_awareness (bool awareness = false) noexcept;
     void mcl_report_sysexception (wchar_t const* what);
 
 
@@ -117,11 +118,7 @@ mcl {
 
     public:
         typename mcl_simpletls_ns::mcl_spinlock_t::lock_t m_nrtlock = 0ul;
-
-    public:
-        color_t m_bkcolor = 0xff000000;
-        color_t m_color   = 0xffb3b3b3;
-        color_t m_flcolor = 0xff000000;
+        char : 8; char : 8; char : 8; char : 8;
     };
 
     inline mcl_imagebuf_t* mcl_get_surface_dataplus (surface_t* s) {
@@ -129,7 +126,7 @@ mcl {
     }
 
     inline char* mcl_get_surface_data (surface_t* s) {
-        return reinterpret_cast<char*>(*reinterpret_cast<mcl_imagebuf_t**>(s) + 1);
+        return reinterpret_cast<char*>(reinterpret_cast<mcl_imagebuf_t**>(s) + 1);
     }
 
 } // namespace

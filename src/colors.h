@@ -27,7 +27,8 @@
     iamyukino[at outlook.com]
     
     @file src/colors.h
-    This is a C++11 header for synthesizing colors.
+    This is a C++11 header for synthesizing colors. mclib uses 24bit
+    true color and does not support palette mode.
 */
 
 #ifndef MCL_COLORS
@@ -35,400 +36,175 @@
 
 # include "mclfwd.h"
 
- /**
-  * @brief
-  *  'colors.h' uses 24bit true color and does not
-  *  support palette mode.
-  *  
-  *  Color Representation Rule is:
-  *  a = alpha, r = red, g = green, b = brue,
-  *  h = hue, s = saturation, l = lightness, v = value
-  *  -rgb: 0xaarrggbb  (0 <= a,r,g,b <= 255)
-  *  -hsl: 0xaahhssll  (0 <= a <= 255, 0 <= h,s,l <= 240)
-  *  -hsv: 0xaahhssvv  (0 <= a <= 255, 0 <= h,s,v <= 240)
-  * 
-  * @function
-  *    x = a, r, g, b, h, s, l, v, g
-  *    y = rgb, hsl, hsv, gray
-  * > function  mcl::makyyy ()
-  * > function  mcl::getx4yyy ()
-  * > function  mcl::setx4yyy ()
-  * > function  mcl::cvt...2... ()
-  *         (... = rgb-bgr, rgb-gray, rgb-hsl, rgb-hsv,
-  *             hsl-rgb, hsl-hsv, hsv-rgb, hsv-hsl)
-  */
-
 namespace
 mcl {
-    
-    enum
-    mcl_colors_enum
-    : color_t {
-            
-        clrAliceBlue    =  0xff0000cd,  
-        clrAntiqueWhite =  0xfffaebd7,  
-        clrAqua         =  0xff00ffff,  
-        clrAquamarine   =  0xff7fffd4,  
-        clrAzure        =  0xfff0ffff,  
-        clrBeige        =  0xfff5f5dc,  
-        clrBisque       =  0xffffe4c4,  
-        clrBlack        =  0xff000000, 
-        clrBlanchedAlmond= 0xffffebcd,  
-        clrBlue         =  0xff0000a8,  
 
-        clrBlueViolet   =  0xff8a2be2,  
-        clrBrown        =  0xffa52a2a,  
-        clrBurlyWood    =  0xffdeb887,  
-        clrCadetBlue    =  0xff5f9ea0,  
-        clrChartreuse   =  0xff7fff00,  
-        clrChocolate    =  0xffd2691e,  
-        clrCoral        =  0xffff7f50,  
-        clrCornflowerBlue= 0xff6495ed,  
-        clrCornsilk     =  0xfffff8dc,  
-        clrCrimson      =  0xffdc143c,  
+    enum: color_t{
+        
+        aliceblue    =  0xff0000cd,  
+        antiquewhite =  0xfffaebd7,  
+        aqua         =  0xff00ffff,  
+        aquamarine   =  0xff7fffd4,  
+        azure        =  0xfff0ffff,  
+        beige        =  0xfff5f5dc,  
+        bisque       =  0xffffe4c4,  
+        black        =  0xff000000,  
+        blanchedalmond= 0xffffebcd,  
+        blue         =  0xff0000a8,  
 
-        clrCyan         =  0xff00ffff,  
-        clrDarkBlue     =  0xff00008b,  
-        clrDarkCyan     =  0xff008b8b,  
-        clrDarkGoldenrod=  0xffb8860b,  
-        clrDarkGray     =  0xffa9a9a9,  
-        clrDarkGreen    =  0xff006400,  
-        clrDarkGrey     =  0xffa9a9a9,  
-        clrDarkKhaki    =  0xffbdb76b,  
-        clrDarkMagenta  =  0xff8b008b,  
-        clrDarkOliveGreen= 0xff556b2f,  
+        blueviolet   =  0xff8a2be2,  
+        brown        =  0xffa52a2a,  
+        burlywood    =  0xffdeb887,  
+        cadetblue    =  0xff5f9ea0,  
+        chartreuse   =  0xff7fff00,  
+        chocolate    =  0xffd2691e,  
+        coral        =  0xffff7f50,  
+        cornflowerblue= 0xff6495ed,  
+        cornsilk     =  0xfffff8dc,  
+        crimson      =  0xffdc143c,  
 
-        clrDarkOrange   =  0xffff8c00,  
-        clrDarkOrchid   =  0xff9932cc,  
-        clrDarkRed      =  0xff8b0000,  
-        clrDarkSalmon   =  0xffe9967a,  
-        clrDarkSeaGreen =  0xff8fbc8f,  
-        clrDarkSlateBlue=  0xff483d8b,  
-        clrDarkSlateGray=  0xff2f4f4f,  
-        clrDarkTurquoise=  0xff00ced1,  
-        clrDarkViolet   =  0xff8b008b,  
-        clrDeepPink     =  0xffff1493,  
+        cyan         =  0xff00ffff,  
+        darkblue     =  0xff00008b,  
+        darkcyan     =  0xff008b8b,  
+        darkgoldenrod=  0xffb8860b,  
+        darkgray     =  0xffa9a9a9,  
+        darkgreen    =  0xff006400,  
+        darkgrey     =  0xffa9a9a9,  
+        darkkhaki    =  0xffbdb76b,  
+        darkmagenta  =  0xff8b008b,  
+        darkolivegreen= 0xff556b2f,  
 
-        clrDeepSkyBlue  =  0xff00bfff,  
-        clrDimGray      =  0xff696969,  
-        clrDimGrey      =  0xff696969,  
-        clrDodgerBlue   =  0xff1e90ff,  
-        clrFireBrick    =  0xffb22222,  
-        clrFloralWhite  =  0xfffffaf0,  
-        clrForestGreen  =  0xff228b22,  
-        clrFuchsia      =  0xffff00ff,  
-        clrGainsboro    =  0xffdcdcdc,  
-        clrGhostWhite   =  0xfff8f8ff,  
+        darkorange   =  0xffff8c00,  
+        darkorchid   =  0xff9932cc,  
+        darkred      =  0xff8b0000,  
+        darksalmon   =  0xffe9967a,  
+        darkseagreen =  0xff8fbc8f,  
+        darkslateblue=  0xff483d8b,  
+        darkslategray=  0xff2f4f4f,  
+        darkturquoise=  0xff00ced1,  
+        darkviolet   =  0xff8b008b,  
+        deeppink     =  0xffff1493,  
 
-        clrGirlPowder   =  0xffe8b5b5,  
-        clrGold         =  0xffffd700,  
-        clrGoldenrod    =  0xffdaa520,  
-        clrGray         =  0xff808080,   
-        clrGreen        =  0xff008000,  
-        clrGreenYellow  =  0xffadff2f,  
-        clrGrey         =  0xff808080,  
-        clrHoneydew     =  0xfff0fff0,  
-        clrHotPink      =  0xffff69b4,  
-        clrIndianRed    =  0xffcd5c5c,  
+        deepskyblue  =  0xff00bfff,  
+        dimgray      =  0xff696969,  
+        dimgrey      =  0xff696969,  
+        dodgerblue   =  0xff1e90ff,  
+        firebrick    =  0xffb22222,  
+        floralwhite  =  0xfffffaf0,  
+        forestgreen  =  0xff228b22,  
+        fuchsia      =  0xffff00ff,  
+        gainsboro    =  0xffdcdcdc,  
+        ghostwhite   =  0xfff8f8ff,  
 
-        clrIndigo       =  0xff4b0082,  
-        clrIvory        =  0xfffffff0,  
-        clrKhaki        =  0xfff0e68c,  
-        clrLavender     =  0xffe6e6fa,  
-        clrLavenderBlush=  0xfffff0f5,  
-        clrLawnGreen    =  0xff7cfc00,  
-        clrLemonChiffon =  0xfffffacd,  
-        clrLightBlue    =  0xffadd8e6,  
-        clrLightCoral   =  0xfff08080,  
-        clrLightCyan    =  0xffe0ffff,  
+        girlpowder   =  0xffe8b5b5,  
+        gold         =  0xffffd700,  
+        goldenrod    =  0xffdaa520,  
+        gray         =  0xff808080,  
+        green        =  0xff008000,  
+        greenyellow  =  0xffadff2f,  
+        grey         =  0xff808080,  
+        honeydew     =  0xfff0fff0,  
+        hotpink      =  0xffff69b4,  
+        indianred    =  0xffcd5c5c,  
 
-        clrLightGoldenrodYellow=0xfffafad2,
-        clrLightGray    =  0xffa8a8a8,  
-        clrLightGreen   =  0xff90ee90,  
-        clrLightGrey    =  0xffd3d3d3,  
-        clrLightMagenta =  0xfffc54fc,  
-        clrLightPink    =  0xffffb6c1,  
-        clrLightRed     =  0xfffc5454,  
-        clrLightSalmon  =  0xffffa07a,  
-        clrLightSeaGreen=  0xff20b2aa,  
-        clrLightSkyBlue =  0xff87cefa,  
+        indigo       =  0xff4b0082,  
+        ivory        =  0xfffffff0,  
+        khaki        =  0xfff0e68c,  
+        lavender     =  0xffe6e6fa,  
+        lavenderblush=  0xfffff0f5,  
+        lawngreen    =  0xff7cfc00,  
+        lemonchiffon =  0xfffffacd,  
+        lightblue    =  0xffadd8e6,  
+        lightcoral   =  0xfff08080,  
+        lightcyan    =  0xffe0ffff,  
 
-        clrLightSlateBlue= 0xff778899,  
-        clrLightSteelBlue= 0xffb0c4de,  
-        clrLightYellow  =  0xffffffe0,  
-        clrLime         =  0xff00ff00,  
-        clrLimeGreen    =  0xff32cd32,  
-        clrLinen        =  0xfffaf0e6,  
-        clrMagenta      =  0xffa800a8,  
-        clrMaroon       =  0xff800000,  
-        clrMediumAquamarine=0xff66cdaa, 
-        clrMediumBlue   =  0xff0000cd,  
+        lightgoldenrodyellow=0xfffafad2,
+        lightgray    =  0xffa8a8a8,  
+        lightgreen   =  0xff90ee90,  
+        lightgrey    =  0xffd3d3d3,  
+        lightmagenta =  0xfffc54fc,  
+        lightpink    =  0xffffb6c1,  
+        lightred     =  0xfffc5454,  
+        lightsalmon  =  0xffffa07a,  
+        lightseagreen=  0xff20b2aa,  
+        lightskyblue =  0xff87cefa,  
 
-        clrMediumOrchid =  0xffba55d3,  
-        clrMediumPurple =  0xff9370db,  
-        clrMediumSeaGreen= 0xff3cb371,  
-        clrMediumSlateBlue=0xff7b68ee,  
-        clrMediumSpringGreen=0xff00fa9a,
-        clrMediumTurquoise=0xff48d1cc,  
-        clrMediumVioletRed=0xffc71585,  
-        clrMidnightBlue =  0xff191970,  
-        clrMintCream    =  0xfff5fffa,  
-        clrMistyRose    =  0xffffe4e1,  
+        lightslateblue= 0xff778899,  
+        lightsteelblue= 0xffb0c4de,  
+        lightyellow  =  0xffffffe0,  
+        lime         =  0xff00ff00,  
+        limegreen    =  0xff32cd32,  
+        linen        =  0xfffaf0e6,  
+        magenta      =  0xffa800a8,  
+        maroon       =  0xff800000,  
+        mediumaquamarine=0xff66cdaa, 
+        mediumblue   =  0xff0000cd,  
 
-        clrMoccasin     =  0xffffe4b5,  
-        clrNavajoWhite  =  0xffffdead,  
-        clrNavy         =  0xff000080,  
-        clrOldLace      =  0xfffdf5e6,  
-        clrOlive        =  0xff808000,  
-        clrOliveDrab    =  0xff6b8e23,  
-        clrOrange       =  0xffffa500,  
-        clrOrangeRed    =  0xffff4500,  
-        clrOrchid       =  0xffda70d6,  
-        clrPaleGoldenrod=  0xffeee8aa,  
+        mediumorchid =  0xffba55d3,  
+        mediumpurple =  0xff9370db,  
+        mediumseagreen= 0xff3cb371,  
+        mediumslateblue=0xff7b68ee,  
+        mediumspringgreen=0xff00fa9a,
+        mediumturquoise=0xff48d1cc,  
+        mediumvioletred=0xffc71585,  
+        midnightblue =  0xff191970,  
+        mintcream    =  0xfff5fffa,  
+        mistyrose    =  0xffffe4e1,  
 
-        clrPaleGreen    =  0xff98fb98,  
-        clrPaleTurquoise=  0xffafeeee,  
-        clrPaleVioletRed=  0xffdb7093,  
-        clrPapayaWhip   =  0xffffefd5,  
-        clrPeachPuff    =  0xffffdab9,  
-        clrPeru         =  0xffcd853f,  
-        clrPink         =  0xffffc0cb,  
-        clrPlum         =  0xffdda0dd,  
-        clrPowderBlue   =  0xffb0e0e6,  
-        clrPurple       =  0xff800080,  
+        moccasin     =  0xffffe4b5,  
+        navajowhite  =  0xffffdead,  
+        navy         =  0xff000080,  
+        oldlace      =  0xfffdf5e6,  
+        olive        =  0xff808000,  
+        olivedrab    =  0xff6b8e23,  
+        orange       =  0xffffa500,  
+        orangered    =  0xffff4500,  
+        orchid       =  0xffda70d6,  
+        palegoldenrod=  0xffeee8aa,  
 
-        clrRed          =  0xffff0000,  
-        clrRosyBrown    =  0xffbc8f8f,  
-        clrRoyalBlue    =  0xff4169e1,  
-        clrSaddleBrown  =  0xff8b4513,  
-        clrSalmon       =  0xfffa8072,  
-        clrSandyBrown   =  0xfff4a460,  
-        clrSeaGreen     =  0xff2e8b57,  
-        clrSeashell     =  0xfffff5ee,  
-        clrSienna       =  0xffa0522d,  
-        clrSilver       =  0xffc0c0c0,  
+        palegreen    =  0xff98fb98,  
+        paleturquoise=  0xffafeeee,  
+        palevioletred=  0xffdb7093,  
+        papayawhip   =  0xffffefd5,  
+        peachpuff    =  0xffffdab9,  
+        peru         =  0xffcd853f,  
+        pink         =  0xffffc0cb,  
+        plum         =  0xffdda0dd,  
+        powderblue   =  0xffb0e0e6,  
+        purple       =  0xff800080,  
 
-        clrSkyBlue      =  0xff87ceeb,  
-        clrSlateBlue    =  0xff6a5acd,  
-        clrSlateGray    =  0xff708090,  
-        clrSnow         =  0xfffffafa,  
-        clrSpringGreen  =  0xff00ff7f,  
-        clrSteelBlue    =  0xff4682b4,  
-        clrTan          =  0xffd2b48c,  
-        clrTeal         =  0xff008080,  
-        clrThistle      =  0xffd8b0d8,  
-        clrTomato       =  0xffff6347,  
-        clrTurquoise    =  0xff40e0d0,  
+        red          =  0xffff0000,  
+        rosybrown    =  0xffbc8f8f,  
+        royalblue    =  0xff4169e1,  
+        saddlebrown  =  0xff8b4513,  
+        salmon       =  0xfffa8072,  
+        sandybrown   =  0xfff4a460,  
+        seagreen     =  0xff2e8b57,  
+        seashell     =  0xfffff5ee,  
+        sienna       =  0xffa0522d,  
+        silver       =  0xffc0c0c0,  
 
-        clrViolet       =  0xffee82ee,  
-        clrWheat        =  0xfff5deb3,  
-        clrWhite        =  0xffffffff,  
-        clrWhiteSmoke   =  0xfff5f5f5,  
-        clrYellow       =  0xffffff00,  
-        clrYellowGreen  =  0xff9acd32,  
+        skyblue      =  0xff87ceeb,  
+        slateblue    =  0xff6a5acd,  
+        slategray    =  0xff708090,  
+        snow         =  0xfffffafa,  
+        springgreen  =  0xff00ff7f,  
+        steelblue    =  0xff4682b4,  
+        tan          =  0xffd2b48c,  
+        teal         =  0xff008080,  
+        thistle      =  0xffd8b0d8,  
+        tomato       =  0xffff6347,  
+        turquoise    =  0xff40e0d0,  
 
-        clrTransparent  =  0x00000000,  
-        clrCurrentColor =  0x00ffffff,
+        violet       =  0xffee82ee,  
+        wheat        =  0xfff5deb3,  
+        white        =  0xffffffff,  
+        whitesmoke   =  0xfff5f5f5,  
+        yellow       =  0xffffff00,  
+        yellowgreen  =  0xff9acd32,  
+        transparent  =  0x00000000,  
+
     };
-    
-    // Synthesize colors with red, green, and blue components.
-    constexpr color_t
-    makrgb (colorcv_t byRed, colorcv_t byGreen,
-           colorcv_t byBlue, colorcv_t byAlpha = 255) {
-        return ( static_cast<color_t>(byAlpha) << 24)
-            |  ( static_cast<color_t>(byRed)   << 16)
-            |  ( static_cast<color_t>(byGreen) << 8 )
-            |  ( static_cast<color_t>(byBlue)       );
-    }
-
-    // Synthesize colors with hue, saturation, lightness, alpha components.
-    constexpr color_t
-    makhsl (colorcv_t byHue,   colorcv_t bySaturation,
-        colorcv_t byLightness, colorcv_t byAlpha = 255) {
-        return makrgb (byHue, bySaturation, byLightness, byAlpha);
-    }
-
-    // Synthesize colors with hue, saturation, value, alpha components.
-    constexpr color_t
-    makhsv (colorcv_t byHue,   colorcv_t bySaturation,
-          colorcv_t byValue,   colorcv_t byAlpha = 255) {
-        return makrgb (byHue, bySaturation, byValue, byAlpha);
-    }
-
-    // Synthesize colors with lightness components.
-    constexpr color_t
-    makgray (colorcv_t byLight, colorcv_t byAlpha = 255) {
-        return ( static_cast<color_t>(byAlpha) << 24 )
-            |  ( static_cast<color_t>(byLight) << 16 )
-            |  ( static_cast<color_t>(byLight) << 8  )
-            |  ( static_cast<color_t>(byLight)       );
-    }
-
-    // Return the alpha value in the specified rgbcolor.
-    constexpr colorcv_t
-    geta4rgb (color_t rgbcolor) {
-        return static_cast<colorcv_t>(   rgbcolor >> 24          );
-    }
-
-    // Return the red value in the specified rgbcolor.
-    constexpr colorcv_t
-    getr4rgb (color_t rgbcolor) {
-        return static_cast<colorcv_t>( ( rgbcolor >> 16 ) & 0xff );
-    }
-
-    // Return the green value in the specified rgbcolor.
-    constexpr colorcv_t
-    getg4rgb (color_t rgbcolor) {
-        return static_cast<colorcv_t>( ( rgbcolor >>  8 ) & 0xff );
-    }
-
-    // Return the blue value in the specified rgbcolor.
-    constexpr colorcv_t
-    getb4rgb (color_t rgbcolor) {
-        return static_cast<colorcv_t>(   rgbcolor         & 0xff );
-    }
-
-    // Return the alpha value in the specified hslcolor.
-    constexpr colorcv_t
-    geta4hsl (color_t hslcolor) {
-        return geta4rgb (hslcolor);
-    }
-
-    // Return the hue value in the specified hslcolor.
-    constexpr colorcv_t
-    geth4hsl (color_t hslcolor) {
-        return getr4rgb (hslcolor);
-    }
-
-    // Return the saturation value in the specified hslcolor.
-    constexpr colorcv_t
-    gets4hsl (color_t hslcolor) {
-        return getg4rgb (hslcolor);
-    }
-
-    // Return the lightness value in the specified hslcolor.
-    constexpr colorcv_t
-    getl4hsl (color_t hslcolor) {
-        return getb4rgb (hslcolor);
-    }
-
-    // Return the alpha value in the specified hsvcolor.
-    constexpr colorcv_t
-    geta4hsv (color_t hsvcolor) {
-        return geta4rgb (hsvcolor);
-    }
-
-    // Return the hue value in the specified hsvcolor.
-    constexpr colorcv_t
-    geth4hsv (color_t hsvcolor) {
-        return getr4rgb (hsvcolor);
-    }
-
-    // Return the saturation value in the specified hsvcolor.
-    constexpr colorcv_t
-    gets4hsv (color_t hsvcolor) {
-        return getg4rgb (hsvcolor);
-    }
-
-    // Return the brightness value in the specified hslcolor.
-    constexpr colorcv_t
-    getv4hsv (color_t hsvcolor) {
-        return getb4rgb (hsvcolor);
-    }
-
-    // Return the gray value in the specified graycolor.
-    constexpr colorcv_t
-    getg4gray (color_t graycolor) {
-        return getb4rgb (graycolor);
-    }
-
-    // Change the alpha value in the specified rgbcolor.
-    constexpr color_t
-    seta4rgb (colorcv_t alpha, color_t rgbcolor) {
-        return ( static_cast<color_t>(alpha) << 24 ) | ( rgbcolor & 0x00ffffff );
-    }
-
-    // Change the red value in the specified rgbcolor.
-    constexpr color_t
-    setr4rgb (colorcv_t red  , color_t rgbcolor) {
-        return ( static_cast<color_t>(red)   << 16 ) | ( rgbcolor & 0xff00ffff );
-    }
-
-    // Change the green value in the specified rgbcolor.
-    constexpr color_t
-    setg4rgb (colorcv_t green, color_t rgbcolor) {
-        return ( static_cast<color_t>(green) << 8  ) | ( rgbcolor & 0xffff00ff );
-    }
-
-    // Change the blue value in the specified rgbcolor.
-    constexpr color_t
-    setb4rgb (colorcv_t blue, color_t rgbcolor) {
-        return ( static_cast<color_t>(blue)        ) | ( rgbcolor & 0xffffff00 );
-    }
-
-    // Change the alpha value in the specified hslcolor.
-    constexpr color_t
-    seta4hsl (colorcv_t alpha, color_t hslcolor) {
-        return seta4rgb (alpha, hslcolor);
-    }
-
-    // Change the hue value in the specified hslcolor.
-    constexpr color_t
-    seth4hsl (colorcv_t hue, color_t hslcolor) {
-        return setr4rgb (hue, hslcolor);
-    }
-
-    // Change the saturation value in the specified hslcolor.
-    constexpr color_t
-    sets4hsl (colorcv_t saturation, color_t hslcolor) {
-        return setg4rgb (saturation, hslcolor);
-    }
-
-    // Change the lightness value in the specified hslcolor.
-    constexpr color_t
-    setl4hsl (colorcv_t lightness, color_t hslcolor) {
-        return setb4rgb (lightness, hslcolor);
-    }
-
-    // Change the alpha value in the specified hsvcolor.
-    constexpr color_t
-    seta4hsv (colorcv_t alpha, color_t hsvcolor) {
-        return seta4rgb (alpha, hsvcolor);
-    }
-
-    // Change the hue value in the specified hsvcolor.
-    constexpr color_t
-    seth4hsv (colorcv_t hue, color_t hsvcolor) {
-        return setr4rgb (hue, hsvcolor);
-    }
-
-    // Change the saturation value in the specified hsvcolor.
-    constexpr color_t
-    sets4hsv (colorcv_t saturation, color_t hsvcolor) {
-        return setg4rgb (saturation, hsvcolor);
-    }
-
-    // Change the brightness value in the specified hsvcolor.
-    constexpr color_t
-    setv4hsv (colorcv_t value, color_t hsvcolor) {
-        return setb4rgb (value, hsvcolor);
-    }
-
-    // Swap colors in red and blue.
-    constexpr color_t
-    cvtrgb2bgr (color_t rgbcolor) {
-        return ( (rgbcolor & 0xff    ) << 16 )
-            |  ( (rgbcolor & 0xff0000) >> 16 )
-            |  (  rgbcolor & 0xff00ff00);
-    }
-
-    // Convert the rgbcolor to grayscale.
-    constexpr color_t
-    cvtrgb2gray (color_t rgbcolor) {
-        return makgray (static_cast<colorcv_t>(
-            getr4rgb (rgbcolor) * 0.299f + getg4rgb (rgbcolor) * 0.587f
-            + getb4rgb (rgbcolor) * 0.114f + .5f ), geta4rgb (rgbcolor) );
-    }
 
     // Convert the rgbcolor to the hslcolor.
     color_t cvtrgb2hsl (color_t rgbcolor);
@@ -448,17 +224,6 @@ mcl {
     // Convert the hslcolor to the rgbcolor.
     color_t cvthsl2rgb (color_t hslcolor);
 
-}  // namespace
-
-
-/**
- * To make it easier to use colors, mclib also introduces
- * the color functions in CSS.
- */
-
-namespace
-mcl {
-
    /**
     * @function rgb <src/colors.h>
     * @brief Synthesize colors with red, green and blue components.
@@ -467,8 +232,7 @@ mcl {
     * @param[in] {color_t} byBlue: [0, 255]
     */
     constexpr color_t
-    rgb (color_t byRed, color_t byGreen, color_t byBlue)
-    {
+    rgb (color_t byRed, color_t byGreen, color_t byBlue) {
         return (byRed << 16) | (byGreen << 8) | byBlue | 0xff000000;
     }
 
@@ -483,9 +247,8 @@ mcl {
     constexpr color_t
     rgba (color_t byRed, color_t byGreen, color_t byBlue, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? clrTransparent :
-            (static_cast<color_t>(byAlpha * 255.f + .5f) << 24)
-            | (byRed << 16) | (byGreen << 8) | byBlue;
+        return (byRed << 16) | (byGreen << 8) | byBlue |
+            (static_cast<color_t>(byAlpha * 255.f + .5f) << 24);
     }
 
     /**
@@ -516,14 +279,12 @@ mcl {
     inline color_t
     hsla (color_t byHue, float bySaturation, float byLightness, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? clrTransparent :
-            cvthsl2rgb (makrgb (
-                static_cast<colorcv_t>(byAlpha      * 255.f + .5f),
-                static_cast<colorcv_t>(static_cast<float>(
-                                    byHue % 360 << 1) / 3.f + .5f),
-                static_cast<colorcv_t>(bySaturation * 240.f + .5f),
-                static_cast<colorcv_t>(byLightness  * 240.f + .5f)
-            ));
+        return cvthsl2rgb (rgba (
+            static_cast<color_t>(static_cast<float>(byHue % 360 << 1) / 3.f + .5f),
+            static_cast<color_t>(bySaturation * 240.f + .5f),
+            static_cast<color_t>(byLightness  * 240.f + .5f),
+            byAlpha
+        ));
     }
 
     /**
@@ -554,16 +315,74 @@ mcl {
     inline color_t
     hsva (color_t byHue, float bySaturation, float byValue, float byAlpha = 1.0f)
     {
-        return byAlpha < .001960785f ? clrTransparent :
-            cvthsv2rgb (makrgb (
-                static_cast<colorcv_t>(byAlpha      * 255.f + .5f),
-                static_cast<colorcv_t>(static_cast<float>(
-                                    byHue % 360 << 1) / 3.f + .5f),
-                static_cast<colorcv_t>(bySaturation * 240.f + .5f),
-                static_cast<colorcv_t>(byValue      * 240.f + .5f)
-            ));
+        return cvthsv2rgb (rgba (
+            static_cast<color_t>(static_cast<float>(byHue % 360 << 1) / 3.f + .5f),
+            static_cast<color_t>(bySaturation * 240.f + .5f),
+            static_cast<color_t>(byValue      * 240.f + .5f),
+            byAlpha
+        ));
+    }
+
+   /**
+    * @function grayscale <src/colors.h>
+    * @brief Synthesize colors with lightness components.
+    * @param[in] {float} byLight: [0, 1]
+    * @param[in] {float} byAlpha: [0, 1]
+    */
+    inline color_t
+    grayscale (float byLight, float byAlpha = 1.0f) {
+        color_t light = static_cast<color_t>(byLight * 255.f + .5f);
+        return rgba (light, light, light, byAlpha);
+    }
+
+    // Return the alpha value in the specified rgbcolor.
+    constexpr float
+    geta4rgb (color_t rgbcolor) {
+        return static_cast<float>(rgbcolor >> 24) / 255.f;
+    }
+
+    // Return the red value in the specified rgbcolor.
+    constexpr color_t
+    getr4rgb (color_t rgbcolor) {
+        return ( rgbcolor >> 16 ) & 0xff;
     }
     
+    // Return the green value in the specified rgbcolor.
+    constexpr color_t
+    getg4rgb (color_t rgbcolor) {
+        return ( rgbcolor >>  8 ) & 0xff;
+    }
+    
+    // Return the blue value in the specified rgbcolor.
+    constexpr color_t
+    getb4rgb (color_t rgbcolor) {
+        return   rgbcolor         & 0xff;
+    }
+    
+    // Change the alpha value in the specified rgbcolor.
+    constexpr color_t
+    seta4rgb (float byAlpha, color_t rgbcolor) {
+        return (static_cast<color_t>(byAlpha * 255.f + .5f) << 24 ) | ( rgbcolor & 0x00ffffff );
+    }
+    
+    // Change the red value in the specified rgbcolor.
+    constexpr color_t
+    setr4rgb (color_t byRed  , color_t rgbcolor) {
+        return ( byRed   << 16 ) | ( rgbcolor & 0xff00ffff );
+    }
+    
+    // Change the green value in the specified rgbcolor.
+    constexpr color_t
+    setg4rgb (color_t byGreen, color_t rgbcolor) {
+        return ( byGreen << 8  ) | ( rgbcolor & 0xffff00ff );
+    }
+    
+    // Change the blue value in the specified rgbcolor.
+    constexpr color_t
+    setb4rgb (color_t byBlue, color_t rgbcolor) {
+        return ( byBlue        ) | ( rgbcolor & 0xffffff00 );
+    }
+
 }  // namespace
 
 #endif  // MCL_COLORS

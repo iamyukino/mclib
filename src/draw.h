@@ -57,10 +57,14 @@ mcl {
         operator       void*      () const noexcept;
         bool           operator!  () const noexcept; 
 
-        rect_t         rect       (surface_t& surface, color_t color,
-                                       rect_t recta, point1d_t width = 0) const noexcept;
-        inline rect_t  rect       (surface_t& surface, rect_t recta)
-            const noexcept { return rect (surface, clrCurrentColor, recta); }
+        rect_t         rect       ( surface_t& surface, color_t color,
+                                    rect_t recta, point1d_t width = 0,
+                                    point1d_t border_radius = 0,
+                                    point1d_t border_top_left_radius = -1,
+                                    point1d_t border_top_right_radius = -1,
+                                    point1d_t border_bottom_left_radius = -1,
+                                    point1d_t border_bottom_right_radius = -1
+                                ) const noexcept;
     };
     extern mcl_draw_t draw; // Module for drawing shapes.
 

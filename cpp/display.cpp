@@ -36,6 +36,7 @@
 # pragma warning(disable: 4464)
 #endif // Relative paths include ".."
 
+#include "../src/mclfwd.h"
 #include "../src/display.h" 
 #include "../src/clog4m.h"
 #include "mcl_control.h"
@@ -167,76 +168,89 @@ mcl {
     * @return void 
     */
     static void
-    mcl_set_size (point2d_t* ptrsize) noexcept{
+    mcl_set_size (point2d_t* ptrsize) noexcept {
         if (!ptrsize || (!ptrsize -> x && !ptrsize -> y)) {
-        // size parameter is not provided
-        // the appropriate size is used based on the screen size
+            // size parameter is not provided
+            // the appropriate size is used based on the screen size
             if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
-                mcl_control_obj.dc_w =  mcl_control_obj.base_w  >> 1;
-                mcl_control_obj.dc_h = (mcl_control_obj.base_w
+                mcl_control_obj.dc_w =   mcl_control_obj.base_w  >> 1;
+                mcl_control_obj.dc_h = ( mcl_control_obj.base_w
                                        + mcl_control_obj.base_h) >> 2;
-            } else {
-                mcl_control_obj.dc_h =  mcl_control_obj.base_h  >> 1;
-                mcl_control_obj.dc_w = (mcl_control_obj.base_w
+            }
+            else {
+                mcl_control_obj.dc_h =   mcl_control_obj.base_h  >> 1;
+                mcl_control_obj.dc_w = ( mcl_control_obj.base_w
                                        + mcl_control_obj.base_h) >> 2;
             }
             return ;
         }
         // if x or Y is set to 0 
         // calculated according to the screen scale
-        int cxmin = ::GetSystemMetrics (SM_CXMIN); 
+        int cxmin = ::GetSystemMetrics (SM_CXMIN);
         if (!ptrsize -> x) {
             if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
                 ptrsize -> x =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> y) * (
                             static_cast<float>( mcl_control_obj.base_w) / 
-                            static_cast<float>((mcl_control_obj.base_w +
+                            static_cast<float>((mcl_control_obj.base_w  +
                                                 mcl_control_obj.base_h) >> 1)
-                    ) + .5f);
-            } else {
-                ptrsize -> x =
+                        ) + .5f);
+            }
+            else {
+                ptrsize->x =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> y) * (
                             static_cast<float>((mcl_control_obj.base_w +
-                                                mcl_control_obj.base_h) >> 1) / 
+                                                mcl_control_obj.base_h) >> 1) /
                             static_cast<float>( mcl_control_obj.base_h)
-                    ) + .5f);
+                        ) + .5f);
             }
-        } else if (!ptrsize -> y) {
+        }
+        else if (!ptrsize -> y) {
             if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
                 ptrsize -> y =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> x) * (
                             static_cast<float>((mcl_control_obj.base_w +
-                                                mcl_control_obj.base_h) >> 1) / 
+                                                mcl_control_obj.base_h) >> 1) /
                             static_cast<float>( mcl_control_obj.base_w)
-                    ) + .5f);
-            } else {
+                        ) + .5f);
+            }
+            else {
                 ptrsize -> y =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> x) * (
-                            static_cast<float>( mcl_control_obj.base_h) / 
+                            static_cast<float>( mcl_control_obj.base_h) /
                             static_cast<float>((mcl_control_obj.base_w +
                                                 mcl_control_obj.base_h) >> 1)
-                    ) + .5f);
+                        ) + .5f);
             }
         }
-        
+
         if (ptrsize -> x < cxmin) ptrsize -> x = cxmin;
         if (ptrsize -> y < 1)     ptrsize -> y = 1;
         mcl_control_obj.dc_w = ptrsize -> x;
         mcl_control_obj.dc_h = ptrsize -> y;
     }
+
     static void
     mcl_init_window (point2d_t* ptrsize, dflags_t dpm_flags = 0) noexcept{
     // Create Window & Start Message Loop.
         // Initialize window parameters.
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
-        clog4m_t ml_; ml_[cll4m.Int];
-        if (bopen) ml_
-           << L"mcl::display::init  | window settings reset:\n"
-              L"  base resolution:   ";
+        clog4m_t ml_;
+        unsigned long retdpi = mcl_set_dbi_awareness();
+        
+        if (bopen) {
+            if (retdpi) {
+                ml_[cll4m.Info] << L"mcl::display::init  | window settings reset:\n"
+                    << "    SetProcessDpiAwareness failed. {\"code\":\"" << retdpi << "\"}\n";
+                ml_[cll4m.Int];
+            } else ml_[cll4m.Int] << L"mcl::display::init  | window settings reset:\n";
+            ml_[cll4m.Int] << L"  base resolution:   ";
+        }
+
         mcl_control_obj.base_w = ::GetSystemMetrics (SM_CXSCREEN);
         mcl_control_obj.base_h = ::GetSystemMetrics (SM_CYSCREEN);
         if (!mcl_control_obj.base_w || !mcl_control_obj.base_h) {
@@ -416,8 +430,7 @@ mcl {
             if (dpm_flags & dflags.Minimize)
                 ::ShowWindow (mcl_control_obj.hwnd, SW_MINIMIZE);
             
-            // Update window
-            ::UpdateWindow (mcl_control_obj.hwnd);
+            ::UpdateWindow (mcl_control_obj.hwnd);  // for vc6
             last_style =
                 ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
             if ((last_style & WS_VISIBLE) && !(last_style & WS_MINIMIZE))
@@ -466,6 +479,41 @@ mcl {
         return *mcl_control_obj.cur_surface;
     }
 
+    mcl_display_t& mcl_display_t::
+    flip () noexcept {
+        RECT rc{ 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h };
+        ::InvalidateRect (mcl_control_obj.hwnd, &rc, TRUE);
+        return *this;
+    }
+    mcl_display_t& mcl_display_t::
+    update (rect_t recta) noexcept {
+        if (recta.w < 0) recta.x += recta.w + 1, recta.w = -recta.w;
+        if (recta.h < 0) recta.y += recta.h + 1, recta.h = -recta.h;
+        RECT rc{ recta.x, recta.y, recta.x + recta.w, recta.y + recta.h };
+        ::InvalidateRect (mcl_control_obj.hwnd, &rc, TRUE);
+        return *this;
+    }
+    mcl_display_t& mcl_display_t::
+    update (std::initializer_list<rect_t>&& rects) noexcept {
+        if (!rects.size ()) return *this;
+        RECT maxrc{2147483647L, 2147483647L, -2147483647L-1L, -2147483647L-1L};
+        for (auto rc : rects) {
+            point1d_t right = rc.x + rc.w;
+            point1d_t max1 = rc.x, min1 = right;
+            if (rc.x < right) min1 = rc.x, max1 = right;
+            if (min1 < maxrc.left)  maxrc.left  = min1;
+            if (max1 > maxrc.right) maxrc.right = max1;
+
+            right = rc.y + rc.h;
+            max1 = rc.y, min1 = right;
+            if (rc.y < right) min1 = rc.y, max1 = right;
+            if (min1 < maxrc.top)    maxrc.top   = min1;
+            if (max1 > maxrc.bottom) maxrc.bottom = max1;
+        }
+        ::InvalidateRect (mcl_control_obj.hwnd, &maxrc, TRUE);
+        return *this;
+    }
+
    /**
     * @function mcl_display_t::hide <src/display.h>
     * @brief Put the window in the background / foreground
@@ -482,7 +530,7 @@ mcl {
             ::ShowWindow ( mcl_control_obj.hwnd,
                            b_hide ? SW_HIDE : SW_SHOW );
             if (!b_hide) {
-                ::UpdateWindow (mcl_control_obj.hwnd);
+                ::UpdateWindow (mcl_control_obj.hwnd);  // for vc6
                 ::SetFocus (mcl_control_obj.hwnd);
             }
         } else clog4m[cll4m.Debug] <<
@@ -671,8 +719,7 @@ mcl {
                                        GWL_EXSTYLE, static_cast<DWORD>(last_exstyle));
                 ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST,
                                        wr.left + last_x, wr.top + last_y,
-                                       wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
-                
+                                       wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);   
             }
             ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
         } else clog4m[cll4m.Debug] <<
