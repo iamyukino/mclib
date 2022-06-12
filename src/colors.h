@@ -203,6 +203,7 @@ mcl {
         yellow       =  0xffffff00,  
         yellowgreen  =  0xff9acd32,  
         transparent  =  0x00000000,  
+        opaque       =  0xff000000,
 
     };
 

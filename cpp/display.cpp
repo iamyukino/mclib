@@ -337,9 +337,9 @@ mcl {
     * @brief Initialize a window or screen for display
     * @param {point2d_t} size
     * @param {dflags_t} dpm_flags
-    * @return mcl_display_t
+    * @return surface_t&
     */
-    mcl_display_t& mcl_display_t::
+    surface_t& mcl_display_t::
     set_mode (point2d_t size) noexcept{
     // Initialize Window & Start Message Loop
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
@@ -376,7 +376,7 @@ mcl {
         
         return *this;
     }
-    mcl_display_t& mcl_display_t::
+    surface_t& mcl_display_t::
     set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
     // Initialize Window & Start Message Loop
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
@@ -447,7 +447,7 @@ mcl {
         } else
             mcl_init_window (&size, dpm_flags);
             
-        return *this;
+        return *(mcl_control_obj.cur_surface);
     }
     
     MCL_NODISCARD_CXX17 static LONG_PTR&
@@ -496,7 +496,8 @@ mcl {
     mcl_display_t& mcl_display_t::
     update (std::initializer_list<rect_t>&& rects) noexcept {
         if (!rects.size ()) return *this;
-        RECT maxrc{2147483647L, 2147483647L, -2147483647L-1L, -2147483647L-1L};
+        constexpr long int32_max = 2147483647L;
+        RECT maxrc{ int32_max, int32_max, -int32_max - 1L, -int32_max - 1L};
         for (auto rc : rects) {
             point1d_t right = rc.x + rc.w;
             point1d_t max1 = rc.x, min1 = right;
@@ -627,7 +628,7 @@ mcl {
     * @return size_t
     */
     size_t mcl_display_t::
-        get_num_displays () const noexcept{ return 1; }
+    get_num_displays () const noexcept{ return 1; }
 
    /**
     * @function mcl_display_t::set_allow_screensaver <src/display.h>

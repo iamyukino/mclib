@@ -1,11 +1,21 @@
-# mclib v0.5.1-Debug.3463
+# mclib v0.5.1-Debug.3464
 
 Release notes for Mclib
 --------------------------------
   |
-.3463     May 14th 2022 - May 22nd 2022
+.3464     June 12th 2022
+  |  
+  |  [  ADDED   ]    Implements some functions in surface_t .
+  |
+  |
+  |
+  |
+.3463     May 14th 2022 - May 24th 2022
   |  
   |  [  ADDED   ]    Add surface.cpp & draw.h .
+  |  [  ADDED   ]    Add function mcl::draw.rect().
+  |  [ IMPROVE  ]    Ignore system dpi setting.
+  |  [ IMPROVE  ]    Rewrite colors.h . Styling colors with CSS.
   |
   |
   |

@@ -138,6 +138,33 @@ namespace mcl
             }
         }
         
+        void mcl_lock (mcl_spinlock_t::lock_t& lk_, unsigned& m_nrt_count) noexcept {
+            unsigned long threadid = ::GetCurrentThreadId ();
+            if (!::InterlockedCompareExchange (&lk_, threadid, 0))
+                return ;
+            if (lk_ == threadid) {
+                clog4m[cll4m.Debug]. putws (
+                   L"\n  mcl::spinlock  | "
+                    "Same thread acquires the same spinlock twice. ");
+                if (m_nrt_count == 0xffffffff) {
+                    clog4m[cll4m.Warn].putws(
+                        L"\n  mcl::spinlock  | "
+                        "Repeat lock exceed the maximum depth. ");
+                    return ;
+                }
+                ++ m_nrt_count;
+                return ; 
+            }
+            while (::InterlockedCompareExchange (&lk_, threadid, 0)); 
+        }
+        void mcl_unlock (mcl_spinlock_t::lock_t& lk_, unsigned& m_nrt_count) noexcept{
+            unsigned long threadid = ::GetCurrentThreadId();
+            if (lk_ == threadid) {
+                if (m_nrt_count) -- m_nrt_count;
+                else ::InterlockedExchange (&lk_, 0);
+            }
+        }
+        
         
        /**
         * @class mcl_m2w_str_t <cpp/mcl_base.h>

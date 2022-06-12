@@ -175,13 +175,13 @@ mcl {
         bool              get_init      () const noexcept;
 
         // Initialize a default window or screen for display
-        inline mcl_display_t& set_mode  (void* = 0) noexcept{ return init (); }
+        inline surface_t& set_mode      (void* = 0) noexcept{ return init (), get_surface (); }
         // Initialize a window or screen with display flags for display
-        inline mcl_display_t& set_mode  (void*, dflags_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
+        inline surface_t& set_mode      (void*, dflags_t dpm_flags) noexcept{ return set_mode (get_window_size (), dpm_flags); }
         // Initialize a window or screen with size and display flags for display
-        mcl_display_t&    set_mode      (point2d_t size, dflags_t dpm_flags) noexcept;
+        surface_t&        set_mode      (point2d_t size, dflags_t dpm_flags) noexcept;
         // Initialize a window or screen of specified size for display
-        mcl_display_t&    set_mode      (point2d_t size) noexcept;
+        surface_t&        set_mode      (point2d_t size) noexcept;
         // Get dpm_flags for set_mode
         dflags_t          get_flags     () const noexcept;
         
@@ -190,6 +190,8 @@ mcl {
         surface_t&        get_surface   () const noexcept;
         // Update the full display Surface to the screen
         mcl_display_t&    flip          () noexcept;
+        // Update portions of the screen for software displays
+        mcl_display_t&    update        (void* = 0) noexcept{ return flip (); }
         // Update portions of the screen for software displays
         mcl_display_t&    update        (rect_t recta) noexcept;
         // Update portions of the screen for software displays
@@ -201,23 +203,8 @@ mcl {
         wchar_t const*    get_driver    () const noexcept;
         // Get information about the current windowing system
         wmi_dict_t        get_wm_info   () const noexcept;     
-
-        // Set the current window caption
-        mcl_display_t&    set_caption   (char    const* caption = nullptr) noexcept;
-        // Set the current window caption
-        mcl_display_t&    set_caption   (wchar_t const* caption = nullptr) noexcept;
-        // Get the current window caption
-        wchar_t const*    get_caption   () const noexcept;
-
-        // Set whether the screensaver may run
-        bool              set_allow_screensaver (bool b_allow = true) noexcept; 
-        // Return whether the screensaver is allowed to run
-        bool              get_allow_screensaver () const noexcept;
-
-        // Switch between fullscreen and windowed displays
-        mcl_display_t&    toggle_fullscreen () noexcept;
-        // Return true if full screen mode is set.
-        bool              get_fullscreen () const noexcept;
+        // Get size of desktop 
+        point2d_t         get_desktop_size () const noexcept;
 
         // Returns true when the display is active on the screen and may be visible to the user
         bool              get_active    () const noexcept;
@@ -228,18 +215,32 @@ mcl {
         // Maximize the display surface
         mcl_display_t&    maximize      () noexcept;
 
+        // Switch between fullscreen and windowed displays
+        mcl_display_t&    toggle_fullscreen () noexcept;
+        // Return true if full screen mode is set.
+        bool              get_fullscreen () const noexcept;
+
+        // Set the current window caption
+        mcl_display_t&    set_caption   (char    const* caption = nullptr) noexcept;
+        // Set the current window caption
+        mcl_display_t&    set_caption   (wchar_t const* caption = nullptr) noexcept;
+        // Get the current window caption
+        wchar_t const*    get_caption   () const noexcept;
+        // Set WS_EX_LAYERED on this window.
+        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept; 
+    
         // Return the number of available displays. This is always 1 at present.
         size_t            get_num_displays () const noexcept;
         // Get position of desktop 
         point2d_t         get_window_pos () const noexcept;
         // Return the size of the window or screen
         point2d_t         get_window_size () const noexcept;
-        // Get size of desktop 
-        point2d_t         get_desktop_size () const noexcept;
 
-        // Set WS_EX_LAYERED on this window.
-        mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept;      
-    
+        // Set whether the screensaver may run
+        bool              set_allow_screensaver (bool b_allow = true) noexcept; 
+        // Return whether the screensaver is allowed to run
+        bool              get_allow_screensaver () const noexcept;
+
     };
     extern mcl_display_t display; // Module for controling the display.
 

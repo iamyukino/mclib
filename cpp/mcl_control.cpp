@@ -167,8 +167,11 @@ mcl {
             mcl_report_sysexception (L"Failed to unregister class.");
             bErrorCode = true;
         }
-        // if (bopen) ml_ << L"  Reseting..." << std::endl;        
-        delete cur_surface;
+        // if (bopen) ml_ << L"  Reseting..." << std::endl;
+        if (cur_surface) {
+            delete cur_surface;
+            cur_surface = nullptr;
+        }
 
         // window properties           // positions
         threaddr      = 0;             base_w  = base_h   = 0;
@@ -292,7 +295,7 @@ mcl {
             case WM_SIZE:       return OnSize        (hWnd, wParam, lParam);    break;
             case WM_MOVE:       return OnMove        (hWnd, wParam, lParam);    break;
             case WM_PAINT:      return OnPaint       (hWnd, wParam, lParam);    break;
-        //  case WM_ERASEBKGND: return true;                                    break;
+            // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:           ::PostQuitMessage (0);                   break; 
             default:            return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
         }
@@ -319,7 +322,7 @@ mcl {
         wc.hInstance     = nullptr;
         wc.lpfnWndProc = mcl_simpletls_ns::bind_mf(&mcl_window_info_t::wndProc, this);
         wc.hCursor       = ::LoadCursor (nullptr, IDC_ARROW);
-        wc.hbrBackground = HBRUSH (COLOR_BACKGROUND + 1);
+        wc.hbrBackground = nullptr; // alternative: HBRUSH (COLOR_BACKGROUND + 1)
         wc.lpszClassName = L"mclibTclass";
         wc.hIcon         = ::LoadIcon (nullptr, IDI_APPLICATION);
                 // Load a standard icon

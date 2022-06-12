@@ -134,8 +134,7 @@ mcl {
             w += hf1 + hf2; h += hf1 + hf2;
         }
         // completely out of window
-        if (x + w <= 0 || x >= mcl_control_obj.dc_w
-            || y + h <= 0 || y >= mcl_control_obj.dc_h)
+        if (x + w <= 0 || y + h <= 0)
             return { recta.x, recta.y, 0, 0 };
 
         // start drawing
@@ -143,17 +142,21 @@ mcl {
         if (!dataplus -> m_width)
             return { recta.x, recta.y, 0, 0 };
 
+        // completely out of window
+        if (x >= dataplus -> m_width || y >= dataplus -> m_height)
+            return { recta.x, recta.y, 0, 0 };
+        
         if (!width) {
         // (default) fill the rectangle
             // out of window
-            if (x + w > mcl_control_obj.dc_w) w = mcl_control_obj.dc_w - x;
-            if (y + h > mcl_control_obj.dc_h) h = mcl_control_obj.dc_h - y;
+            if (x + w > dataplus -> m_width)  w = dataplus -> m_width - x;
+            if (y + h > dataplus -> m_height) h = dataplus -> m_height - y;
             if (x < 0) w += x, x = 0;
             if (y < 0) h += y, y = 0; 
 
-            color_t *i = dataplus -> m_pbuffer + y * dataplus -> m_width + x, *j = 0;
+            color_t *i = dataplus -> m_pbuffer + x + y * dataplus -> m_width, *j = 0;
             color_t *i0 = i + h * dataplus -> m_width, *j0 = 0;
-            
+
             color_t sa = color >> 24;
             if (0xff == sa) {
             // no alpha
@@ -178,6 +181,10 @@ mcl {
             return { x, y, w, h };
         }
         // TODO: 圆角和边框 
+        hf1 =
+        border_top_left_radius = border_top_right_radius = 
+        border_bottom_left_radius = border_bottom_right_radius =
+        border_radius;
 
         return { x, y, w, h }; // TODO: 未处理边界外情况
     }

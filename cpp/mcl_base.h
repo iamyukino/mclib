@@ -103,11 +103,11 @@ namespace mcl
     */
     constexpr char const*    mcl_version_number_a (){ return        "0.5.1";            }
     constexpr wchar_t const* mcl_version_number ()  { return       L"0.5.1";            }
-    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.1-Debug.3463"; }
+    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.1-Debug.3464"; }
     constexpr int            mcl_major_number ()    { return         0; }
     constexpr int            mcl_minor_number ()    { return           5; }
     constexpr int            mcl_patch_number ()    { return             1; }
-    constexpr int            mcl_revision_number () { return                     3463; }
+    constexpr int            mcl_revision_number () { return                     3464; }
     
    /**
     * @class mcl_spinlock_t <cpp/mcl_base.h>
@@ -124,6 +124,8 @@ namespace mcl
            char : 8; char : 8; char : 8; char : 8; char : 8;
            char : 8; char : 8;
     };
+    void mcl_lock (mcl_spinlock_t::lock_t& lk_, unsigned& m_nrt_count) noexcept;
+    void mcl_unlock (mcl_spinlock_t::lock_t& lk_, unsigned& m_nrt_count) noexcept;
     
     
    /**

@@ -107,7 +107,7 @@ mcl {
                 ~mcl_imagebuf_t () noexcept;
         bool     init           () noexcept;
         void     uninit         () noexcept;
-        void     cleardevice    () noexcept;
+        void     cleardevice    (color_t c) noexcept;
 
     public:
         color_t*  m_pbuffer  = nullptr;
@@ -118,7 +118,7 @@ mcl {
 
     public:
         typename mcl_simpletls_ns::mcl_spinlock_t::lock_t m_nrtlock = 0ul;
-        char : 8; char : 8; char : 8; char : 8;
+        unsigned m_nrt_count = 0u;
     };
 
     inline mcl_imagebuf_t* mcl_get_surface_dataplus (surface_t* s) {
