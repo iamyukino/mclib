@@ -49,7 +49,7 @@ int main()
     register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
   
     POINT point{ 0, 0 };
-    blend_t bl = blend.Over_rgba;
+    blend_t bl = blend.Ovl_rgba;
     while (1) {
         GetCursorPos (&point);
         ScreenToClient (display.get_wm_info()["window"], &point);
@@ -60,7 +60,7 @@ int main()
         auto r3 = display.get_surface().fill(rgba(181, 144, 0, .2f), { point.x - 150, point.y - 75, 300, 150 }, bl);
 
         display.update({ r0, r1, r2, r3 });
-        timer.wait(1);
+        timer.wait(40);
     }
     
     while(1) timer.wait(1);

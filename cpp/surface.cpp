@@ -58,7 +58,7 @@ mcl {
     blend_t constexpr mcl_blend_t::Min;
     blend_t constexpr mcl_blend_t::Max;
     blend_t constexpr mcl_blend_t::Xor;
-    blend_t constexpr mcl_blend_t::Over;
+    blend_t constexpr mcl_blend_t::Ovl;
 
     blend_t constexpr mcl_blend_t::Copy_rgb;
     blend_t constexpr mcl_blend_t::Add_rgb;
@@ -67,7 +67,7 @@ mcl {
     blend_t constexpr mcl_blend_t::Min_rgb;
     blend_t constexpr mcl_blend_t::Max_rgb;
     blend_t constexpr mcl_blend_t::Xor_rgb;
-    blend_t constexpr mcl_blend_t::Over_rgb;
+    blend_t constexpr mcl_blend_t::Ovl_rgb;
 
     blend_t constexpr mcl_blend_t::Copy_rgba;
     blend_t constexpr mcl_blend_t::Add_rgba;
@@ -76,7 +76,7 @@ mcl {
     blend_t constexpr mcl_blend_t::Min_rgba;
     blend_t constexpr mcl_blend_t::Max_rgba;
     blend_t constexpr mcl_blend_t::Xor_rgba;
-    blend_t constexpr mcl_blend_t::Over_rgba;
+    blend_t constexpr mcl_blend_t::Ovl_rgba;
 #endif
 
     /**
@@ -198,16 +198,17 @@ mcl {
      */
     surface_t::
     surface_t (point2d_t size, bool b_srcalpha) noexcept
-        : m_dataplus_ (new(std::nothrow) mcl_imagebuf_t(size.x, size.y)),
+      : m_dataplus_ (new(std::nothrow) mcl_imagebuf_t(size.x, size.y)),
         m_data_{ b_srcalpha } {
-            if (m_dataplus_ &&
-                !static_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width) {
-                    delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
-                    m_dataplus_ = nullptr;
-            } else {
-                static_cast<mcl_imagebuf_t*>(m_dataplus_)
-                  -> cleardevice (b_srcalpha ? 0xff000000 : 0);
-            }
+        if (!m_dataplus_)
+            return ;
+        if (!static_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width) {
+            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
+            m_dataplus_ = nullptr;
+            return ;
+        }
+        static_cast<mcl_imagebuf_t*>(m_dataplus_)
+            -> cleardevice (black);
     }
 
     /**
@@ -228,7 +229,8 @@ mcl {
      */
     surface_t::
     operator void* () const noexcept {
-        return this && m_dataplus_ ? const_cast<surface_t*>(this) : 0;
+        return this && m_dataplus_ ?
+            const_cast<surface_t*>(this) : 0;
     }
 
     /**
@@ -623,25 +625,36 @@ mcl {
                 break;
             }
             // overlay
-            case mcl_blend_t::Over_rgb: {
+            case mcl_blend_t::Ovl_rgb: {
                 color_t sa = color >> 24;
-                if (0xff == sa) // no alpha
+                if (0xff == sa) {
+                // no alpha
                     blend_fun = [color](color_t& dst) { dst = color; };
-                else { // have alpha
-                    color_t srsa = getr4rgb(color) * sa;
-                    color_t sgsa = getg4rgb(color) * sa;
-                    color_t sbsa = getb4rgb(color) * sa;
-                    color_t da   = 255 - sa;
+                    break;
+                }
+                // have alpha
+                color_t srsa = getr4rgb(color) * sa;
+                color_t sgsa = getg4rgb(color) * sa;
+                color_t sbsa = getb4rgb(color) * sa;
+                color_t da   = 255 - sa;
+                if (m_data_[0]) {
                     blend_fun = [srsa, sgsa, sbsa, da](color_t& dst) {
                         color_t r = (getr4rgb(dst) * da + srsa) / 255;
                         color_t g = (getg4rgb(dst) * da + sgsa) / 255;
                         color_t b = (getb4rgb(dst) * da + sbsa) / 255;
-                        dst = 0xff000000 | (r << 16) | (g << 8) | b;
+                        dst = (dst & 0xff000000) | (r << 16) | (g << 8) | b;
                     };
+                    break;
                 }
+                blend_fun = [srsa, sgsa, sbsa, da](color_t& dst) {
+                    color_t r = (getr4rgb(dst) * da + srsa) / 255;
+                    color_t g = (getg4rgb(dst) * da + sgsa) / 255;
+                    color_t b = (getb4rgb(dst) * da + sbsa) / 255;
+                    dst = (r << 16) | (g << 8) | b;
+                };
                 break;
             }
-            case mcl_blend_t::Over_rgba: {
+            case mcl_blend_t::Ovl_rgba: {
                 color_t sa = color >> 24;
                 if (0xff == sa) // no alpha
                     blend_fun = [color](color_t& dst) { dst = color; };
@@ -748,8 +761,8 @@ mcl {
         if (y < 0) h += y, y = 0; 
 
         // start filling
-        color_t *i = dataplus -> m_pbuffer + y * dataplus -> m_width + x, *j = 0;
-        color_t *i0 = i + h * dataplus -> m_width, *j0 = 0;
+        color_t *i = dataplus -> m_pbuffer + static_cast<long long>(y) * dataplus -> m_width + x, *j = 0;
+        color_t *i0 = static_cast<long long>(h) * dataplus -> m_width + i, *j0 = 0;
 
         for (; i != i0; i += dataplus -> m_width)
             for (j = i, j0 = i + w; j != j0; ++j)

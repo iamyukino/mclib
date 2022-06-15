@@ -59,7 +59,7 @@ mcl {
         static type constexpr Min  = 0x4; // darken.
         static type constexpr Max  = 0x5; // lighten.
         static type constexpr Xor  = 0x6; // normal xor.
-        static type constexpr Over = 0x7; // overlay.
+        static type constexpr Ovl  = 0x7; // overlay.
 
         static type constexpr Copy_rgb = 0x100; // normal copy. preserve alpha.
         static type constexpr Add_rgb  = 0x101; // color dodge. preserve alpha.
@@ -68,7 +68,7 @@ mcl {
         static type constexpr Min_rgb  = 0x104; // darken. preserve alpha.
         static type constexpr Max_rgb  = 0x105; // lighten. preserve alpha.
         static type constexpr Xor_rgb  = 0x106; // normal xor. preserve alpha.
-        static type constexpr Over_rgb = 0x107; // overlay. ignore background alpha.
+        static type constexpr Ovl_rgb  = 0x107; // overlay. ignore background alpha.
 
         static type constexpr Copy_rgba = 0x200; // normal copy. alpha involved.
         static type constexpr Add_rgba  = 0x201; // color dodge. alpha involved.
@@ -77,7 +77,7 @@ mcl {
         static type constexpr Min_rgba  = 0x204; // darken. alpha involved.
         static type constexpr Max_rgba  = 0x205; // lighten. alpha involved.
         static type constexpr Xor_rgba  = 0x206; // normal xor. alpha involved.
-        static type constexpr Over_rgba = 0x207; // overlay. alpha involved.
+        static type constexpr Ovl_rgba  = 0x207; // overlay. alpha involved.
 
     };
     using blend_t = mcl_blend_t::type;

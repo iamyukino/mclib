@@ -176,12 +176,11 @@ mcl {
                 mcl_control_obj.dc_w =   mcl_control_obj.base_w  >> 1;
                 mcl_control_obj.dc_h = ( mcl_control_obj.base_w
                                        + mcl_control_obj.base_h) >> 2;
+                return ;
             }
-            else {
-                mcl_control_obj.dc_h =   mcl_control_obj.base_h  >> 1;
-                mcl_control_obj.dc_w = ( mcl_control_obj.base_w
-                                       + mcl_control_obj.base_h) >> 2;
-            }
+            mcl_control_obj.dc_h =   mcl_control_obj.base_h  >> 1;
+            mcl_control_obj.dc_w = ( mcl_control_obj.base_w
+                                   + mcl_control_obj.base_h) >> 2;
             return ;
         }
         // if x or Y is set to 0 
@@ -349,7 +348,7 @@ mcl {
                 clog4m[cll4m.Debug] << L"mcl.display.set_mode()\n"
                    L"    warning:  Not take effect.  In full screen "
                    L"mode [-display-window-togglefullscreen]\n";
-                return *this;
+                return *(mcl_control_obj.cur_surface);
             }
             bool bopen = clog4m.get_init ()
                          && clog4m.get_event_level ().value <= cll4m.Int.value;
@@ -374,7 +373,7 @@ mcl {
         } else 
             mcl_init_window (&size); 
         
-        return *this;
+        return *(mcl_control_obj.cur_surface);
     }
     surface_t& mcl_display_t::
     set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
@@ -482,7 +481,8 @@ mcl {
     mcl_display_t& mcl_display_t::
     flip () noexcept {
         RECT rc{ 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h };
-        ::InvalidateRect (mcl_control_obj.hwnd, &rc, TRUE);
+        ::InvalidateRect (mcl_control_obj.hwnd, &rc, FALSE);
+        ::UpdateWindow (mcl_control_obj.hwnd);
         return *this;
     }
     mcl_display_t& mcl_display_t::
@@ -490,7 +490,8 @@ mcl {
         if (recta.w < 0) recta.x += recta.w + 1, recta.w = -recta.w;
         if (recta.h < 0) recta.y += recta.h + 1, recta.h = -recta.h;
         RECT rc{ recta.x, recta.y, recta.x + recta.w, recta.y + recta.h };
-        ::InvalidateRect (mcl_control_obj.hwnd, &rc, TRUE);
+        ::InvalidateRect (mcl_control_obj.hwnd, &rc, FALSE);
+        ::UpdateWindow (mcl_control_obj.hwnd);
         return *this;
     }
     mcl_display_t& mcl_display_t::
@@ -511,7 +512,8 @@ mcl {
             if (min1 < maxrc.top)    maxrc.top   = min1;
             if (max1 > maxrc.bottom) maxrc.bottom = max1;
         }
-        ::InvalidateRect (mcl_control_obj.hwnd, &maxrc, TRUE);
+        ::InvalidateRect (mcl_control_obj.hwnd, &maxrc, FALSE);
+        ::UpdateWindow (mcl_control_obj.hwnd);
         return *this;
     }
 

@@ -676,13 +676,13 @@ mcl {
             ::fputwc ('\n', mcl_logf_obj.f_u8log);
             mcl_logf_obj.b_newl = true;
         }
-        if (mcl_logf_obj.dw_indent != 0) {
+        if (mcl_logf_obj.dw_indent) {
             -- m_data_[0];
             -- mcl_logf_obj.dw_indent;
-        } else {
-            static_cast<mcl_logbuf_t*>(m_dataplus_)
-                -> bf_fail_ = true;
+            return *this;
         }
+        static_cast<mcl_logbuf_t*>(m_dataplus_)
+            -> bf_fail_ = true;
         return *this;
     }
     

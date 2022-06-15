@@ -60,12 +60,11 @@ mcl {
 #define MCL_COLOR_ADD(dst, sa, srsa, sgsa, sbsa, bIgnoreDstAlpha) \
     do { \
         color_t da  = bIgnoreDstAlpha ? 255 - sa : (*dst >> 24) * (255 - sa) / 255; \
-        color_t sda = sa + da; \
-        color_t t = 255 - sda; \
-        color_t r = (getr4rgb(*dst) * da + srsa) / sda; \
-        color_t g = (getg4rgb(*dst) * da + sgsa) / sda; \
-        color_t b = (getb4rgb(*dst) * da + sbsa) / sda; \
-        *dst = ((t << 24) | (r << 16) | (g << 8) | b); \
+        color_t t = sa + da; \
+        color_t r = (getr4rgb(*dst) * da + srsa) / t; \
+        color_t g = (getg4rgb(*dst) * da + sgsa) / t; \
+        color_t b = (getb4rgb(*dst) * da + sbsa) / t; \
+        *dst = (t << 24) | (r << 16) | (g << 8) | b; \
     } while (0)
 
    /**
@@ -154,8 +153,8 @@ mcl {
             if (x < 0) w += x, x = 0;
             if (y < 0) h += y, y = 0; 
 
-            color_t *i = dataplus -> m_pbuffer + x + y * dataplus -> m_width, *j = 0;
-            color_t *i0 = i + h * dataplus -> m_width, *j0 = 0;
+            color_t *i = dataplus -> m_pbuffer + static_cast<long long>(y) * dataplus -> m_width + x, *j = 0;
+            color_t *i0 = static_cast<long long>(h) * dataplus -> m_width + i, *j0 = 0;
 
             color_t sa = color >> 24;
             if (0xff == sa) {
