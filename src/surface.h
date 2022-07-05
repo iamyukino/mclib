@@ -35,6 +35,7 @@
 # define MCL_SURFACE
 
 # include "mclfwd.h"
+# include "bufferproxy.h"
 
 namespace
 mcl {
@@ -94,19 +95,30 @@ mcl {
     class
     surface_t {
     public:
-        explicit   surface_t (void* = 0, bool b_srcalpha = false) noexcept;
-        explicit   surface_t (point2d_t size, bool b_srcalpha = false) noexcept;
+        explicit   surface_t (void* = 0, bool b_srcalpha = true) noexcept;
+        explicit   surface_t (point2d_t size, bool b_srcalpha = true) noexcept;
                   ~surface_t () noexcept;
 
-//                   surface_t (surface_t const& rhs, bool b_srcalpha = false) noexcept;
-//                   surface_t (surface_t&& rhs, bool b_srcalpha = false) noexcept; // TODO 
+                   surface_t (surface_t const& rhs) noexcept;
+                   surface_t (surface_t const& rhs, bool b_srcalpha) noexcept;
+                   surface_t (surface_t&& rhs) noexcept;
+                   surface_t (surface_t&& rhs, bool b_srcalpha) noexcept;
 
-//        surface_t& operator= (surface_t const& rhs) noexcept;
-//        surface_t& operator= (surface_t&& rhs) noexcept;
+        surface_t& operator= (surface_t const& rhs) noexcept;
+        surface_t& operator= (surface_t&& rhs) noexcept;
 
         operator   void*     () const noexcept;
         bool       operator! () const noexcept;
 
+        // draw one image onto another
+        rect_t     bilt      (surface_t& source, void* = 0, void* = 0, blend_t special_flags = 0) noexcept;
+        // draw one image onto another
+        rect_t     bilt      (surface_t& source, point2d_t dest, void* = 0, blend_t special_flags = 0) noexcept;
+        // draw one image onto another
+        rect_t     bilt      (surface_t& source, void*, rect_t area, blend_t special_flags = 0) noexcept;
+        // draw one image onto another
+        rect_t     bilt      (surface_t& source, point2d_t dest, rect_t area, blend_t special_flags = 0) noexcept;
+        
         // fill surface_t with a solid color
         rect_t     fill      (color_t color, void* = 0, blend_t special_flags = 0) noexcept;
         // fill surface_t with a solid color
@@ -136,7 +148,11 @@ mcl {
         color_t    set_at    (point2d_t pos, color_t color) noexcept;
         // get the additional flags used for the Surface. return true if srcalpha is set.
         bool       get_flags () const noexcept;
-        
+
+        // acquires a buffer object for the pixels of the surface_t.
+        inline bufferproxy_t get_buffer () noexcept{ return bufferproxy_t (this); }
+        // pixel buffer address
+        color_t*   _pixels_address () noexcept;
 
     private:
         void* m_dataplus_;

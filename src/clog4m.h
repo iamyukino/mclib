@@ -83,35 +83,35 @@ mcl {
         static type constexpr All{ 0 };       // opening all logs
           // For opening all logs
        
-        static type constexpr Int{ 1 };       // internal (buffered)
+        static type constexpr Int{ 1 };       // internal 
           // For mclib internal function, it is generally
           // used in the mclib functions. 
          
-        static type constexpr Trace{ 2 };     // trace (buffered)
+        static type constexpr Trace{ 2 };     // trace 
           // Designates finer-grained informational events
           // than the cll4m.Debug.
         
-        static type constexpr Debug{ 3 };     // debug (buffered)
+        static type constexpr Debug{ 3 };     // debug 
           // For function developers, it is generally used
           // in the function development stage to check
           // whether the function is normal for developers.
         
-        static type constexpr Info{ 4 };      // information (buffered)
+        static type constexpr Info{ 4 };      // information 
           // The internal beta version can output this log
           // to check whether the newly developed features
           // or bug fix are normal.
         
-        static type constexpr Warn{ 5 };      // warning (unbuffered)
+        static type constexpr Warn{ 5 };      // warning 
           // Logs above this level will be set to unbuffered.
           // Abnormal processes that will not affect the
           // system.
         
-        static type constexpr Error{ 6 };     // error (unbuffered) 
+        static type constexpr Error{ 6 };     // error 
           // Abnormal processes that will affect the system
           // can be self repaired without affecting the
           // stability of the system.
             
-        static type constexpr Fatal{ 7 };     // fatal error (unbuffered)
+        static type constexpr Fatal{ 7 };     // fatal error 
           // An irreversible error has occurred and the
           // system cannot work normally.
         

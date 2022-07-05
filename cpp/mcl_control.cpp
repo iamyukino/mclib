@@ -412,7 +412,7 @@ mcl {
             return 0;
         }
         instance = ::GetModuleHandleW (nullptr);
-        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, true);
+        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h });
         if (!cur_surface || !*cur_surface) {
             ml_[cll4m.Fatal] << "Failed to create surface." << std::endl;
             MCL_RELEASE_HDC_();

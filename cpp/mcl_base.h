@@ -101,13 +101,13 @@ namespace mcl
     * @function mcl_name <cpp/mcl_base.h>
     * @brief mclib version information
     */
-    constexpr char const*    mcl_version_number_a (){ return        "0.5.1";            }
-    constexpr wchar_t const* mcl_version_number ()  { return       L"0.5.1";            }
-    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.1-Debug.3464"; }
+    constexpr char const*    mcl_version_number_a (){ return        "0.5.2";            }
+    constexpr wchar_t const* mcl_version_number ()  { return       L"0.5.2";            }
+    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.2-Debug.3465"; }
     constexpr int            mcl_major_number ()    { return         0; }
     constexpr int            mcl_minor_number ()    { return           5; }
-    constexpr int            mcl_patch_number ()    { return             1; }
-    constexpr int            mcl_revision_number () { return                     3464; }
+    constexpr int            mcl_patch_number ()    { return             2; }
+    constexpr int            mcl_revision_number () { return                     3465; }
     
    /**
     * @class mcl_spinlock_t <cpp/mcl_base.h>
