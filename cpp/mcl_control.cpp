@@ -119,6 +119,8 @@ mcl {
         return ret ? 0ul : ::GetLastError ();
     } 
     
+    extern void mcl_do_atquit ();
+
    /**
     * @function mcl_window_info_t::OnClose <cpp/mcl_control.cpp>
     * @brief
@@ -136,6 +138,8 @@ mcl {
         if (::InterlockedCompareExchange (&bIsReady, 0, 1) == 0)
             return 0u;
 
+        mcl_do_atquit ();
+        
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_;
         if (bopen) {

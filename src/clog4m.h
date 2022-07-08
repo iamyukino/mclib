@@ -61,7 +61,6 @@ mcl {
     * 
     * @ingroup logger
     * @ingroup mclib
-    * @ingroup debug
     * 
     *  mcl::clog4m write a log entry to a log only if
     *  the event level set for the logger is greater
@@ -133,7 +132,6 @@ mcl {
     * 
     * @ingroup logger
     * @ingroup mclib
-    * @ingroup debug
     * 
     *  This is the class for the mclib api log output stream.
     *  It inherits from ostream, so any function provided in
@@ -201,7 +199,6 @@ mcl {
     *
     * @ingroup logger
     * @ingroup mclib
-    * @ingroup debug
     *
     *  This is an encapsulation class for clog4m_t.
     *  For more information, see the section of the manual

@@ -44,7 +44,7 @@ mcl {
     * @enum class mcl_dflags_t <src/display.h>
     * @brief Flags that controls which type of display you want.
     * 
-    * @ingroup display
+    * @ingroup images
     * @ingroup mclib
     */
     class

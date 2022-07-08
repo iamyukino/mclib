@@ -103,6 +103,7 @@ mcl {
     */
     class mcl_imagebuf_t {
     public:
+        explicit mcl_imagebuf_t () noexcept{}
         explicit mcl_imagebuf_t (point1d_t width, point1d_t height) noexcept;
                 ~mcl_imagebuf_t () noexcept;
         bool     init           () noexcept;
@@ -113,8 +114,8 @@ mcl {
         color_t*  m_pbuffer  = nullptr;
         HDC       m_hdc      = nullptr;
         HBITMAP   m_hbmp     = nullptr;
-        point1d_t m_width;
-        point1d_t m_height;
+        point1d_t m_width    = 0;
+        point1d_t m_height   = 0;
 
     public:
         typename mcl_simpletls_ns::mcl_spinlock_t::lock_t m_nrtlock = 0ul;

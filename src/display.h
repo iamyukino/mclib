@@ -259,6 +259,7 @@ mcl {
     * @endcode
     * @ingroup display
     * @ingroup py-style
+    * @ingroup mclib
     */
     class wmi_dict_t {  static wchar_t const* get_ (size_t it) noexcept;
     public: 

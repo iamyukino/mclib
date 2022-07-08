@@ -123,6 +123,26 @@ mcl {
     void* mcl_new_mcl_logbuf_t ();
     void mcl_del_mcl_logbuf_t (void**);
 
+    // Execute the registered function
+    void mcl_do_atquit () noexcept {
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock);
+        if (mcl_base_obj.atquit_table_size) {
+            mcl_base_obj.mcl_threadid_after_exit = ::GetCurrentThreadId ();
+            mcl_base_obj.mcl_clog4m_after_exit = mcl_new_mcl_logbuf_t ();
+
+            while (mcl_base_obj.atquit_registered) try{
+                mcl_base_obj.atquit_table[-- mcl_base_obj.atquit_registered] ();
+            } catch (...) {
+                clog4m[cll4m.Warn].putws (L"warning:  atquit: exception caught");
+            }
+            ::free (mcl_base_obj.atquit_table);
+            mcl_base_obj.atquit_table_size = 0;
+
+            mcl_base_obj.mcl_threadid_after_exit = 0;
+            mcl_del_mcl_logbuf_t (&mcl_base_obj.mcl_clog4m_after_exit);
+        }
+    }
+    
    /**
     * @function quit <src/mclib.h>
     * @brief Uninitialize all mclib modules
@@ -131,24 +151,7 @@ mcl {
     void
     quit () noexcept{
         // Execute the registered function
-        {
-          mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock);
-          if (mcl_base_obj.atquit_table_size) {
-              mcl_base_obj.mcl_threadid_after_exit = ::GetCurrentThreadId ();
-              mcl_base_obj.mcl_clog4m_after_exit = mcl_new_mcl_logbuf_t ();
-
-              while (mcl_base_obj.atquit_registered) try{
-                  mcl_base_obj.atquit_table[-- mcl_base_obj.atquit_registered] ();
-              } catch (...) {
-                  clog4m[cll4m.Warn].putws (L"warning:  atquit: exception caught");
-              }
-              ::free (mcl_base_obj.atquit_table);
-              mcl_base_obj.atquit_table_size = 0;
-
-              mcl_base_obj.mcl_threadid_after_exit = 0;
-              mcl_del_mcl_logbuf_t (&mcl_base_obj.mcl_clog4m_after_exit);
-          }
-        } 
+        mcl_do_atquit ();
         
         // Uninit all modules
         display.quit ();

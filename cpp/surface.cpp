@@ -217,12 +217,12 @@ mcl {
      */
     surface_t::
     surface_t (surface_t const& src) noexcept
-      : m_dataplus_ (src && src.m_dataplus_ ?
+      : m_dataplus_ (&src && src.m_dataplus_ ?
           new(std::nothrow) mcl_imagebuf_t(
               static_cast<mcl_imagebuf_t*>(src.m_dataplus_) -> m_width,
               static_cast<mcl_imagebuf_t*>(src.m_dataplus_) -> m_height
           ) : 0
-      ), m_data_{ src && src.m_data_[0] } {
+      ), m_data_{ &src && src.m_data_[0] } {
         if (!m_dataplus_) return ;
         mcl_imagebuf_t& dsrc = *static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
         mcl_imagebuf_t& ddst = *static_cast<mcl_imagebuf_t*>(m_dataplus_);
@@ -283,8 +283,9 @@ mcl {
      */
     surface_t::~surface_t() noexcept {
         if (m_dataplus_) {
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
+            mcl_imagebuf_t* p = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
             m_dataplus_ = nullptr;
+            delete p;
         }
     }
     
@@ -309,7 +310,7 @@ mcl {
             mcl_imagebuf_t(dsrc -> m_width, dsrc -> m_height);
         if (!m_dataplus_) return *this;
 
-        mcl_imagebuf_t* ddst = static_cast<mcl_imagebuf_t*>(m_dataplus_);        
+        mcl_imagebuf_t* ddst = static_cast<mcl_imagebuf_t*>(m_dataplus_); 
         mcl_simpletls_ns::mcl_spinlock_t lk (ddst -> m_nrtlock);
         if (!ddst -> m_width) {
             delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
@@ -1229,7 +1230,7 @@ mcl {
         // start bilting
         color_t *si = src -> m_pbuffer, *sj = 0;
         color_t *di = dst -> m_pbuffer, *dj = 0;
-        color_t *di0 = di + h * dst -> m_width, *dj0 = 0;
+        color_t *di0 = di + static_cast<size_t>(h) * dst -> m_width, *dj0 = 0;
 
         for (; di != di0; si += src -> m_width, di += dst -> m_width)
             for (sj = si, dj = di, dj0 = di + w; dj != dj0; ++ sj, ++ dj)
@@ -1273,9 +1274,9 @@ mcl {
         if (h <= 0) return { dest.x, dest.y, 0, 0 };
         
         // start bilting
-        color_t *si = src -> m_pbuffer + sy * src -> m_width + sx, *sj = 0;
-        color_t *di = dst -> m_pbuffer + dy * dst -> m_width + dx, *dj = 0;
-        color_t *di0 = di + h * dst -> m_width, *dj0 = 0;
+        color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
+        color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;
+        color_t *di0 = di + static_cast<size_t>(h) * dst -> m_width, *dj0 = 0;
 
         for (; di != di0; si += src -> m_width, di += dst -> m_width)
             for (sj = si, dj = di, dj0 = di + w; dj != dj0; ++ sj, ++ dj)
@@ -1320,9 +1321,9 @@ mcl {
         if (w <= 0 || h <= 0) return { 0, 0, 0, 0 };
         
         // start bilting
-        color_t *si = src -> m_pbuffer + sy * src -> m_width + sx, *sj = 0;
-        color_t *di = dst -> m_pbuffer + dy * dst -> m_width + dx, *dj = 0;
-        color_t *di0 = di + h * dst -> m_width, *dj0 = 0;
+        color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
+        color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;
+        color_t *di0 = di + static_cast<size_t>(h) * dst -> m_width, *dj0 = 0;
 
         for (; di != di0; si += src -> m_width, di += dst -> m_width)
             for (sj = si, dj = di, dj0 = di + w; dj != dj0; ++ sj, ++ dj)
@@ -1375,9 +1376,9 @@ mcl {
         if (w <= 0 || h <= 0) return { dest.x, dest.y, 0, 0 };
         
         // start bilting
-        color_t *si = src -> m_pbuffer + sy * src -> m_width + sx, *sj = 0;
-        color_t *di = dst -> m_pbuffer + dy * dst -> m_width + dx, *dj = 0;
-        color_t *di0 = di + h * dst -> m_width, *dj0 = 0;
+        color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
+        color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;
+        color_t *di0 = di + static_cast<size_t>(h) * dst -> m_width, *dj0 = 0;
 
         for (; di != di0; si += src -> m_width, di += dst -> m_width)
             for (sj = si, dj = di, dj0 = di + w; dj != dj0; ++ sj, ++ dj)

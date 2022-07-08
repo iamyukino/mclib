@@ -34,7 +34,7 @@
 #ifndef MCL_DRAW
 # define MCL_DRAW
 
-# include "colors.h"
+# include "mclfwd.h"
 
 namespace
 mcl {

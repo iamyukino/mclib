@@ -3,10 +3,11 @@
 Release notes for Mclib
 --------------------------------
   |
-.3464-65  June 12th 2022
+.3464-66  June 12th 2022
   |  
   |  [  ADDED   ]    Finished surface_t .
   |  [   NEW    ]    Add bufferproxy_t .
+  |  [  ADDED   ]    Add image.h .
   |
   |
   |

@@ -94,6 +94,9 @@ mcl {
     // class for exporting a surface buffer through an array protocol.  see bufferproxy.h
     class bufferproxy_t;
 
+    // module for image transfer.  see image.h
+    class mcl_image_t;
+
     // module for drawing shapes.  see draw.h
     class mcl_draw_t;
     

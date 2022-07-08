@@ -62,22 +62,27 @@
 //  This header is for color models.
 #   include "colors.h"
 
-//  This header is for representing any image.
-#   include "surface.h"
-
 //  This header is for mclib standard graphics control.
 #   include "display.h"
 
 //  This header is for drawing shapes.
 #   include "draw.h"
 
+//  This header is for image transfer.
+#   include "image.h"
+
 //  This header is for loading and playing sounds.
+//  inline include music.h
 #   include "mixer.h"
+
+//  This header is for representing any image.
+//  inline include bufferproxy.h
+#   include "surface.h"
 
 //  This header is for monitoring time.
 #   include "timer.h"
 
-//  This header is for mclib standard log output stream.
+//  This header is for data types in python.
 #   include "pyobj.h"
 // @}
 
