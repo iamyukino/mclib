@@ -105,11 +105,13 @@ int main()
         auto r2 = surface.fill(rgba(255, 181, 181, .5f), { 80, 150, 300, 150 }, bl);
 
         // test surface.bilt
+        surface_t su_c = display.get_surface();
         surface.bilt(bki, { 300, 5 }, 0, blend.Copy);
         surface.bilt(s4buf, { 20, 10 });
-        display.get_surface().bilt(surface, 0, 0, blend.Copy);
-        display.get_surface().fill(rgba(255, 255, 255, .4f), 0, blend.Ovl_rgba);
-        display.get_surface().bilt(surface, { point.x - 150, point.y - 75 }, { point.x - 150, point.y - 75, 300, 150 }, blend.Copy);
+        su_c.bilt(surface, 0, 0, blend.Copy);
+        su_c.fill(rgba(255, 255, 255, .4f), 0, blend.Ovl_rgba);
+        su_c.bilt(surface, { point.x - 150, point.y - 75 }, { point.x - 150, point.y - 75, 300, 150 }, blend.Copy);
+        display.get_surface().bilt(su_c);
         
         // test display.update
         display.update({ r0 });

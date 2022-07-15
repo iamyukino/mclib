@@ -146,8 +146,10 @@ mcl {
         }            
 
         // Create a surface
-        surface_t surface({qbmp.bmWidth, qbmp.bmHeight});
-        if (!surface) {
+        surface_t surf{};
+        mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(reinterpret_cast<void*>(&surf));
+        ibuf = new (std::nothrow) mcl_imagebuf_t{ qbmp.bmWidth, qbmp.bmHeight };
+        if (!surf) {
             ::SelectObject (hldc, hbmpold);
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
@@ -155,8 +157,7 @@ mcl {
         }
         
         // Blit the dc
-        char* cbuf = mcl_get_surface_data (&surface);
-        mcl_imagebuf_t* ibuf = mcl_get_surface_dataplus (&surface);
+        char* cbuf = mcl_get_surface_data (&surf);
         BOOL retbilt = ::BitBlt (ibuf -> m_hdc, 0, 0,
             qbmp.bmWidth, qbmp.bmHeight, hldc, 0, 0, SRCCOPY);
         
@@ -175,7 +176,7 @@ mcl {
                 *p |= 0xff000000;
             }
         }
-        return surface;
+        return surf;
     }
 
     /**

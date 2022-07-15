@@ -224,20 +224,20 @@ mcl {
           ) : 0
       ), m_data_{ &src && src.m_data_[0] } {
         if (!m_dataplus_) return ;
-        mcl_imagebuf_t& dsrc = *static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
-        mcl_imagebuf_t& ddst = *static_cast<mcl_imagebuf_t*>(m_dataplus_);
-        if (!dsrc.m_width) {
+        mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
+        mcl_imagebuf_t* ddst = static_cast<mcl_imagebuf_t*>(m_dataplus_);
+        if (!(dsrc && dsrc -> m_width)) {
             static_cast<mcl_imagebuf_t*>(m_dataplus_)
                 -> cleardevice (black);
             return;
         }
-        if (!ddst.m_width) {
+        if (!(ddst && ddst -> m_width)) {
             delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
             m_dataplus_ = nullptr;
             return ;
         }
-        ::BitBlt (ddst.m_hdc, 0, 0, ddst.m_width, ddst.m_height,
-            dsrc.m_hdc, 0, 0, SRCCOPY);
+        ::BitBlt (ddst -> m_hdc, 0, 0, ddst -> m_width, ddst -> m_height,
+            dsrc -> m_hdc, 0, 0, SRCCOPY);
     }
 
     /**
