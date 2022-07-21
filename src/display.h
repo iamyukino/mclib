@@ -83,6 +83,8 @@ mcl {
         static type constexpr NoFrame       = 0x20;
         // Display window will disable minimizing
         static type constexpr NoMinimizeBox = 0x40;
+        // Display window will be double buffered
+        static type constexpr DoubleBuf     = 0x80;
     
     };
     using dflags_t = mcl_dflags_t::type; // Display flags type for mcl::display.init() 
@@ -205,6 +207,8 @@ mcl {
         wmi_dict_t        get_wm_info   () const noexcept;     
         // Get size of desktop 
         point2d_t         get_desktop_size () const noexcept;
+        // Get rect of desktop 
+        rect_t            get_desktop_rect () const noexcept;
 
         // Returns true when the display is active on the screen and may be visible to the user
         bool              get_active    () const noexcept;
@@ -226,6 +230,8 @@ mcl {
         mcl_display_t&    set_caption   (wchar_t const* caption = nullptr) noexcept;
         // Get the current window caption
         wchar_t const*    get_caption   () const noexcept;
+        // Change the system image for the display window
+        mcl_display_t&    set_icon      (surface_t const& icon) noexcept;
         // Set WS_EX_LAYERED on this window.
         mcl_display_t&    set_window_alpha (double f_alpha = 0.) noexcept; 
     
@@ -235,6 +241,8 @@ mcl {
         point2d_t         get_window_pos () const noexcept;
         // Return the size of the window or screen
         point2d_t         get_window_size () const noexcept;
+        // Return the position and size of the window or screen
+        rect_t            get_window_rect () const noexcept;
 
         // Set whether the screensaver may run
         bool              set_allow_screensaver (bool b_allow = true) noexcept; 

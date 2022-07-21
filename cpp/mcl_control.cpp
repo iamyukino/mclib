@@ -138,7 +138,9 @@ mcl {
         if (::InterlockedCompareExchange (&bIsReady, 0, 1) == 0)
             return 0u;
 
+        bAtQuitInClose = true;
         mcl_do_atquit ();
+        bAtQuitInClose = false;
         
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_;
@@ -172,9 +174,17 @@ mcl {
             bErrorCode = true;
         }
         // if (bopen) ml_ << L"  Reseting..." << std::endl;
+        if (dbuf_surface) {
+            delete dbuf_surface;
+            dbuf_surface = nullptr;
+        }
         if (cur_surface) {
             delete cur_surface;
             cur_surface = nullptr;
+        }
+        if (hicon) {
+            ::DestroyIcon (hicon);
+            hicon = nullptr;
         }
 
         // window properties           // positions
@@ -248,6 +258,12 @@ mcl {
             }
         } else
             this -> b_maximize = false;
+
+        // resize
+        if (dbuf_surface)
+            dbuf_surface -> resize ({this -> dc_w, this -> dc_h}, false);
+        cur_surface -> resize ({this -> dc_w, this -> dc_h}, false);
+        
         return 0;
     }
 
@@ -424,6 +440,10 @@ mcl {
             MCL_UNREGISTERING_WINDOW_();
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_();
             return 0;
+        }
+        if (flags & dflags.DoubleBuf) {
+        // surface for double buffer
+            dbuf_surface = new(std::nothrow) surface_t({ dc_w, dc_h });
         }
 
         if (b_allow_screensaver_before == 2)

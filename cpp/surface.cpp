@@ -80,6 +80,38 @@ mcl {
 #endif
 
     /**
+     * @function mcl_createbmp <cpp/surface.cpp>
+     * @brief Create a new bitmap.
+     * @return HBITMAP
+     */
+    static HBITMAP
+    mcl_createbmp (point1d_t m_width, point1d_t m_height, PDWORD* m_pbuffer) {
+        HBITMAP m_hbmp = nullptr;
+        BITMAPINFO bmi = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {{0, 0, 0, 0}} };
+        
+        bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
+        bmi.bmiHeader.biWidth = m_width;
+        bmi.bmiHeader.biHeight = -1 - m_height;
+        bmi.bmiHeader.biPlanes = 1;
+        bmi.bmiHeader.biBitCount = 32;
+        bmi.bmiHeader.biSizeImage = m_width * m_height * 4u;
+
+        m_hbmp = ::CreateDIBSection (
+            nullptr, &bmi,
+            DIB_RGB_COLORS,
+            reinterpret_cast<void**>(m_pbuffer),
+            nullptr, 0u
+        );
+        return m_hbmp;
+    }
+
+    static void
+    mcl_release_imgbuf (mcl_imagebuf_t* imgbuf) {
+        ::DeleteDC (imgbuf -> m_hdc);
+        ::DeleteObject (imgbuf -> m_hbmp);
+    }
+    
+    /**
      * @function mcl_imagebuf_t::init <src/surface.cpp>
      * @brief initialize buffer for surface.
      * @return bool
@@ -102,20 +134,7 @@ mcl {
         }
         
         // create a new bitmap
-        BITMAPINFO bmi = { {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, {{0, 0, 0, 0}} };
-        bmi.bmiHeader.biSize = sizeof(bmi.bmiHeader);
-        bmi.bmiHeader.biWidth = m_width;
-        bmi.bmiHeader.biHeight = -1 - m_height;
-        bmi.bmiHeader.biPlanes = 1;
-        bmi.bmiHeader.biBitCount = 32;
-        bmi.bmiHeader.biSizeImage = m_width * m_height * 4u;
-
-        m_hbmp = ::CreateDIBSection (
-            nullptr, &bmi,
-            DIB_RGB_COLORS,
-            reinterpret_cast<void**>(&m_pbuffer),
-            nullptr, 0u
-        );
+        m_hbmp = mcl_createbmp (m_width, m_height, &m_pbuffer);
         if (!m_hbmp) {
             clog4m[cll4m.Warn] << L"surface.init()\n"
                 L"    warning:  CreateDIBSection Failed. [-Wsurface-winapi-"
@@ -126,10 +145,7 @@ mcl {
         ::SelectObject (m_hdc, m_hbmp);
         
         // init the bitmap
-        if (!::SetBkMode (m_hdc, TRANSPARENT))
-            clog4m[cll4m.Info] << L"surface.init()\n"
-                L"    warning:  SetBkMode Failed. [-Wsurface-winapi-"
-            << ::GetLastError () << L"]\n";
+        ::SetBkMode (m_hdc, TRANSPARENT);
 
         return true;
     }
@@ -139,22 +155,7 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lk(m_nrtlock);
         if (m_width) {
             m_width = 0;
-            ::DeleteDC (m_hdc);
-            ::DeleteObject (m_hbmp);
-        }
-    }
-
-    /**
-     * @function mcl_imagebuf_t::cleardevice <src/surface.cpp>
-     * @brief fill buffer with bkcolor.
-     * @return none
-     */
-    void mcl_imagebuf_t::
-    cleardevice (color_t c) noexcept {
-        for (color_t* p = m_pbuffer,
-            *e = m_pbuffer + static_cast<long long>(m_width) * m_height;
-            p != e; ++p) {
-                *p = c;
+            mcl_release_imgbuf (this);
         }
     }
 
@@ -174,7 +175,7 @@ mcl {
      * @return none
      */
     mcl_imagebuf_t::~mcl_imagebuf_t() noexcept {
-        if (m_width) this -> uninit ();
+        this -> uninit ();
     }
 
     /**
@@ -201,13 +202,14 @@ mcl {
       : m_dataplus_ (new(std::nothrow) mcl_imagebuf_t(size.x, size.y)),
         m_data_{ b_srcalpha } {
         if (!m_dataplus_) return ;
-        if (!static_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width) {
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
+        mcl_imagebuf_t* dataplus = static_cast<mcl_imagebuf_t*>(m_dataplus_);
+        if (!dataplus -> m_width) {
+            delete dataplus;
             m_dataplus_ = nullptr;
             return ;
         }
-        static_cast<mcl_imagebuf_t*>(m_dataplus_)
-            -> cleardevice (black);
+        ::memset (dataplus -> m_pbuffer, 0, static_cast<size_t>
+            (dataplus -> m_width) * dataplus -> m_height * 4u);
     }
 
     /**
@@ -217,22 +219,20 @@ mcl {
      */
     surface_t::
     surface_t (surface_t const& src) noexcept
-      : m_dataplus_ (&src && src.m_dataplus_ ?
-          new(std::nothrow) mcl_imagebuf_t(
-              static_cast<mcl_imagebuf_t*>(src.m_dataplus_) -> m_width,
-              static_cast<mcl_imagebuf_t*>(src.m_dataplus_) -> m_height
-          ) : 0
-      ), m_data_{ &src && src.m_data_[0] } {
-        if (!m_dataplus_) return ;
+      : m_dataplus_ (0), m_data_{ &src && src.m_data_[0] } {
+        if (!(&src && src.m_dataplus_)) return ;
         mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
+
+        mcl_simpletls_ns::mcl_spinlock_t lk(dsrc -> m_nrtlock);
+        if (!dsrc -> m_width) return ;
+
+        m_dataplus_ = new(std::nothrow)
+            mcl_imagebuf_t(dsrc -> m_width, dsrc -> m_height);
+        if (!m_dataplus_) return ;
+        
         mcl_imagebuf_t* ddst = static_cast<mcl_imagebuf_t*>(m_dataplus_);
-        if (!(dsrc && dsrc -> m_width)) {
-            static_cast<mcl_imagebuf_t*>(m_dataplus_)
-                -> cleardevice (black);
-            return;
-        }
-        if (!(ddst && ddst -> m_width)) {
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
+        if (!ddst -> m_width) {
+            delete ddst;
             m_dataplus_ = nullptr;
             return ;
         }
@@ -302,24 +302,41 @@ mcl {
         if (m_dataplus_ == rhs.m_dataplus_ || !rhs.m_dataplus_)
             return *this;
         
-        if (m_dataplus_)
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
-        
-        mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(rhs.m_dataplus_);
-        m_dataplus_ = new(std::nothrow)
-            mcl_imagebuf_t(dsrc -> m_width, dsrc -> m_height);
-        if (!m_dataplus_) return *this;
+        if (m_dataplus_) {
+            mcl_imagebuf_t* old_dp = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
+            mcl_simpletls_ns::mcl_spinlock_t lk(old_dp -> m_nrtlock);
+            
+            mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(rhs.m_dataplus_);
+            mcl_imagebuf_t new_dp(dsrc -> m_width, dsrc -> m_height);
+            if (!new_dp.m_width) return *this;
+            
+            // release old surface
+            if (old_dp -> m_width) mcl_release_imgbuf (old_dp);
+            
+            // copy new surface
+            ::BitBlt (new_dp.m_hdc, 0, 0, new_dp.m_width, new_dp.m_height,
+            dsrc -> m_hdc, 0, 0, SRCCOPY);
+            
+            old_dp -> m_pbuffer = new_dp.m_pbuffer;
+            old_dp -> m_hbmp    = new_dp.m_hbmp;
+            old_dp -> m_hdc     = new_dp.m_hdc;
+            old_dp -> m_height  = new_dp.m_height;
+            old_dp -> m_width   = new_dp.m_width;
 
-        mcl_imagebuf_t* ddst = static_cast<mcl_imagebuf_t*>(m_dataplus_); 
-        mcl_simpletls_ns::mcl_spinlock_t lk (ddst -> m_nrtlock);
-        if (!ddst -> m_width) {
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
-            m_dataplus_ = nullptr;
+            // temp imgbuf should not call destructor.
+            new_dp.m_width = 0;
             return *this;
         }
-
-        ::BitBlt (ddst -> m_hdc, 0, 0, ddst -> m_width, ddst -> m_height,
+        // quit or never created. same as copy constructor
+        // no lock is needed.
+        mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(rhs.m_dataplus_);
+        mcl_imagebuf_t* new_dp = new (std::nothrow)
+            mcl_imagebuf_t (dsrc -> m_width, dsrc -> m_height);
+        if (!(new_dp && new_dp -> m_width)) return *this;
+        
+        ::BitBlt (new_dp -> m_hdc, 0, 0, new_dp -> m_width, new_dp -> m_height,
             dsrc -> m_hdc, 0, 0, SRCCOPY);
+        m_dataplus_ = new_dp;
         return *this;
     }
     
@@ -336,11 +353,11 @@ mcl {
         if (m_dataplus_ == rhs.m_dataplus_ || !rhs.m_dataplus_)
             return *this;
         
-        if (m_dataplus_)
-            delete static_cast<mcl_imagebuf_t*>(m_dataplus_);
-        
+        mcl_imagebuf_t* cpy_dp = static_cast<mcl_imagebuf_t*>(m_dataplus_);
         m_dataplus_ = rhs.m_dataplus_;
         rhs.m_dataplus_ = nullptr;
+        
+        if (cpy_dp) delete cpy_dp;
         return *this;
     }
 
@@ -514,6 +531,82 @@ mcl {
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_pbuffer
             : nullptr;
     }
+
+    /**
+     * @function surface_t::resize <src/surface.h>
+     * @brief Resize the surface
+     * @param size
+     * @param b_keep
+     * @return point2d_t
+     */
+    point2d_t surface_t::
+    resize (point2d_t size, bool b_fast) noexcept {
+        if (!this) return { 0, 0 };
+        if (size.x <= 0) size.x = 1;
+        if (size.y <= 0) size.y = 1;
+
+        mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
+        if (!dataplus) {
+        // display surface quit or never created
+        // create a new surface
+            m_dataplus_ = dataplus = new(std::nothrow) mcl_imagebuf_t(size.x, size.y);
+            if (!dataplus) return { 0, 0 };
+            if (!dataplus -> m_width) {
+                delete dataplus;
+                m_dataplus_ = nullptr;
+                return { 0, 0 };
+            }
+            if (!b_fast)
+                ::memset (dataplus -> m_pbuffer, 0, static_cast<size_t>
+                    (dataplus -> m_width) * dataplus -> m_height * 4u);
+            return size;
+        }
+        
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        if (size.x == dataplus -> m_width && size.y == dataplus -> m_height || !size.x)
+            return { 0, 0 }; // no change
+        
+        if (b_fast) {
+        // just resize the buffer
+            PDWORD  bmp_buf = nullptr;
+            HBITMAP bmp     = mcl_createbmp (size.x, size.y, &bmp_buf);
+            if (!bmp) return { 0, 0 };
+
+            HBITMAP old_bmp = reinterpret_cast<HBITMAP>(
+                ::SelectObject(dataplus -> m_hdc, bmp));
+            ::DeleteObject (old_bmp);
+            
+            dataplus -> m_pbuffer = bmp_buf;
+            dataplus -> m_hbmp    = bmp;
+            dataplus -> m_height  = size.y;
+            dataplus -> m_width   = size.x;
+            
+            return size; // no change
+        }
+
+        // keep the old content
+        surface_t surf (size, static_cast<bool>(m_data_[0]));
+        if (!surf) return { 0, 0 };
+        mcl_imagebuf_t* surf_dataplus = reinterpret_cast<mcl_imagebuf_t*>(surf.m_dataplus_);
+        surf.bilt (*this);
+
+        // delete the old surface
+        if (dataplus -> m_width) mcl_release_imgbuf (dataplus);
+        
+        dataplus -> m_hbmp    = surf_dataplus -> m_hbmp;
+        dataplus -> m_pbuffer = surf_dataplus -> m_pbuffer;
+        dataplus -> m_hdc     = surf_dataplus -> m_hdc;
+        dataplus -> m_height  = surf_dataplus -> m_height;
+        dataplus -> m_width   = surf_dataplus -> m_width;
+        
+        // delete the tmp surface without destructor
+        surf_dataplus -> m_width = 0; 
+		delete surf_dataplus;
+        surf.m_dataplus_ = nullptr;
+        
+        return this -> get_size ();
+    }
+    
 
     /**
      * @function mcl_switch_blend_fun_fill <src/surface.cpp>
@@ -913,7 +1006,7 @@ mcl {
      */
     static bool mcl_switch_blend_fun_bilt(
         std::function<void(color_t&, color_t)>& blend_fun,
-        blend_t special_flags, char* m_data_, char* m_data_src
+        blend_t special_flags, char* m_data_, char const* m_data_src
     ) {
         if (!m_data_src[0]) {
             // the alpha is ignored unless the source surface uses per pixel alpha
@@ -938,8 +1031,9 @@ mcl {
                 MCL_FALLTHROUGH_CXX17
             }
             case mcl_blend_t::Copy_rgba: {
-                blend_fun = [](color_t& dst, color_t src) { dst = src; };
-                break;
+                return true;
+                // blend_fun = [](color_t& dst, color_t src) { dst = src; };
+                // break;
             }
             // darken
             case mcl_blend_t::Min_rgb: {
@@ -1210,7 +1304,7 @@ mcl {
      * @return rect_t
      */
     rect_t surface_t::
-    bilt (surface_t& source, void*, void*, blend_t special_flags) noexcept{
+    bilt (surface_t const& source, void*, void*, blend_t special_flags) noexcept{
         if (!this || !&source) return { 0, 0, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
@@ -1218,15 +1312,21 @@ mcl {
         
         // blend flags
         std::function<void(color_t& dst, color_t src)> blend_fun;
-        if (mcl_switch_blend_fun_bilt (blend_fun, special_flags, m_data_, source.m_data_))
+        bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
+        
+        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
             return { 0, 0, 0, 0 };
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);       
         point1d_t w = src -> m_width, h = src -> m_height;
         if (w > dst -> m_width)  w = dst -> m_width;
         if (h > dst -> m_height) h = dst -> m_height;
-        if (!w) return { 0, 0, 0, 0 };
         
+        if (ret) {
+        // only bilt
+            ::BitBlt (dst -> m_hdc, 0, 0, w, h, src -> m_hdc, 0, 0, SRCCOPY);
+            return { 0, 0, w, h };
+        }
         // start bilting
         color_t *si = src -> m_pbuffer, *sj = 0;
         color_t *di = dst -> m_pbuffer, *dj = 0;
@@ -1248,7 +1348,7 @@ mcl {
      * @return rect_t
      */
     rect_t surface_t::
-    bilt (surface_t& source, point2d_t dest, void*, blend_t special_flags) noexcept{
+    bilt (surface_t const& source, point2d_t dest, void*, blend_t special_flags) noexcept{
         if (!this || !&source) return { dest.x, dest.y, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
@@ -1256,10 +1356,11 @@ mcl {
         
         // blend flags
         std::function<void(color_t& dst, color_t src)> blend_fun;
-        if (mcl_switch_blend_fun_bilt (blend_fun, special_flags, m_data_, source.m_data_))
-            return { dest.x, dest.y, 0, 0 };
+        bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
         
         mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
+            return { dest.x, dest.y, 0, 0 };
         
         point1d_t sx = 0, sy = 0, dx = dest.x, dy = dest.y;
         if (dx > dst -> m_width || dy > dst -> m_height)
@@ -1267,12 +1368,16 @@ mcl {
         if (dx < 0) { sx -= dx; dx = 0; }
         if (dy < 0) { sy -= dy; dy = 0; }
         
-        point1d_t w = src -> m_width - sx, h = src -> m_height - sy;
-        if (w > dst -> m_width - dx)  w = dst -> m_width - dx;
-        if (w <= 0) return { dest.x, dest.y, 0, 0 };
-        if (h > dst -> m_height - dy) h = dst -> m_height - dy;
-        if (h <= 0) return { dest.x, dest.y, 0, 0 };
+        point1d_t w  = src -> m_width - sx, h  = src -> m_height - sy;
+        point1d_t dw = dst -> m_width - dx, dh = dst -> m_height - dy;
+        w = (w > dw ? dw : w); h = (h > dh ? dh : h);
+        if (w <= 0 || h <= 0) return { dest.x, dest.y, 0, 0 };
         
+        if (ret) {
+        // only bilt
+            ::BitBlt (dst -> m_hdc, dx, dy, w, h, src -> m_hdc, sx, sy, SRCCOPY);
+            return { dx, dy, w, h };
+        }
         // start bilting
         color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
         color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;
@@ -1293,7 +1398,7 @@ mcl {
      * @return rect_t
      */
     rect_t surface_t::
-    bilt (surface_t& source, void*, rect_t area, blend_t special_flags) noexcept{
+    bilt (surface_t const& source, void*, rect_t area, blend_t special_flags) noexcept{
         if (!this || !&source) return { 0, 0, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
@@ -1301,8 +1406,7 @@ mcl {
         
         // blend flags
         std::function<void(color_t& dst, color_t src)> blend_fun;
-        if (mcl_switch_blend_fun_bilt (blend_fun, special_flags, m_data_, source.m_data_))
-            return { 0, 0, 0, 0 };
+        bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
 
         // rect
         point1d_t sx = area.x, sy = area.y, w = area.w, h = area.h, dx = 0, dy = 0;
@@ -1311,15 +1415,22 @@ mcl {
         if (h < 0) { sy += h; h = -h; }
         if (sx < 0) { dx -= sx; w += sx; sx = 0; }
         if (sy < 0) { dy -= sy; h += sy; sy = 0; }
-        if (sx + w > src -> m_width)  w = src -> m_width - sx;
-        if (sy + h > src -> m_height) h = src -> m_height - sy;
+        point1d_t tw = src -> m_width - sx, th = src -> m_height - sy;
+        w = (w > tw ? tw : w); h = (h > th ? th : h);
         
         mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock); 
+        if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
+            return { 0, 0, 0, 0 };
         
-        if (w > dst -> m_width - dx)  w = dst -> m_width - dx;
-        if (h > dst -> m_height - dy) h = dst -> m_height - dy;
+        tw = dst -> m_width - dx, th = dst -> m_height - dy;
+        w = (w > tw ? tw : w); h = (h > th ? th : h);
         if (w <= 0 || h <= 0) return { 0, 0, 0, 0 };
         
+        if (ret) {
+        // only bilt
+            ::BitBlt (dst -> m_hdc, dx, dy, w, h, src -> m_hdc, sx, sy, SRCCOPY);
+            return { 0, 0, w, h };
+        }
         // start bilting
         color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
         color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;
@@ -1342,7 +1453,7 @@ mcl {
      * @return rect_t
      */
     rect_t surface_t::
-    bilt (surface_t& source, point2d_t dest, rect_t area, blend_t special_flags) noexcept{
+    bilt (surface_t const& source, point2d_t dest, rect_t area, blend_t special_flags) noexcept{
         if (!this || !&source) return { dest.x, dest.y, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
@@ -1350,8 +1461,7 @@ mcl {
         
         // blend flags
         std::function<void(color_t& dst, color_t src)> blend_fun;
-        if (mcl_switch_blend_fun_bilt (blend_fun, special_flags, m_data_, source.m_data_))
-            return { dest.x, dest.y, 0, 0 };
+        bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
 
         // rect
         point1d_t sx = area.x, sy = area.y, w = area.w, h = area.h, dx = 0, dy = 0;
@@ -1360,10 +1470,12 @@ mcl {
         if (h < 0) { sy += h; h = -h; }
         if (sx < 0) { dx -= sx; w += sx; sx = 0; }
         if (sy < 0) { dy -= sy; h += sy; sy = 0; }
-        if (sx + w > src -> m_width)  w = src -> m_width - sx;
-        if (sy + h > src -> m_height) h = src -> m_height - sy;
+        point1d_t tw = src -> m_width - sx, th = src -> m_height - sy;
+        w = (w > tw ? tw : w); h = (h > th ? th : h);
         
         mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
+            return { dest.x, dest.y, 0, 0 };
         
         dx += dest.x, dy += dest.y;
         if (dx > dst -> m_width || dy > dst -> m_height)
@@ -1371,10 +1483,15 @@ mcl {
         if (dx < 0) { sx -= dx; dx = 0; }
         if (dy < 0) { sy -= dy; dy = 0; }
         
-        if (w > dst -> m_width - dx)  w = dst -> m_width - dx;
-        if (h > dst -> m_height - dy) h = dst -> m_height - dy;
+        tw = dst -> m_width - dx, th = dst -> m_height - dy;
+        w = (w > tw ? tw : w); h = (h > th ? th : h);
         if (w <= 0 || h <= 0) return { dest.x, dest.y, 0, 0 };
         
+        if (ret) {
+        // only bilt
+            ::BitBlt (dst -> m_hdc, dx, dy, w, h, src -> m_hdc, sx, sy, SRCCOPY);
+            return { dx, dy, w, h };
+        }
         // start bilting
         color_t *si = src -> m_pbuffer + static_cast<size_t>(sy) * src -> m_width + sx, *sj = 0;
         color_t *di = dst -> m_pbuffer + static_cast<size_t>(dy) * dst -> m_width + dx, *dj = 0;

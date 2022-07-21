@@ -57,11 +57,11 @@ mcl {
         LRESULT OnPaint     (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:   // window properties
-        HDC       dc        = nullptr;
-        HINSTANCE instance  = nullptr;
-        HWND      hwnd      = nullptr;
+        HDC       dc         = nullptr;
+        HINSTANCE instance   = nullptr;
+        HWND      hwnd       = nullptr;
         HANDLE    taskhandle = nullptr;    // thread handle
-        HICON     window_hicon = nullptr;
+        HICON     hicon      = nullptr;
         LONGLONG  timer      = 0ll;
         unsigned  threaddr   = 0u;         // thread id
         wchar_t   window_caption[_MAX_FNAME];
@@ -81,13 +81,15 @@ mcl {
 
     public:   // state quantities
         bool      bErrorCode = false;      // successful flag
-        char : 8;
+        bool      bCtrlMsgLoop = false;    // whether msg loop is taken over
         unsigned  bIsReady = 0ul;          // whether message loop starts
         unsigned  bIsExit  = 0ul;
-        char : 8; char : 8; char : 8; char : 8;
+        bool      bAtQuitInClose = false;
+        char : 8; char : 8; char : 8;
     
     public:   // surface
-        surface_t* cur_surface = nullptr;
+        surface_t* cur_surface = nullptr;  // current surface
+        surface_t* dbuf_surface = nullptr; // surface for double buffer
     };
     
     extern mcl_window_info_t mcl_control_obj;
@@ -108,7 +110,6 @@ mcl {
                 ~mcl_imagebuf_t () noexcept;
         bool     init           () noexcept;
         void     uninit         () noexcept;
-        void     cleardevice    (color_t c) noexcept;
 
     public:
         color_t*  m_pbuffer  = nullptr;

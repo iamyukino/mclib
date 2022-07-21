@@ -111,14 +111,20 @@ mcl {
         bool       operator! () const noexcept;
 
         // draw one image onto another
-        rect_t     bilt      (surface_t& source, void* = 0, void* = 0, blend_t special_flags = 0) noexcept;
+        rect_t     bilt      (surface_t const& source, void* = 0, void* = 0, blend_t special_flags = 0) noexcept;
         // draw one image onto another
-        rect_t     bilt      (surface_t& source, point2d_t dest, void* = 0, blend_t special_flags = 0) noexcept;
+        rect_t     bilt      (surface_t const& source, point2d_t dest, void* = 0, blend_t special_flags = 0) noexcept;
         // draw one image onto another
-        rect_t     bilt      (surface_t& source, void*, rect_t area, blend_t special_flags = 0) noexcept;
+        rect_t     bilt      (surface_t const& source, void*, rect_t area, blend_t special_flags = 0) noexcept;
         // draw one image onto another
-        rect_t     bilt      (surface_t& source, point2d_t dest, rect_t area, blend_t special_flags = 0) noexcept;
+        rect_t     bilt      (surface_t const& source, point2d_t dest, rect_t area, blend_t special_flags = 0) noexcept;
         
+        // create a new copy of a Surface
+        inline surface_t copy () const noexcept { return surface_t(*this); }
+        
+        // resize the surface
+        point2d_t  resize    (point2d_t size, bool b_fast = false) noexcept;
+
         // fill surface_t with a solid color
         rect_t     fill      (color_t color, void* = 0, blend_t special_flags = 0) noexcept;
         // fill surface_t with a solid color

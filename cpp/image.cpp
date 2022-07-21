@@ -226,6 +226,9 @@ mcl {
             mcl_get_surface_dataplus (&const_cast<surface_t&>(surface));
         if (!ibuf) return false;
 
+        mcl_simpletls_ns::mcl_spinlock_t lk(ibuf -> m_nrtlock);
+        if (!ibuf -> m_width) return false;
+
         // Write bmp header
         BITMAPFILEHEADER bmpfHead = { 0, 0, 0, 0, 0 };
         BITMAPINFOHEADER bmpinfo = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };

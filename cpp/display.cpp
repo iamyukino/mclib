@@ -39,6 +39,7 @@
 #include "../src/mclfwd.h"
 #include "../src/display.h" 
 #include "../src/clog4m.h"
+#include "../src/surface.h"
 #include "mcl_control.h"
 
 #ifdef _MSC_VER
@@ -69,6 +70,7 @@ mcl {
     dflags_t constexpr mcl_dflags_t::Resizable;
     dflags_t constexpr mcl_dflags_t::NoFrame;
     dflags_t constexpr mcl_dflags_t::NoMinimizeBox;
+    dflags_t constexpr mcl_dflags_t::DoubleBuf;
 #endif
     
     mcl_display_t::
@@ -158,6 +160,64 @@ mcl {
     get_caption () const noexcept{
         return mcl_control_obj.window_caption;
     }
+
+   /**
+    * @function mcl_display_t::set_icon <src/display.h>
+    * @brief Change the system image for the display window
+    * @param icon
+    * @return mcl_display_t&
+    */
+    mcl_display_t& mcl_display_t::
+    set_icon (surface_t const& icon) noexcept {
+        mcl_imagebuf_t* buf =
+            mcl_get_surface_dataplus(const_cast<surface_t*>(&icon));
+        if (!buf) return *this;
+        
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        if (!mcl_control_obj.bIsReady) return *this;
+        
+        // create a copy from surface
+        HBITMAP hbmMask = ::CreateCompatibleBitmap (
+            mcl_control_obj.dc, buf -> m_width, buf -> m_height);
+        HBITMAP hbmColor = ::CreateCompatibleBitmap (
+            mcl_control_obj.dc, buf -> m_width, buf -> m_height);
+        if (!(hbmMask && hbmColor)) return *this;
+        
+        // copy the surface to the icon
+        HDC hdcColor = ::CreateCompatibleDC (mcl_control_obj.dc);
+        if (!hdcColor) return *this;
+        HBITMAP hbmOldColor = 
+            static_cast<HBITMAP>(::SelectObject (hdcColor, hbmColor));
+        ::BitBlt (hdcColor, 0, 0, buf -> m_width, buf -> m_height,
+                  buf -> m_hdc, 0, 0, SRCCOPY);
+        ::SelectObject (hdcColor, hbmOldColor);
+        ::DeleteDC (hdcColor);
+        
+        // create icon
+        ICONINFO ii = { 0, 0, 0, 0, 0 };
+        ii.fIcon = TRUE;
+        ii.hbmColor = hbmColor;
+        ii.hbmMask = hbmMask;
+        HICON hIcon = ::CreateIconIndirect (&ii);
+        ::DeleteObject (hbmMask);
+        if (!hIcon) {
+            clog4m[cll4m.Info] << L"error:  Failed to create icon from surface"
+                L" [-Wdisplay-winapi-" << ::GetLastError () << L"]\n";
+            return *this;
+        }
+
+        // set the icon
+        if (mcl_control_obj.hicon)
+            ::DestroyIcon (mcl_control_obj.hicon);
+        mcl_control_obj.hicon = hIcon;
+
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETICON,
+            ICON_BIG, reinterpret_cast<LPARAM>(reinterpret_cast<void*>(hIcon)));
+        ::SendMessage(mcl_control_obj.hwnd, WM_SETICON,
+            ICON_SMALL, reinterpret_cast<LPARAM>(reinterpret_cast<void*>(hIcon)));
+        
+        return *this;
+    }
     
    /**
     * @function mcl_set_size <src/display.cpp>
@@ -197,7 +257,7 @@ mcl {
                         ) + .5f);
             }
             else {
-                ptrsize->x =
+                ptrsize -> x =
                     static_cast<point1d_t>(
                         static_cast<float>(ptrsize -> y) * (
                             static_cast<float>((mcl_control_obj.base_w +
@@ -236,6 +296,9 @@ mcl {
     static void
     mcl_init_window (point2d_t* ptrsize, dflags_t dpm_flags = 0) noexcept{
     // Create Window & Start Message Loop.
+        if (mcl_control_obj.bAtQuitInClose)
+            return ;
+        
         // Initialize window parameters.
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_;
@@ -342,7 +405,7 @@ mcl {
     set_mode (point2d_t size) noexcept{
     // Initialize Window & Start Message Loop
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
-        if (mcl_control_obj.bIsReady) {
+        if (mcl_control_obj.bIsReady || mcl_control_obj.bAtQuitInClose) {
         // change form size only
             if (mcl_control_obj.b_fullscreen) {
                 clog4m[cll4m.Debug] << L"mcl.display.set_mode()\n"
@@ -379,7 +442,7 @@ mcl {
     set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
     // Initialize Window & Start Message Loop
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
-        if (mcl_control_obj.bIsReady) {
+        if (mcl_control_obj.bIsReady || mcl_control_obj.bAtQuitInClose) {
         // change form style only
             bool bopen = clog4m.get_init ()
                          && clog4m.get_event_level ().value <= cll4m.Int.value;
@@ -429,6 +492,16 @@ mcl {
             if (dpm_flags & dflags.Minimize)
                 ::ShowWindow (mcl_control_obj.hwnd, SW_MINIMIZE);
             
+            // double buffered
+            if ((dpm_flags & dflags.DoubleBuf) && !mcl_control_obj.dbuf_surface) {
+                mcl_control_obj.dbuf_surface = new(std::nothrow)
+                    surface_t({ mcl_control_obj.dc_w, mcl_control_obj.dc_h });
+            }
+            else if (!(dpm_flags & dflags.DoubleBuf) && mcl_control_obj.dbuf_surface) {
+                delete mcl_control_obj.dbuf_surface;
+                mcl_control_obj.dbuf_surface = nullptr;
+            }
+            
             ::UpdateWindow (mcl_control_obj.hwnd);  // for vc6
             last_style =
                 ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
@@ -463,23 +536,38 @@ mcl {
         LONG_PTR last_style = mcl_control_obj.b_fullscreen ?
             mcl_fullscreen_last_style () : style;
         dflags_t flags = dflags.Hidden | dflags.NoFrame | dflags.NoMinimizeBox;
-        if (     style & WS_VISIBLE)    flags &= ~dflags.Hidden;
-        if (     style & WS_MINIMIZE)   flags |=  dflags.Minimize;
-        if (mcl_control_obj.b_maximize) flags |=  dflags.Maximize;
-        if (last_style & WS_CAPTION)    flags &= ~dflags.NoFrame;
-        if (last_style & WS_MINIMIZEBOX)flags &= ~dflags.NoMinimizeBox;
-        if (last_style & WS_THICKFRAME) flags |=  dflags.Resizable;
+        if (     style & WS_VISIBLE)      flags &= ~dflags.Hidden;
+        if (     style & WS_MINIMIZE)     flags |=  dflags.Minimize;
+        if (mcl_control_obj.b_maximize)   flags |=  dflags.Maximize;
+        if (last_style & WS_CAPTION)      flags &= ~dflags.NoFrame;
+        if (last_style & WS_MINIMIZEBOX)  flags &= ~dflags.NoMinimizeBox;
+        if (last_style & WS_THICKFRAME)   flags |=  dflags.Resizable;
+        if (mcl_control_obj.dbuf_surface) flags |=  dflags.DoubleBuf;
         return flags;
     }
 
     surface_t& mcl_display_t::get_surface() const noexcept {
     // Return a reference to the currently set display Surface.
     // If no display mode has been set this will return None.
-        return *mcl_control_obj.cur_surface;
+        return *(mcl_control_obj.dbuf_surface ?
+            mcl_control_obj.dbuf_surface : mcl_control_obj.cur_surface);
+    }
+
+    static void mcl_filp_dbuf_surface () noexcept {
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        if (mcl_control_obj.dbuf_surface) {
+            surface_t* t = mcl_control_obj.cur_surface;
+            mcl_control_obj.cur_surface = mcl_control_obj.dbuf_surface;
+            mcl_control_obj.dbuf_surface = t;
+        }
     }
 
     mcl_display_t& mcl_display_t::
     flip () noexcept {
+        // double buffered
+        mcl_filp_dbuf_surface ();
+        
+        // flip
         RECT rc{ 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h };
         ::InvalidateRect (mcl_control_obj.hwnd, &rc, FALSE);
         ::UpdateWindow (mcl_control_obj.hwnd);
@@ -487,6 +575,8 @@ mcl {
     }
     mcl_display_t& mcl_display_t::
     update (rect_t recta) noexcept {
+        mcl_filp_dbuf_surface ();
+        
         if (recta.w < 0) recta.x += recta.w + 1, recta.w = -recta.w;
         if (recta.h < 0) recta.y += recta.h + 1, recta.h = -recta.h;
         RECT rc{ recta.x, recta.y, recta.x + recta.w, recta.y + recta.h };
@@ -496,6 +586,8 @@ mcl {
     }
     mcl_display_t& mcl_display_t::
     update (std::initializer_list<rect_t>&& rects) noexcept {
+        mcl_filp_dbuf_surface ();
+        
         if (!rects.size ()) return *this;
         constexpr long int32_max = 2147483647L;
         RECT maxrc{ int32_max, int32_max, -int32_max - 1L, -int32_max - 1L};
@@ -853,6 +945,12 @@ mcl {
         return mcl_control_obj.b_fullscreen ? get_desktop_size() :
                 point2d_t{ mcl_control_obj.dc_w, mcl_control_obj.dc_h };
     }
+    rect_t mcl_display_t::
+    get_window_rect  () const noexcept{
+        return mcl_control_obj.b_fullscreen ? get_desktop_rect() :
+                rect_t{ mcl_control_obj.x_pos, mcl_control_obj.y_pos,
+                        mcl_control_obj.dc_w, mcl_control_obj.dc_h };
+    }
     point2d_t mcl_display_t::
     get_window_pos   () const noexcept{
         return mcl_control_obj.b_fullscreen ? point2d_t{0, 0} :
@@ -863,6 +961,12 @@ mcl {
         return mcl_control_obj.bIsReady ?
                 point2d_t{ mcl_control_obj.base_w,  mcl_control_obj.base_h } :
                 point2d_t{::GetSystemMetrics (SM_CXSCREEN), ::GetSystemMetrics (SM_CYSCREEN)};
+    }
+    rect_t mcl_display_t::
+    get_desktop_rect () const noexcept{
+        return mcl_control_obj.bIsReady ?
+            rect_t{ 0, 0, mcl_control_obj.base_w,  mcl_control_obj.base_h } :
+            rect_t{ 0, 0, ::GetSystemMetrics (SM_CXSCREEN), ::GetSystemMetrics (SM_CYSCREEN)};
     }
 
    /**

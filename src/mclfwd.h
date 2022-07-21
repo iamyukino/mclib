@@ -88,6 +88,9 @@ mcl {
     class mcl_display_t;
     class wmi_dict_t;
 
+    // module for interacting with events and queues.  see event.h
+    class mcl_event_t;
+
     // class for representing any image.  see surface.h
     class surface_t;
 

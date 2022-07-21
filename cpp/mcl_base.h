@@ -57,6 +57,7 @@
 
 # ifdef _MSC_VER
 #  pragma warning(pop)
+#  pragma warning(disable: 4514)
 # endif
 
 // define

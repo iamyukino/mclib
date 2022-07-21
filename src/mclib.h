@@ -68,6 +68,9 @@
 //  This header is for drawing shapes.
 #   include "draw.h"
 
+//  This header is for interacting with events and queues.
+#   include "event.h"
+
 //  This header is for image transfer.
 #   include "image.h"
 

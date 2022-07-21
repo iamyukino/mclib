@@ -54,7 +54,7 @@ int main()
     clog4m.init("log\\").enable_event_level(cll4m.All);
     
     // test display.init
-    display.set_mode(nullptr, dflags.Resizable);
+    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf);
     display.set_window_alpha(.3);
 
     // test image.load
@@ -63,61 +63,39 @@ int main()
     if (!bki)
         bki = image.load("..\\bg.bmp"), is_test = true;
 
-    // test register_quit
-    register_quit([is_test] { image.save(display.get_surface(), is_test ? "test.bmp" : "..\\test\\debug\\test.bmp"); });
-    register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
+    // test display.set_icon
+    surface_t cpy = bki;
+    cpy.resize({ 512, 512 });
+    display.set_icon(cpy);
 
-    // test image.frombuffer
-    color_t* buf = new color_t[100 * 100];
-    for (color_t i = 0; i < 100; ++i)
-        for (color_t j = 0; j < 100; ++j)
-            buf[j * 100 + i] = black;
-    surface_t s4buf = image.frombuffer(buf, { 100, 100 });
-    for (color_t i = 50; i < 90; ++i)
-        for (color_t j = 20; j < 60; ++j)
-            buf[j * 100 + i] = rgba(i, j, 0);
+    // test register_quit
+    register_quit([is_test] {
+        display.set_mode (0, display.get_flags() & ~dflags.DoubleBuf);
+        image.save(display.get_surface(), is_test ? "test.bmp" : "..\\test\\debug\\test.bmp");
+    });
+    register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
     
     POINT point{ 0, 0 };
-    blend_t bl = blend.Ovl_rgba;
     while (1) {
-        ::GetCursorPos (&point);
-        ::ScreenToClient (display.get_wm_info()["window"], &point);
-        
-        // test surface.copy_constructor
-        surface_t surface(display.get_surface());
-        
-        // test surface.fill
-        auto r0 = surface.fill(white);
+        ::GetCursorPos(&point);
+        ::ScreenToClient(display.get_wm_info()["window"], &point);
 
-        // test surface.get_buffer (bufferproxy)
-        do {
-            auto pbuf = surface.get_buffer();
-            if (!pbuf) break;
-            pbuf = 120000 + pbuf;
-            for (auto i = pbuf.begin(); i != pbuf.end() - 120000; ++i)
-                *i = purple;
-            
-            surface = pbuf.get_surface (); // no need
-        } while (0);
+        // test surface.fill & bilt
+        display.get_surface().fill(white);
+        display.get_surface().bilt(bki);
+        display.get_surface().fill(rgba(255, 181, 181, .5f), { point.x - 150, point.y - 75, 300, 150 }, blend.Ovl_rgba);
         
-        // test surface.fill
-        auto r1 = surface.fill(rgba(0, 255, 255, .6f), { 280, 100, -300, 150 }, bl);
-        auto r2 = surface.fill(rgba(255, 181, 181, .5f), { 80, 150, 300, 150 }, bl);
+        // test surface.resize
+        cpy.resize(display.get_window_size());
+        cpy.bilt(display.get_surface());
+        display.get_surface() = cpy;
 
-        // test surface.bilt
-        surface_t su_c = display.get_surface();
-        surface.bilt(bki, { 300, 5 }, 0, blend.Copy);
-        surface.bilt(s4buf, { 20, 10 });
-        su_c.bilt(surface, 0, 0, blend.Copy);
-        su_c.fill(rgba(255, 255, 255, .4f), 0, blend.Ovl_rgba);
-        su_c.bilt(surface, { point.x - 150, point.y - 75 }, { point.x - 150, point.y - 75, 300, 150 }, blend.Copy);
-        display.get_surface().bilt(su_c);
+        // same as display.flip();
+        auto sz = display.get_window_size();
+        display.update({ 0, 0, sz.x, sz.y });
         
-        // test display.update
-        display.update({ r0 });
         timer.wait(20);
     }
-    
-    // while(1) timer.wait(1);
+
     return 0;
 }
