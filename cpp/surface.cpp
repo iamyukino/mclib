@@ -122,7 +122,7 @@ mcl {
         // get global dc
         HDC refdc = nullptr;
         if (mcl_control_obj.bIsReady)
-            refdc = mcl_control_obj.dc;
+            refdc = ::GetDC (mcl_control_obj.hwnd);
 
         // create a new dc
         m_hdc = ::CreateCompatibleDC (refdc);
@@ -130,6 +130,7 @@ mcl {
             clog4m[cll4m.Warn] << L"surface.init()\n"
                 L"    warning:  CreateCompatibleDC Failed. [-Wsurface-winapi-"
                 << ::GetLastError() << L"]\n";
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return false;
         }
         
@@ -140,6 +141,7 @@ mcl {
                 L"    warning:  CreateDIBSection Failed. [-Wsurface-winapi-"
                 << ::GetLastError() << L"]\n";
             ::DeleteDC (m_hdc);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return false;
         }
         ::SelectObject (m_hdc, m_hbmp);
@@ -147,6 +149,7 @@ mcl {
         // init the bitmap
         ::SetBkMode (m_hdc, TRANSPARENT);
 
+        if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
         return true;
     }
 
@@ -601,7 +604,7 @@ mcl {
         
         // delete the tmp surface without destructor
         surf_dataplus -> m_width = 0; 
-		delete surf_dataplus;
+        delete surf_dataplus;
         surf.m_dataplus_ = nullptr;
         
         return this -> get_size ();

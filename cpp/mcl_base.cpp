@@ -124,7 +124,7 @@ namespace mcl
                         oldt = nowt;
                         clog4m[cll4m.Warn]. wprintln (
                            L"\n  mcl::spinlock  | TimeOut "
-                            "{\"own\":\"%lux\", \"cur\":\"%lux\"}", lk_, threadid);
+                            "{\"own\":\"0x%04lx\", \"cur\":\"0x%04lx\"}", lk_, threadid);
                         ::InterlockedExchange (&lk_, 0);
                     }  nowt = MCL_GETTICKCOUNT ();
                 }

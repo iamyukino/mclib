@@ -119,10 +119,12 @@ mcl {
         // Create a dc that is compatible with the window
         HDC hldc = nullptr, refdc = nullptr;
         if (mcl_control_obj.bIsReady)
-            refdc = mcl_control_obj.dc;
+            refdc = ::GetDC (mcl_control_obj.hwnd);
+
         hldc = ::CreateCompatibleDC (refdc);
         if (!hldc) {
             ::DeleteObject (hbmp);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }
 
@@ -133,6 +135,7 @@ mcl {
         if (!retgo) {
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }
             
@@ -142,6 +145,7 @@ mcl {
         if (!hbmpold) {
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }            
 
@@ -153,6 +157,7 @@ mcl {
             ::SelectObject (hldc, hbmpold);
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }
         
@@ -176,6 +181,7 @@ mcl {
                 *p |= 0xff000000;
             }
         }
+        if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
         return surf;
     }
 
@@ -258,7 +264,6 @@ mcl {
         for (y = ibuf -> m_height - 1; y >= 0; -- y) {
             for (x = 0; x < ibuf -> m_width; ++ x) {
                 DWORD col = ibuf -> m_pbuffer[y * ibuf -> m_width + x];
-                //col = RGBTOBGR(col);
                 size_t ret = ::fwrite (&col, 3, 1, fileobj);
                 if (!ret) {
                     ::fclose (fileobj);
@@ -296,10 +301,12 @@ mcl {
         // Create a memory device context
         HDC hldc = nullptr, refdc = nullptr;
         if (mcl_control_obj.bIsReady)
-            refdc = mcl_control_obj.dc;
+            refdc = ::GetDC (mcl_control_obj.hwnd);
+
         hldc = ::CreateCompatibleDC (refdc);
         if (!hldc) {
             ::DeleteObject (hbmp);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }
 
@@ -312,6 +319,7 @@ mcl {
         if (!ibuf) {
             ::DeleteObject (hbmp);
             ::DeleteDC (hldc);
+            if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
         }
         ibuf -> m_hbmp = hbmp;
@@ -320,6 +328,7 @@ mcl {
         ibuf -> m_width = size.x;
         ibuf -> m_height = size.y;
         
+        if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
         return surf;
     }
     

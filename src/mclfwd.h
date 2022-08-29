@@ -89,7 +89,9 @@ mcl {
     class wmi_dict_t;
 
     // module for interacting with events and queues.  see event.h
+    using eventtype_t = unsigned long;
     class mcl_event_t;
+    struct event_t;
 
     // class for representing any image.  see surface.h
     class surface_t;

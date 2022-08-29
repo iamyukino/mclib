@@ -74,7 +74,7 @@ mcl {
     }
 
    /**
-    * @function quit <src/mclib.h>
+    * @function get_init <src/mclib.h>
     * @brief Returns true if the window has been initialized
     * @return bool
     */

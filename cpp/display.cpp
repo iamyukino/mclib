@@ -176,16 +176,28 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (!mcl_control_obj.bIsReady) return *this;
         
+        HDC refdc = nullptr;
+        if (mcl_control_obj.bIsReady)
+            refdc = ::GetDC (mcl_control_obj.hwnd);
+
         // create a copy from surface
         HBITMAP hbmMask = ::CreateCompatibleBitmap (
-            mcl_control_obj.dc, buf -> m_width, buf -> m_height);
+            refdc, buf -> m_width, buf -> m_height);
         HBITMAP hbmColor = ::CreateCompatibleBitmap (
-            mcl_control_obj.dc, buf -> m_width, buf -> m_height);
-        if (!(hbmMask && hbmColor)) return *this;
+            refdc, buf -> m_width, buf -> m_height);
+        if (!(hbmMask && hbmColor)) {
+            if (refdc)
+                ::ReleaseDC (mcl_control_obj.hwnd, refdc);
+            return *this;
+        }
         
         // copy the surface to the icon
-        HDC hdcColor = ::CreateCompatibleDC (mcl_control_obj.dc);
-        if (!hdcColor) return *this;
+        HDC hdcColor = ::CreateCompatibleDC (refdc);
+        if (!hdcColor) {
+            if (refdc)
+                ::ReleaseDC (mcl_control_obj.hwnd, refdc);
+            return *this;
+        }
         HBITMAP hbmOldColor = 
             static_cast<HBITMAP>(::SelectObject (hdcColor, hbmColor));
         ::BitBlt (hdcColor, 0, 0, buf -> m_width, buf -> m_height,
@@ -203,6 +215,8 @@ mcl {
         if (!hIcon) {
             clog4m[cll4m.Info] << L"error:  Failed to create icon from surface"
                 L" [-Wdisplay-winapi-" << ::GetLastError () << L"]\n";
+            if (refdc)
+                ::ReleaseDC(mcl_control_obj.hwnd, refdc);
             return *this;
         }
 
@@ -216,6 +230,8 @@ mcl {
         ::SendMessage(mcl_control_obj.hwnd, WM_SETICON,
             ICON_SMALL, reinterpret_cast<LPARAM>(reinterpret_cast<void*>(hIcon)));
         
+        if (refdc)
+            ::ReleaseDC (mcl_control_obj.hwnd, refdc);
         return *this;
     }
     
@@ -451,7 +467,8 @@ mcl {
             
             LONG_PTR last_style =
                 ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
-            LONG_PTR last_exstyle;
+            LONG_PTR last_exstyle =
+                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE );
             if (bopen)
                 ml_.wprintf (L"mcl.display.set_mode({%ld, %ld}, 0x%08lx)\n"
                              L"  Setting styles... 0x%08lx -> ",
@@ -460,15 +477,13 @@ mcl {
             
             if (!mcl_control_obj.b_fullscreen) {
                 // set window form style
-                if (dpm_flags & dflags.NoFrame)       last_style &= ~WS_CAPTION, last_style |= WS_POPUP;
-                else                                  last_style |= WS_CAPTION,  last_style &= ~WS_POPUP;
+                if (dpm_flags & dflags.NoFrame)       last_style &= ~WS_CAPTION, last_style |= WS_POPUP, last_exstyle &= ~WS_EX_CLIENTEDGE;
+                else                                  last_style |= WS_CAPTION,  last_style &= ~WS_POPUP, last_exstyle |= WS_EX_CLIENTEDGE;
                 if (dpm_flags & dflags.Resizable)     last_style |= (WS_THICKFRAME | WS_MAXIMIZEBOX);
                 else                                  last_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
                 if (dpm_flags & dflags.NoMinimizeBox) last_style &= ~WS_MINIMIZEBOX;
                 else                                  last_style |= WS_MINIMIZEBOX;
                 
-                last_exstyle = ::GetWindowLongPtrW (
-                                   mcl_control_obj.hwnd, GWL_EXSTYLE );
                 RECT wr = { mcl_control_obj.x_pos, mcl_control_obj.y_pos,
                             mcl_control_obj.x_pos + mcl_control_obj.dc_w,
                             mcl_control_obj.y_pos + mcl_control_obj.dc_h };
@@ -704,10 +719,11 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     quit () noexcept{
-        if (!mcl_control_obj.bIsReady) return *this;
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
-        if (!mcl_control_obj.bIsReady) return *this; 
-        ::PostMessage (mcl_control_obj.hwnd, WM_CLOSE, 2, 0);
+        {
+            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+            if (!mcl_control_obj.bIsReady) return *this; 
+            ::PostMessage (mcl_control_obj.hwnd, WM_CLOSE, 2, 0);
+        }
         DWORD ret = ::WaitForSingleObject (mcl_control_obj.taskhandle, 1024);
         if (ret) clog4m[cll4m.Warn].wprintln (
            L"failed to wait for thread to end, return: 0x%08lu", ret);
@@ -768,12 +784,14 @@ mcl {
     toggle_fullscreen () noexcept{
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
         if (get_active ()) {
-            static LONG_PTR last_exstyle;
-            static point1d_t last_x, last_y, last_w, last_h;
-            
             ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
-            LONG_PTR& last_style = mcl_fullscreen_last_style ();
-            LONG_PTR  lstyle     = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+
+            static point1d_t last_x, last_y, last_w, last_h;
+            static LONG_PTR last_exstyle;
+            
+            LONG_PTR& last_style  = mcl_fullscreen_last_style ();
+            LONG_PTR  new_style   = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+            LONG_PTR  new_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
             
             if (!mcl_control_obj.b_fullscreen) {
                 // full screen
@@ -781,11 +799,11 @@ mcl {
                 last_y       = mcl_control_obj.y_pos;
                 last_w       = mcl_control_obj.dc_w;
                 last_h       = mcl_control_obj.dc_h;
-                last_style   = lstyle;
-                last_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
+                last_style   = new_style;
+                last_exstyle = new_exstyle;
                 
-                LONG_PTR new_style   = (last_style & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
-                LONG_PTR new_exstyle = last_exstyle | WS_EX_CLIENTEDGE;
+                new_style   = (new_style & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
+                new_exstyle = new_style & ~WS_EX_CLIENTEDGE;
                 
                 RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),
@@ -797,11 +815,16 @@ mcl {
                 
                 mcl_control_obj.b_fullscreen = true;
                 
-            } else if (!(lstyle & WS_MINIMIZE)) {
+            } else if (!(new_style & WS_MINIMIZE)) {
                 // windowed displays
-                if (last_style & WS_POPUP) last_style |= lstyle;
-                else                      (last_style |= lstyle) &= ~WS_POPUP;
-                last_exstyle |= ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
+                if (last_style & WS_POPUP) new_style |= WS_POPUP;
+                else                       new_style &= ~WS_POPUP;
+                if (last_style & WS_THICKFRAME) new_style |= WS_THICKFRAME;
+                else                            new_style &= ~WS_THICKFRAME;
+                if (last_exstyle & WS_EX_CLIENTEDGE) new_exstyle |= WS_EX_CLIENTEDGE;
+                else                                 new_exstyle &= ~WS_EX_CLIENTEDGE;
+                last_style   = new_style;
+                last_exstyle = new_exstyle;
                 
                 mcl_control_obj.b_fullscreen = false;
                 
@@ -860,7 +883,7 @@ mcl {
     MCL_NODISCARD_CXX17 static void* mcl_get_wm_info (char const* key) noexcept{
         if (!(key && key[0] && key[1] && key[2])) return nullptr;
         switch (MCL_MAKRGB(key[0], key[1], key[2])) {
-          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.dc;
+          case MCL_MAKRGB('h','d','c'):  return ::GetDC (mcl_control_obj.hwnd);
           case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.instance; 
           case MCL_MAKRGB('t','a','s'):  return mcl_control_obj.taskhandle;
           case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.hwnd;
@@ -871,7 +894,7 @@ mcl {
     MCL_NODISCARD_CXX17 static void* mcl_get_wm_info (wchar_t const* key) noexcept{
         if (!(key && key[0] && key[1] && key[2])) return nullptr;
         switch (MCL_MAKRGB(key[0], key[1], key[2])) {
-          case MCL_MAKRGB('h','d','c'):  return mcl_control_obj.dc;
+          case MCL_MAKRGB('h','d','c'):  return ::GetDC (mcl_control_obj.hwnd);
           case MCL_MAKRGB('h','i','n'):  return mcl_control_obj.instance; 
           case MCL_MAKRGB('t','a','s'):  return mcl_control_obj.taskhandle;
           case MCL_MAKRGB('w','i','n'):  return mcl_control_obj.hwnd;
@@ -893,19 +916,23 @@ mcl {
     
     std::string str_a (wmi_dict_t const) noexcept{  
         std::ostringstream oss;
-        oss << "{'hdc': "      << mcl_control_obj.dc         << ", "
+        HDC dc = ::GetDC (mcl_control_obj.hwnd);
+        oss << "{'hdc': "      << dc                         << ", "
                "'hinstance': " << mcl_control_obj.instance   << ", "
                "'taskhandle': "<< mcl_control_obj.taskhandle << ", "
                "'window': "    << mcl_control_obj.hwnd       << "}";
+        if (dc) ::ReleaseDC (mcl_control_obj.hwnd, dc);
         return oss.str ();
     }
     
     std::wstring str (wmi_dict_t const) noexcept{ 
         std::wostringstream oss;
-        oss << L"{'hdc': "      << mcl_control_obj.dc         << L", "
+        HDC dc = ::GetDC (mcl_control_obj.hwnd);
+        oss << L"{'hdc': "      << dc                         << L", "
                L"'hinstance': " << mcl_control_obj.instance   << L", "
                L"'taskhandle': "<< mcl_control_obj.taskhandle << L", "
                L"'window': "    << mcl_control_obj.hwnd       << L"}";
+        if (dc) ::ReleaseDC (mcl_control_obj.hwnd, dc);
         return oss.str ();
     }
     

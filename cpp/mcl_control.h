@@ -36,6 +36,17 @@
 
 # include "mcl_base.h"
 
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable: 4464)
+#endif // Relative paths include ".."
+
+#include "../src/event.h"
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
+
 namespace
 mcl {
 
@@ -50,14 +61,22 @@ mcl {
             (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
     
     public:   // callback functions
-        LRESULT OnClose     (HWND hWnd, WPARAM wParam, LPARAM lParam);
-        LRESULT OnNCHitTest (HWND hWnd, WPARAM wParam, LPARAM lParam);
-        LRESULT OnSize      (HWND hWnd, WPARAM wParam, LPARAM lParam);
-        LRESULT OnMove      (HWND hWnd, WPARAM wParam, LPARAM lParam);
-        LRESULT OnPaint     (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnClose       (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnNCHitTest   (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnSize        (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnMove        (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnPaint       (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnActivate    (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnShowWindow  (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnMouseMove   (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnButtonDown  (char type, WPARAM wParam, LPARAM lParam);
+        LRESULT OnButtonUp    (char type, WPARAM wParam, LPARAM lParam);
+        LRESULT OnMouseWheel  (char type, WPARAM wParam, LPARAM lParam);
+        LRESULT OnMouseLeave  (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnKeyDown     (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+        LRESULT OnKeyUp       (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
     public:   // window properties
-        HDC       dc         = nullptr;
         HINSTANCE instance   = nullptr;
         HWND      hwnd       = nullptr;
         HANDLE    taskhandle = nullptr;    // thread handle
@@ -85,7 +104,12 @@ mcl {
         unsigned  bIsReady = 0ul;          // whether message loop starts
         unsigned  bIsExit  = 0ul;
         bool      bAtQuitInClose = false;
-        char : 8; char : 8; char : 8;
+        bool      bMouseInClient = false;
+        
+        char : 8; char : 8;
+
+        HHOOK     hWndMouseGrabed = nullptr;
+        HHOOK     hWndKeyGrabed = nullptr;
     
     public:   // surface
         surface_t* cur_surface = nullptr;  // current surface
@@ -97,6 +121,40 @@ mcl {
     void mcl_report_sysexception (wchar_t const* what);
 
 
+
+    /**
+     * @class mcl_eventqueue_t <src/surface.cpp>
+     * @brief Event queue for event.h
+     */
+    class
+    mcl_eventqueue_t {
+    public:
+        struct mcl_lqnode_t {
+            event_t data{ 0, {{0, 0}} };
+            mcl_lqnode_t* next = nullptr;
+        };
+
+    public:
+             mcl_eventqueue_t () noexcept;
+            ~mcl_eventqueue_t () noexcept;
+        int  push (event_t const& rhs) noexcept;
+        int  pop  (event_t& rhs) noexcept;
+        void pop_next (mcl_lqnode_t*& rhs) noexcept;
+        void process (std::function<bool(mcl_lqnode_t*&)> process_func) noexcept;
+
+    public:
+        typename mcl_simpletls_ns::
+            mcl_spinlock_t::lock_t _lock = 0ul;
+        
+        int _len = 0;
+        mcl_lqnode_t* _f = nullptr;
+        mcl_lqnode_t* _r = nullptr;
+        enum : int { QueueLen = mcl_event_t::MaxLQSize };
+
+        eventtype_t _blocked = 0;
+        eventtype_t _userType = (mcl::mcl_event_t::UserEventMin >> 1);
+    };
+    extern mcl_eventqueue_t mcl_event_obj;
 
 
    /**
@@ -130,6 +188,7 @@ mcl {
     inline char* mcl_get_surface_data (surface_t* s) {
         return reinterpret_cast<char*>(reinterpret_cast<mcl_imagebuf_t**>(s) + 1);
     }
+
 
 } // namespace
 

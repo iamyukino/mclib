@@ -1,11 +1,18 @@
-# mclib v0.5.2-Debug.3466
+# mclib v0.5.2-Debug.3467
 
 Release notes for Mclib
 --------------------------------
   |
+.3467     August 29th 2022
+  |  
+  |  [  ADDED   ]    Completed event.h .
+  |
+  |
+  |
+  |
 .3464-66  June 12th 2022 - June 20th 2022
   |  
-  |  [  ADDED   ]    Finished surface_t .
+  |  [  ADDED   ]    Completed surface.h .
   |  [   NEW    ]    Add bufferproxy_t.h .
   |  [   NEW    ]    Add image.h .
   |  [  ADDED   ]    Add dflags.DoubleBuf .

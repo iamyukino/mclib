@@ -3,12 +3,12 @@ Most useful stuff:
     color.h       ok
     display.h     ok
     draw.h        X   <- WAIT 
-    event.h       X   <- TODO 
+    event.h       ok
     font.h        X
     image.h       ok
     key.h         X
     mixer.h       X
-    mouse.h       X
+    mouse.h       X   <- TODO 
     surface.h     ok
     timer.h       ok
     music.h       ok
@@ -27,34 +27,25 @@ Other:
 */
 
 
-#if 0
-#include "../src/mclib.h"
-// #include <windows.h>
-using namespace mcl;
-#else
 # ifdef _MSC_VER
 #  pragma warning(push)
-#  pragma warning(disable: 4365 5039 4464)
+#  pragma warning(disable: 4464)
 # endif
-# define WIN32_LEAN_AND_MEAN
-# include "../src/mclib.h"
-# include <windows.h>
-# include <windowsx.h>
-# include <process.h>
-# undef WIN32_LEAN_AND_MEAN
+
+#include "../src/mclib.h"
 using namespace mcl;
+
 # ifdef _MSC_VER
 #  pragma warning(pop)
 # endif
-#endif
 
 int main()
 {
     // test clog4m
-    clog4m.init("log\\").enable_event_level(cll4m.All);
+    clog4m.init().enable_event_level(cll4m.All);
     
     // test display.init
-    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf);
+    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf | dflags.NoFrame);
     display.set_window_alpha(.3);
 
     // test image.load
@@ -74,11 +65,35 @@ int main()
         image.save(display.get_surface(), is_test ? "test.bmp" : "..\\test\\debug\\test.bmp");
     });
     register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
-    
-    POINT point{ 0, 0 };
+
+    point2d_t point{0, 0};
     while (1) {
-        ::GetCursorPos(&point);
-        ::ScreenToClient(display.get_wm_info()["window"], &point);
+        // test event.get
+        for (auto&& ev : event.get ()) {
+            switch (ev.type) {
+                case event.Quit: {
+                    ::exit(0);
+                    break;
+                }
+                case event.MouseMotion: {
+                    point = ev.mouse.pos;
+                    break;
+                }
+                case event.KeyUp:
+                case event.KeyDown: {
+                    clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << ev.key.unicode;
+                    break;
+                }
+                case event.MouseButtonUp: {
+                    display.toggle_fullscreen();
+                    break;
+                }
+                default: {
+                    clog4m[cll4m.Info] << event.event_name (ev.type) << ": " << ev.window.wParam << ", " << ev.window.lParam;
+                    break;
+                }
+            }
+        }
 
         // test surface.fill & bilt
         display.get_surface().fill(white);
@@ -95,6 +110,7 @@ int main()
         display.update({ 0, 0, sz.x, sz.y });
         
         timer.wait(20);
+
     }
 
     return 0;
