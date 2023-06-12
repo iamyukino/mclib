@@ -39,17 +39,17 @@
 # include <type_traits>
 # include <typeinfo>
 
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4365)
-#endif
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4365)
+# endif
 
 # include <ostream>
 # include <sstream>
 
-#ifdef _MSC_VER
-# pragma warning(pop)
-#endif
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
 
 # include "mclfwd.h"
 
@@ -93,15 +93,26 @@ mcl {
     constexpr typename std::enable_if<std::is_convertible<rhs_t, lhs_t>::value, void>::type
     mcl_copy (lhs_t* lhs, rhs_t* rhs) noexcept
     { const_cast<typename std::remove_const<decltype(*lhs)>::type>(*lhs) = *rhs; }
+
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4946)
+# endif
     
     template <typename visit_t, typename Tv, typename... Ts> void 
     mcl_tuple_visitor (size_t index, std::tuple<Tv, Ts...> const& t, visit_t* ptr) {
+
         if (index >= (1 + sizeof...(Ts))) 
             throw std::invalid_argument ("Bad Index");
-        else if (index > 0)
+        else if (index)
             mcl_tuple_visitor (index - 1, reinterpret_cast<std::tuple<Ts...> const&>(t), ptr);
         else mcl_copy (ptr, &std::get<0>(t));
+    
     }
+
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
     
     
     // Outputs specified tuple elements at run time
@@ -133,18 +144,27 @@ mcl {
     constexpr int
     mcl_tuple_printer (size_t, std::tuple<> const&, void*) noexcept{ return 0; }
     
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4946)
+# endif
+
     template <typename os_t, typename Tv, typename... Ts> void 
     mcl_tuple_printer (size_t index, std::tuple<Tv, Ts...> const& t, os_t* oss) {
         if (index >= (1 + sizeof...(Ts)))
             throw std::invalid_argument ("Bad index");
-        else if (index > 0)
+        else if (index)
             mcl_tuple_printer (index - 1, reinterpret_cast<std::tuple<Ts...> const&>(t), oss);
         else mcl_oss_print (oss, &std::get<0>(t));
     }
         // Use the characteristics of compile time extension to obtain the elements with
         // specified subscripts through recursion at run time
     
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
     
+
     // Compare between tuples of different types
     template <typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<!sizeof...(lhs_t) && sizeof...(rhs_t), int>::type
@@ -175,7 +195,12 @@ mcl {
             : ( std::is_arithmetic<rhsf>::value ? 1 : (sizeof (lhsf) > sizeof (rhsf)) );
     } // The end is not reached and the first element type is different. Compare the type,
       // and the number type is smaller. Otherwise, press sizeof for comparison.
-    
+
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4946)
+# endif
+
     // Compare between tuples of different types
     template <typename lhsf, typename rhsf, typename... lhs_t, typename... rhs_t>
     constexpr typename std::enable_if<
@@ -190,6 +215,10 @@ mcl {
     } // If the end is not reached and the first element type is the same, compare whether the
       // first element of two tuples is equal. If it is not equal, the comparison result is
       // returned, and if it is equal, the next element is compared recursively.
+
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
     
     // Get the length of tuple
     template <typename... T> 
@@ -211,16 +240,25 @@ mcl {
             size_t index;
             constexpr proxy_t (std::tuple<pt...> const& m, size_t i) noexcept
                 : m_ptr (m), index (i) { }
-            constexpr proxy_t (proxy_t const&) = default;
-            constexpr proxy_t (proxy_t&&) = default;
-            proxy_t& operator= (proxy_t const&) = default;
-            proxy_t& operator= (proxy_t&&) = default;
             
         public:
+            constexpr proxy_t(proxy_t const& rhs)
+                : m_ptr(rhs.m_ptr), index(rhs.index) { }
+            constexpr proxy_t(proxy_t&& rhs)
+                : m_ptr(rhs.m_ptr), index(rhs.index) { }
+            proxy_t& operator= (proxy_t const& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
+            proxy_t& operator= (proxy_t&& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
+
+            template<typename cv, typename = decltype(cv())>
+            inline operator cv const () const{
+                cv v();
+                mcl_tuple_visitor<cv>(index, m_ptr, &v);
+                return v;
+            }
             template<typename cv>
             inline operator cv const () const{
-                cv v; // ignore Int-unini, may not have default constructor
-                mcl_tuple_visitor<cv> (index, m_ptr, &v);
+                cv v;
+                mcl_tuple_visitor<cv>(index, m_ptr, &v);
                 return v;
             }
             friend inline std::ostream&
@@ -314,6 +352,14 @@ mcl {
                 : m_ptr (m), index (i) { } 
             friend pytuple;
         public:
+
+            constexpr iterator(iterator const& rhs)
+                : m_ptr (rhs.m_ptr), index (rhs.index) { }
+            constexpr iterator(iterator&& rhs)
+                : m_ptr(rhs.m_ptr), index(rhs.index) { }
+            iterator& operator= (iterator const& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
+            iterator& operator= (iterator&& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
+
             constexpr pytuple::proxy_t<T...> operator* () noexcept
             { return pytuple::proxy_t<T...>(m_ptr, index); }
             constexpr bool operator!= (iterator const& rhs) const noexcept

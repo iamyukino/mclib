@@ -803,7 +803,7 @@ mcl {
                 last_exstyle = new_exstyle;
                 
                 new_style   = (new_style & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
-                new_exstyle = new_style & ~WS_EX_CLIENTEDGE;
+                // new_exstyle = new_style & ~WS_EX_CLIENTEDGE;
                 
                 RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),

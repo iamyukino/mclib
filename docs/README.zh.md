@@ -42,4 +42,4 @@ MSVC:
 特别地，[examples](https://github.com/iamyukino/mclib/tree/main/examples) 子目录下的代码或文件属于公共文件，不受开源许可证的限制。
 
 有关开源许可证的详细内容，请参见 ``LICENSE`` 。  
-[GPL-3.O](LICENSE) © Yukino Amamiya
+[LGPL-2.1](LICENSE) © Yukino Amamiya

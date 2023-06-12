@@ -93,6 +93,9 @@ mcl {
     class mcl_event_t;
     struct event_t;
 
+    // module for working with the mouse.  see mouse.h
+    class mcl_mouse_t;
+
     // class for representing any image.  see surface.h
     class surface_t;
 

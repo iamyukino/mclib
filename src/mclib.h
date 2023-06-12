@@ -71,6 +71,9 @@
 //  This header is for interacting with events and queues.
 #   include "event.h"
 
+//  This header is for working with the mouse.
+#   include "mouse.h"
+
 //  This header is for image transfer.
 #   include "image.h"
 

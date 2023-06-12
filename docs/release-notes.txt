@@ -1,7 +1,14 @@
-# mclib v0.5.2-Debug.3467
+# mclib v0.5.2-Debug.3468
 
 Release notes for Mclib
 --------------------------------
+  |
+.3468     June 10th 2023 - June 12th 2023
+  |  
+  |  [   NEW    ]    Add mouse.h .
+  |
+  |
+  |
   |
 .3467     August 29th 2022
   |  

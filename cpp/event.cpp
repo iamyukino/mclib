@@ -52,6 +52,18 @@ mcl {
     // Module for interacting with events and queues.
     mcl_event_t event;
     mcl_eventqueue_t mcl_event_obj;
+
+    mcl_event_t::
+    operator void* () const noexcept{
+        return mcl_control_obj.bCtrlMsgLoop ?
+            const_cast<mcl_event_t*>(this) : nullptr;
+    }
+    
+    bool mcl_event_t::
+    operator! () const noexcept{
+        return !mcl_control_obj.bCtrlMsgLoop;
+    }
+
     
 #if __cplusplus < 201703L
     eventtype_t constexpr mcl_event_t::NoEvent;

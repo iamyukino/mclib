@@ -42,4 +42,4 @@ This basically means you can use mclib in any project you want, but if you make 
 The programs in the [examples](https://github.com/iamyukino/mclib/tree/main/examples) subdirectory are in the public domain.
 
 See ``LICENSE`` for licenses of dependencies.  
-[GPL-3.O](LICENSE) © Yukino Amamiya
+[LGPL-2.1](LICENSE) © Yukino Amamiya

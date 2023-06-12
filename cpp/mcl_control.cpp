@@ -218,6 +218,7 @@ mcl {
         }
         bCtrlMsgLoop = false;
         bMouseInClient = false;
+        bHideCursor = false;
         
         // switchs
         if (b_allow_screensaver_before != 2) {
@@ -366,13 +367,13 @@ mcl {
 
         // post Active Event
         ev.type = event.ActiveEvent;
-        if (LOWORD(wParam) == WA_INACTIVE) ev.active.gain = 0;
-        else ev.active.gain = 1;
-
-        constexpr int MouseFocus = 1, InputFocus = 2, Active = 4;
-        if (!fMinimized)                       ev.active.state = Active;
-        if (ev.active.state && ev.active.gain) ev.active.state |= InputFocus;
-        if (LOWORD(wParam) == WA_CLICKACTIVE)  ev.active.state |= MouseFocus;
+        if (fActive == WA_INACTIVE) ev.active.gain = 0, bHasIMFocus = 0;
+        else                        ev.active.gain = 1, bHasIMFocus |= 1;
+        if (fActive == WA_CLICKACTIVE) bHasIMFocus |= 2;
+        
+        constexpr int MouseFocus = 1, InputFocus = 2, MouseActive = 4;
+        if (bHasIMFocus & 1)        ev.active.state |= (MouseFocus | InputFocus);
+        if (bHasIMFocus & 2)        ev.active.state |= MouseActive;
 
         event.post (ev);
         return 0;
@@ -396,7 +397,7 @@ mcl {
         ev.mouse.pos.x = GET_X_LPARAM (lParam);
         ev.mouse.pos.y = GET_Y_LPARAM (lParam);
         ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = ev.mouse.buttons;
+        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
         if (!bMouseInClient) {
@@ -435,6 +436,12 @@ mcl {
     }
 
     LRESULT mcl_window_info_t::
+    OnSetCursor (HWND, WPARAM wParam, LPARAM lParam) {
+        if (bHideCursor) { ::SetCursor (0); return TRUE; }
+        return ::DefWindowProc (hwnd, WM_SETCURSOR, wParam, lParam);
+    }
+
+    LRESULT mcl_window_info_t::
     OnMouseWheel (char type, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.MouseWheel;
@@ -442,7 +449,7 @@ mcl {
         ev.mouse.pos.x = GET_X_LPARAM (lParam);
         ev.mouse.pos.y = GET_Y_LPARAM (lParam);
         ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam) | (type ? 0x100 : 0x80));
-        *(&ev.mouse.buttons + 1) = ev.mouse.buttons;
+        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
         event.post (ev);
         return 0;
     }
@@ -458,7 +465,7 @@ mcl {
         ev.mouse.pos.x = GET_X_LPARAM (lParam);
         ev.mouse.pos.y = GET_Y_LPARAM (lParam);
         ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = ev.mouse.buttons;
+        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
         event.post (ev);
         return 0;
     }
@@ -474,7 +481,7 @@ mcl {
         ev.mouse.pos.x = GET_X_LPARAM (lParam);
         ev.mouse.pos.y = GET_Y_LPARAM (lParam);
         ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = ev.mouse.buttons;
+        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
         event.post (ev);
         return 0;
     }
@@ -558,6 +565,7 @@ mcl {
             case WM_XBUTTONUP:   return OnButtonUp    (4, wParam, lParam);       break;
             case WM_MOUSEMOVE:   return OnMouseMove   (hWnd, wParam, lParam);    break;
             case WM_MOUSELEAVE:  return OnMouseLeave  (hWnd, wParam, lParam);    break;
+            case WM_SETCURSOR:   return OnSetCursor   (hWnd, wParam, lParam);    break;
             case WM_MOUSEWHEEL:  return OnMouseWheel  (0, wParam, lParam);       break;
             case 0x20E /* WM_MOUSEHWHEEL */:
                                  return OnMouseWheel  (1, wParam, lParam);       break;
@@ -566,8 +574,8 @@ mcl {
             case WM_KEYUP:       return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_SYSKEYUP:    return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             // case WM_ERASEBKGND: return true; // never erase background
-            case WM_DESTROY:           ::PostQuitMessage (0);                    break; 
-            default:            return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
+            case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
+            default:             return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
         }
         return 0;
     }

@@ -73,6 +73,7 @@ mcl {
         LRESULT OnButtonUp    (char type, WPARAM wParam, LPARAM lParam);
         LRESULT OnMouseWheel  (char type, WPARAM wParam, LPARAM lParam);
         LRESULT OnMouseLeave  (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnSetCursor   (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnKeyDown     (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
         LRESULT OnKeyUp       (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
 
@@ -104,9 +105,14 @@ mcl {
         unsigned  bIsReady = 0ul;          // whether message loop starts
         unsigned  bIsExit  = 0ul;
         bool      bAtQuitInClose = false;
+
         bool      bMouseInClient = false;
-        
-        char : 8; char : 8;
+        char      bMouseKeyState = 0;
+        char      bHasIMFocus = 0;
+        bool      bHideCursor = false;
+
+        char : 8; char : 8; char : 8;
+        char : 8; char : 8; char : 8; char : 8;
 
         HHOOK     hWndMouseGrabed = nullptr;
         HHOOK     hWndKeyGrabed = nullptr;

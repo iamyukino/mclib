@@ -57,6 +57,8 @@ mcl {
         };   // ActiveEvent
 
         struct mcl_key_event_t {
+        // event.key.mod is not included
+        // use mcl::key.get_mods instead
             unsigned  scancode;
             wchar_t   unicode;
             char      key; // vk-code
@@ -64,6 +66,8 @@ mcl {
         };   // KeyXxxxx
 
         struct mcl_mouse_event_t {
+        // buttons is not the same as pygame
+        // if needed, use mcl::mouse.get_pressed
             point2d_t pos;
             char      buttons;
             bool      lbutton   : 1; // button = 1
@@ -151,8 +155,8 @@ mcl {
         static type constexpr UserEventMax    = 0x80000000;
         
     public:
-        // operator       void*       () const noexcept;
-        // bool           operator!   () const noexcept;
+        operator       void*       () const noexcept;
+        bool           operator!   () const noexcept;
         
         // unlike pygame, there is no (need to call) event.pump because
         // mclib always handles internal events automatically.

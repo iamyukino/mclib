@@ -15,7 +15,7 @@ Most useful stuff:
     mclib.h       ok
 
 Advanced stuff:
-    cursors.h     X
+    cursors.h     X   <- TODO 
     bufferproxy.h ok
     transform.h   X
 
@@ -45,8 +45,9 @@ int main()
     clog4m.init().enable_event_level(cll4m.All);
     
     // test display.init
-    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf | dflags.NoFrame);
+    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf);// | dflags.NoFrame);
     display.set_window_alpha(.3);
+    if (!display) return 0;
 
     // test image.load
     bool is_test = false;
@@ -79,17 +80,34 @@ int main()
                     point = ev.mouse.pos;
                     break;
                 }
-                case event.KeyUp:
                 case event.KeyDown: {
                     clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << ev.key.unicode;
                     break;
                 }
-                case event.MouseButtonUp: {
-                    display.toggle_fullscreen();
+                case event.ActiveEvent: {
+                    clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << (ev.active.state);
                     break;
                 }
+
+                case event.MouseButtonUp: {
+                    display.toggle_fullscreen();
+                    mouse.set_pos ({20, 20});
+                    break;
+                }
+                case event.KeyUp: {
+                    if (ev.key.unicode == 27)
+                        ::exit(0);
+
+                    if (ev.key.unicode == 'h' || ev.key.unicode == 'H')
+                        mouse.set_visible (false);
+                    else if (ev.key.unicode == 's' || ev.key.unicode == 'S')
+                        mouse.set_visible (true);
+                    // no break
+                }
                 default: {
-                    clog4m[cll4m.Info] << event.event_name (ev.type) << ": " << ev.window.wParam << ", " << ev.window.lParam;
+                    clog4m[cll4m.Info] << event.event_name (ev.type) << " (" << ev.window.wParam << ", " << ev.window.lParam
+                        << ")   ";
+                    // for (auto i : mouse.get_pressed()) clog4m[cll4m.Info] << i << " _";
                     break;
                 }
             }
