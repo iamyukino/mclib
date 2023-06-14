@@ -74,6 +74,9 @@
 //  This header is for working with the mouse.
 #   include "mouse.h"
 
+//  This header is for cursor resources.
+#   include "cursors.h"
+
 //  This header is for image transfer.
 #   include "image.h"
 

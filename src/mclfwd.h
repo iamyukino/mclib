@@ -96,6 +96,11 @@ mcl {
     // module for working with the mouse.  see mouse.h
     class mcl_mouse_t;
 
+    // module for cursor resources.  see cursors.h
+    class mcl_cursors_t;
+    using sys_cursor_t = unsigned short;
+    class cursor_t;
+
     // class for representing any image.  see surface.h
     class surface_t;
 

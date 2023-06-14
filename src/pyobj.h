@@ -242,22 +242,16 @@ mcl {
                 : m_ptr (m), index (i) { }
             
         public:
-            constexpr proxy_t(proxy_t const& rhs)
+            constexpr proxy_t(proxy_t const& rhs) noexcept
                 : m_ptr(rhs.m_ptr), index(rhs.index) { }
-            constexpr proxy_t(proxy_t&& rhs)
+            constexpr proxy_t(proxy_t&& rhs) noexcept
                 : m_ptr(rhs.m_ptr), index(rhs.index) { }
-            proxy_t& operator= (proxy_t const& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
-            proxy_t& operator= (proxy_t&& rhs) { m_ptr = rhs.m_ptr; index = rhs.index; }
-
-            template<typename cv, typename = decltype(cv())>
-            inline operator cv const () const{
-                cv v();
-                mcl_tuple_visitor<cv>(index, m_ptr, &v);
-                return v;
-            }
+            proxy_t& operator= (proxy_t const& rhs) noexcept { m_ptr = rhs.m_ptr; index = rhs.index; }
+            proxy_t& operator= (proxy_t&& rhs) noexcept { m_ptr = rhs.m_ptr; index = rhs.index; }
+            
             template<typename cv>
             inline operator cv const () const{
-                cv v;
+                cv v; // ignore Int-unini ?
                 mcl_tuple_visitor<cv>(index, m_ptr, &v);
                 return v;
             }
@@ -286,6 +280,7 @@ mcl {
 
         constexpr bool operator! () { return !sizeof...(T); }
         constexpr operator void* () { return sizeof...(T) ? const_cast<pytuple<T...>*>(this) : 0; }
+        constexpr pytuple<T...>&& operator* () { return std::move (*const_cast<pytuple<T...>*>(this)); }
 
         constexpr proxy_t<T...> operator[] (long long index) const noexcept
         { return proxy_t <T...>(*this, index >= 0 ? index : sizeof...(T) + index); }

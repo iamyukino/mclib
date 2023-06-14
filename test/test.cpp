@@ -8,7 +8,7 @@ Most useful stuff:
     image.h       ok
     key.h         X
     mixer.h       X
-    mouse.h       X   <- TODO 
+    mouse.h       ok  <- TODO 
     surface.h     ok
     timer.h       ok
     music.h       ok
@@ -67,6 +67,33 @@ int main()
     });
     register_quit([] { clog4m[cll4m.Off] << "Hello, World!"; });
 
+    char const* ctest =
+        "XX                      "
+        "XXX                     "
+        "XXXX                    "
+        "XX.XX                   "
+        "XX..XX                  "
+        "XX...XX                 "
+        "XX....XX                "
+        "XX.....XX               "
+        "XX..oo..XX              "
+        "XX.oooo..XX             "
+        "XX.oooo...XX            "
+        "XX..oo....XXX           "
+        "XX......XXXXX           "
+        "XX.XXX..XX              "
+        "XXXX XX..XX             "
+        "XX   XX..XX             "
+        "     XX..XX             "
+        "      XX..XX            "
+        "      XX..XX            "
+        "       XXXX             "
+        "       XX               "
+        "                        "
+        "                        "
+        "                        ";
+    auto tup = cursors.compile (ctest);
+
     point2d_t point{0, 0};
     while (1) {
         // test event.get
@@ -98,10 +125,32 @@ int main()
                     if (ev.key.unicode == 27)
                         ::exit(0);
 
+                    static cursor_t cur;
+
                     if (ev.key.unicode == 'h' || ev.key.unicode == 'H')
                         mouse.set_visible (false);
                     else if (ev.key.unicode == 's' || ev.key.unicode == 'S')
                         mouse.set_visible (true);
+                    else if (ev.key.unicode == 'r')
+                        cur = mouse.get_cursor ();
+                    else if (ev.key.unicode == 'w')
+                        mouse.set_cursor (cur);
+                    else if (ev.key.unicode >= '1' && ev.key.unicode <= '9') {
+                        surface_t sur = display.get_surface();
+                        sur.resize ({25, 33});
+                        static sys_cursor_t test = 0;
+                        // sur.fill(0x7f123456);
+                        if (ev.key.unicode == '1')
+                            mouse.set_cursor({ 24, 24 }, { 0, 0 }, *tup);
+                        else if (ev.key.unicode == '2')
+                            mouse.set_cursor({ 0, 0 }, sur);
+                        else if (ev.key.unicode == '3') {
+                            if (!mouse.set_cursor(++ test))
+                                mouse.set_cursor(test = 0);
+                        }
+                        else
+                            mouse.set_cursor();
+                    }
                     // no break
                 }
                 default: {

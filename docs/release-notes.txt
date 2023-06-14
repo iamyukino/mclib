@@ -3,9 +3,11 @@
 Release notes for Mclib
 --------------------------------
   |
-.3468     June 10th 2023 - June 12th 2023
+.3468     June 10th 2023 - June 14th 2023
   |  
   |  [   NEW    ]    Add mouse.h .
+  |  [   NEW    ]    Add cursors.h .
+  |  [  ADDED   ]    Completed mouse.set_cursor().
   |
   |
   |
