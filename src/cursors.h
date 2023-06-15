@@ -90,28 +90,45 @@ mcl {
     };
     extern mcl_cursors_t cursors; // Module for cursor resources.
 
+
     class
     cursor_t {
     public:
-        explicit cursor_t  () noexcept;
-        operator void*     () const noexcept;
-        bool     operator! () const noexcept;
+                       cursor_t (cursor_t const& rhs) noexcept;
+                       cursor_t (cursor_t&& rhs) noexcept;
+                      ~cursor_t () noexcept;
+        operator       void*    () const noexcept;
+        bool           operator!() const noexcept;
+        cursor_t&      operator=(cursor_t const& rhs) noexcept;
+        cursor_t&      operator=(cursor_t&& rhs) noexcept;
+        cursor_t&      operator=(decltype(nullptr)) noexcept;
 
-        wchar_t const* type () noexcept;
-        char const* type_a () noexcept;
+        wchar_t const* type     () noexcept;
+        char const*    type_a   () noexcept;
+
+        explicit       cursor_t (point2d_t size, point2d_t hotspot,
+            pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
+            xor_and_masks) noexcept;
+                // use Windows binary cursor. (returned by mcl::cursors.compile)
+                // width and height must be equal and be a multiple of 8
+                // for example:
+                //   auto cursor = mcl::cursors.compile(thickarrow_strings);
+                //   mouse.set_cursor({24, 24}, {0, 0}, *cursor);
+
+        explicit       cursor_t (point2d_t size, point2d_t hotspot,
+            unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
+                // use Windows binary cursor.
+                // width and height must be equal and be a multiple of 8
+        explicit       cursor_t (sys_cursor_t constant) noexcept;
+                // use system cursor.  see cursors.h
+        explicit       cursor_t (point2d_t hotspot, surface_t surface) noexcept;
+                // use color cursor.  all sizes and rgba colors are supported
+        explicit       cursor_t () noexcept;
         
-        // TODO: 
-        // 1. implement reference counting to ensure that
-        // each set_cursor will call DestroyCursor. 
-        // 2. cursor_t objects can be created directly
-        // by providing parameters as set_cursor. 
-        // 3. load_xbm 
-
     private:
-        void* m_dataplus_; // HCURSOR
-        char m_data_[1];   // 1: "system", 2: "bitmap", 3: "color"
+        void* m_dataplus_;
+        char m_data_[1];
         
-        friend class mcl_mouse_t;
         char : 8; char : 8; char : 8; char : 8;
         char : 8; char : 8; char : 8;
     };

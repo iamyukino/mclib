@@ -104,11 +104,11 @@ namespace mcl
     */
     constexpr char const*    mcl_version_number_a (){ return        "0.5.2";            }
     constexpr wchar_t const* mcl_version_number ()  { return       L"0.5.2";            }
-    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.2-Debug.3468"; }
+    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.2-Debug.3469"; }
     constexpr int            mcl_major_number ()    { return         0; }
     constexpr int            mcl_minor_number ()    { return           5; }
     constexpr int            mcl_patch_number ()    { return             2; }
-    constexpr int            mcl_revision_number () { return                     3468; }
+    constexpr int            mcl_revision_number () { return                     3469; }
     
    /**
     * @class mcl_spinlock_t <cpp/mcl_base.h>
@@ -144,6 +144,33 @@ namespace mcl
         constexpr bool operator! () const noexcept { return !m_ptr; }
         constexpr operator T*() const noexcept{ return m_ptr; }
         constexpr T* ptr() const noexcept{ return m_ptr; }
+    };
+
+   /**
+    * @class mcl_shared_ptr_t <cpp/mcl_base.h>
+    * @brief shared pointer
+    */
+    template <typename T>
+    class
+    mcl_shared_ptr_t {
+        T m_ptr;
+        unsigned long* ref_cnt;
+        std::function<void()> fun_del;
+    public:
+        explicit mcl_shared_ptr_t (T rptr, std::function<void()> fun)
+            noexcept : m_ptr(rptr), ref_cnt (new (std::nothrow)
+                unsigned long(1)), fun_del (fun) {
+            if (!m_ptr) { if (ref_cnt) delete ref_cnt; ref_cnt = 0; }
+        }
+        void add () noexcept { if (ref_cnt && *ref_cnt) ++ *ref_cnt; }
+        bool del () noexcept{
+            if (ref_cnt && *ref_cnt) if (!-- *ref_cnt)
+            { fun_del(); delete ref_cnt; ref_cnt = 0; m_ptr = 0; return true; }
+            return false;
+        }
+        constexpr bool operator! () const noexcept { return !m_ptr; }
+        constexpr operator T() const noexcept{ return m_ptr; }
+        constexpr T ptr() const noexcept{ return m_ptr; }
     };
     
     

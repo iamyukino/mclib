@@ -5,17 +5,17 @@ Most useful stuff:
     draw.h        X   <- WAIT 
     event.h       ok
     font.h        X
-    image.h       ok
+    image.h       ok  <- TODO: support .cur & .ico 
     key.h         X
     mixer.h       X
-    mouse.h       ok  <- TODO 
+    mouse.h       ok
     surface.h     ok
     timer.h       ok
     music.h       ok
     mclib.h       ok
 
 Advanced stuff:
-    cursors.h     X   <- TODO 
+    cursors.h     ok
     bufferproxy.h ok
     transform.h   X
 
@@ -93,6 +93,7 @@ int main()
         "                        "
         "                        ";
     auto tup = cursors.compile (ctest);
+    cursor_t arrow({ 24, 24 }, { 0, 0 }, *tup);
 
     point2d_t point{0, 0};
     while (1) {
@@ -139,9 +140,8 @@ int main()
                         surface_t sur = display.get_surface();
                         sur.resize ({25, 33});
                         static sys_cursor_t test = 0;
-                        // sur.fill(0x7f123456);
                         if (ev.key.unicode == '1')
-                            mouse.set_cursor({ 24, 24 }, { 0, 0 }, *tup);
+                            mouse.set_cursor(arrow);
                         else if (ev.key.unicode == '2')
                             mouse.set_cursor({ 0, 0 }, sur);
                         else if (ev.key.unicode == '3') {

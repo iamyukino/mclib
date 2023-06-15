@@ -150,8 +150,8 @@ mcl {
         }            
 
         // Create a surface
-        surface_t surf{};
-        mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(reinterpret_cast<void*>(&surf));
+        surface_t surf;
+        mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(&surf);
         ibuf = new (std::nothrow) mcl_imagebuf_t{ qbmp.bmWidth, qbmp.bmHeight };
         if (!surf) {
             ::SelectObject (hldc, hbmpold);
@@ -313,8 +313,8 @@ mcl {
         // Select loaded bmp into dc
         ::SelectObject (hldc, hbmp);
 
-        surface_t surf{};
-        mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(reinterpret_cast<void*>(&surf));
+        surface_t surf;
+        mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(&surf);
         ibuf = new (std::nothrow) mcl_imagebuf_t ();
         if (!ibuf) {
             ::DeleteObject (hbmp);

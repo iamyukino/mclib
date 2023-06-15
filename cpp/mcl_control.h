@@ -42,6 +42,7 @@
 #endif // Relative paths include ".."
 
 #include "../src/event.h"
+#include "../src/cursors.h"
 
 #ifdef _MSC_VER
 # pragma warning(pop)
@@ -82,7 +83,6 @@ mcl {
         HWND      hwnd       = nullptr;
         HANDLE    taskhandle = nullptr;    // thread handle
         HICON     hicon      = nullptr;
-        HCURSOR   hcursor    = nullptr;
         LONGLONG  timer      = 0ll;
         unsigned  threaddr   = 0u;         // thread id
         wchar_t   window_caption[_MAX_FNAME];
@@ -111,10 +111,11 @@ mcl {
         char      bMouseKeyState = 0;
         char      bHasIMFocus = 0;
         bool      bHideCursor = false;
-        char      nCursorType = 0;
 
-        char : 8; char : 8;
+        char : 8; char : 8; char : 8;
         char : 8; char : 8; char : 8; char : 8;
+
+        cursor_t  cucur;
 
         HHOOK     hWndMouseGrabed = nullptr;
         HHOOK     hWndKeyGrabed = nullptr;

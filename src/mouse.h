@@ -87,31 +87,20 @@ mcl {
         // check if the display is receiving mouse input
         bool           get_focused () noexcept;
 
-        // set the mouse cursor to a new cursor. 
-        bool           set_cursor(point2d_t size, point2d_t hotspot,
+        // set the mouse cursor to a new cursor.  see cursors.h
+        bool           set_cursor  () noexcept;
+        bool           set_cursor  (cursor_t cur) noexcept;
+        bool           set_cursor  (sys_cursor_t constant) noexcept;
+        bool           set_cursor  (point2d_t hotspot, surface_t surface) noexcept;
+        bool           set_cursor  (point2d_t size, point2d_t hotspot,
             pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
             xor_and_masks) noexcept;
-                // use Windows binary cursor. (returned by mcl::cursors.compile)
-                // width and height must be equal and be a multiple of 8
-                // for example:
-                //   auto cursor = mcl::cursors.compile(thickarrow_strings);
-                //   mouse.set_cursor({24, 24}, {0, 0}, *cursor);
 
-        bool           set_cursor (point2d_t size, point2d_t hotspot,
+        bool           set_cursor  (point2d_t size, point2d_t hotspot,
             unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
-                // use Windows binary cursor.
-                // width and height must be equal and be a multiple of 8
-        bool           set_cursor () noexcept;
-                // use default cursor.
-        bool           set_cursor (cursor_t cur) noexcept;
-                // use cursor from mcl::mouse.get_cursor.
-        bool           set_cursor (sys_cursor_t constant) noexcept;
-                // use system cursor.  see cursors.h
-        bool           set_cursor (point2d_t hotspot, surface_t surface) noexcept;
-                // use color cursor.  all sizes and rgba colors are supported
 
         // get the current mouse cursor
-        cursor_t       get_cursor () noexcept;
+        cursor_t       get_cursor  () noexcept;
 
     };
     extern mcl_mouse_t mouse; // Module for interacting with the mouse.

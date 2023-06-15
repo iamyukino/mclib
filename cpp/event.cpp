@@ -243,7 +243,7 @@ mcl {
     get (void*) noexcept {
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
         mcl_control_obj.bCtrlMsgLoop = true;
-        std::vector<event_t> vec{};
+        std::vector<event_t> vec;
         event_t ev{ 0, {{0, 0}} };
         while (mcl_event_obj.pop(ev))
             vec.push_back (ev);
@@ -256,7 +256,7 @@ mcl {
             return get ();
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
         mcl_control_obj.bCtrlMsgLoop = true;
-        std::vector<event_t> vec{};
+        std::vector<event_t> vec;
         mcl_event_obj.process([&vec, &eventtype]
         (mcl_eventqueue_t::mcl_lqnode_t*& node) -> bool {
             if ((node -> next -> data.type) & eventtype) {
@@ -276,7 +276,7 @@ mcl {
             return get ();
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
         mcl_control_obj.bCtrlMsgLoop = true;
-        std::vector<event_t> vec{};
+        std::vector<event_t> vec;
         mcl_event_obj.process([&vec, &exclude]
         (mcl_eventqueue_t::mcl_lqnode_t* node) -> bool {
             if ((node -> next -> data.type) & exclude) {

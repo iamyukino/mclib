@@ -539,7 +539,7 @@ mcl {
     
     MCL_NODISCARD_CXX17 static LONG_PTR&
     mcl_fullscreen_last_style () noexcept{
-        static LONG_PTR mcl_fullscreen_last_style_obj{};
+        static LONG_PTR mcl_fullscreen_last_style_obj = 0;
         return mcl_fullscreen_last_style_obj;
     }
     

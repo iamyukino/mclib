@@ -197,12 +197,9 @@ mcl {
             ::DestroyIcon (hicon);
             hicon = nullptr;
         }
-        if (hcursor) {
+        if (cucur) {
             ::SetCursor (0);
-            if (nCursorType != 1)
-                ::DestroyCursor (hcursor);
-            nCursorType = 0;
-            hcursor = nullptr;
+            cucur = nullptr;
         }
 
         // window properties           // positions
@@ -445,7 +442,11 @@ mcl {
     LRESULT mcl_window_info_t::
     OnSetCursor (HWND, WPARAM wParam, LPARAM lParam) {
         if (bHideCursor) { ::SetCursor (0); return TRUE; }
-        if (LOWORD(lParam) == HTCLIENT && hcursor) { ::SetCursor (hcursor); return TRUE; }
+        if (LOWORD(lParam) == HTCLIENT && cucur) {
+            ::SetCursor ((**reinterpret_cast<mcl_simpletls_ns::
+                mcl_shared_ptr_t<HCURSOR>**>(&cucur)).ptr());
+            return TRUE;
+        }
         return ::DefWindowProc (hwnd, WM_SETCURSOR, wParam, lParam);
     }
 
