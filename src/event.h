@@ -36,7 +36,17 @@
 # define MCL_EVENT
 
 # include "mclfwd.h"
+
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4365)
+# endif 
+
 # include <vector>
+
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
 
 namespace
 mcl {

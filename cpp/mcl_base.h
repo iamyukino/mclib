@@ -83,6 +83,8 @@
       (cnt ? ::_vsnwprintf_s (buf, cnt, cnt, fmt, list) : ::_vscwprintf (fmt, list))
 #  define MCL_WGETFILENAME(path, f) \
       (::_wsplitpath_s (path, nullptr, 0, nullptr, 0, f, _MAX_FNAME, nullptr, 0))
+#  define MCL_WGETFILEEXT(path, f) \
+      (::_wsplitpath_s (path, nullptr, 0, nullptr, 0, nullptr, 0, f, _MAX_EXT))
 # else
 #  define MCL_GETTICKCOUNT() (::GetTickCount ())
 #  define MCL_WCSNCPY(de, sc, cnt) (::wcsncpy (de, sc, cnt))
@@ -90,7 +92,8 @@
 #  define MCL_WFREOPEN(file, name, mode, s) ((file) = ::_wfreopen (name, mode, s))
 #  define MCL_SNWPRINTF(buf, cnt, fmt, ...)    (::_snwprintf (buf, cnt, fmt, __VA_ARGS__))
 #  define MCL_VSNWPRINTF(buf, cnt, fmt, list) (::_vsnwprintf (buf, cnt, fmt, list))
-#  define MCL_WGETFILENAME(path, f) (::_wsplitpath (path, nullptr, nullptr, f, nullptr))
+#  define MCL_WGETFILENAME(path, f) (::_wsplitpath (path, nullptr, nullptr, f, nullptr), 0)
+#  define MCL_WGETFILEEXT(path, f) (::_wsplitpath (path, nullptr, nullptr, nullptr, f), 0)
 # endif
 
 namespace mcl

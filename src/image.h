@@ -57,7 +57,8 @@ mcl {
         operator      void*       () const noexcept;
         bool          operator!   () const noexcept;  
 
-        // Load and save image only supports bmp at the moment.
+        // load image only supports uncompressed BMP ICO CUR image
+        // (currently don't support 1, 2, 4, 8, 16, 24 bits image) 
 
         // load new image from a file
         surface_t     load        (char const* filename, void* = 0) noexcept;
@@ -68,6 +69,9 @@ mcl {
         // load new image from a file
         surface_t     load        (wchar_t const* filename, point2d_t size) noexcept;
         
+        // save image only supports uncompressed BMP image
+        // (currently don't support 1, 2, 4, 8, 16, 24 bits image) 
+
         // save an image to file
         bool          save        (surface_t const& surface, char const* filename) noexcept;
         // save an image to file

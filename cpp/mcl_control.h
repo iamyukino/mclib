@@ -77,12 +77,14 @@ mcl {
         LRESULT OnSetCursor   (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnKeyDown     (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
         LRESULT OnKeyUp       (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
+        LRESULT OnTimer       (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:   // window properties
         HINSTANCE instance   = nullptr;
         HWND      hwnd       = nullptr;
         HANDLE    taskhandle = nullptr;    // thread handle
         HICON     hicon      = nullptr;
+        void*     timermap   = nullptr;
         LONGLONG  timer      = 0ll;
         unsigned  threaddr   = 0u;         // thread id
         wchar_t   window_caption[_MAX_FNAME];

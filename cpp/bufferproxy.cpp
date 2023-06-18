@@ -137,13 +137,13 @@ mcl {
     }
     
     /**
-     * @function bufferproxy_t::get_surface <src/bufferproxy.h>
+     * @function bufferproxy_t::parent <src/bufferproxy.h>
      * @brief Return wrapped exporting object.
      * @return The Surface which returned the BufferProxy object 
      *    or the object passed to a BufferProxy call.
      */
     surface_t& bufferproxy_t::
-    get_surface () const noexcept {
+    parent () const noexcept {
         if (!m_dataplus_)
             return *reinterpret_cast<surface_t*>(reinterpret_cast<void*>(0));
         return *reinterpret_cast<mcl_proxy_impl_t*>(m_dataplus_) -> surf;

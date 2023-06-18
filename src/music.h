@@ -95,6 +95,12 @@ mcl {
         float        get_length  () noexcept;
         // Returns true if the music stream is playing.
         bool         get_busy    () noexcept;
+        // Have the music send an event when playback stops.
+        event_t      set_endevent(event_t type) noexcept;
+        // Have the music send an event when playback stops.
+        event_t      set_endevent(eventtype_t type) noexcept;
+        // Get the event a channel sends when playback stops.
+        event_t      get_endevent() noexcept;
     };
    /** @}  */
     

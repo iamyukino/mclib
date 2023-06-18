@@ -48,7 +48,6 @@ mcl {
     * @ingroup mouse
     * @ingroup event
     * @ingroup mclib
-    * @{
     */
     class
     mcl_mouse_t { public:
@@ -76,12 +75,14 @@ mcl {
             pytuple<bool, bool, bool, bool, bool> >::type get_pressed()
         noexcept{ return mcl_get_pressed_5 (); }
         
-        // get & set the mouse cursor position
+        // get the mouse cursor position
         point2d_t      get_pos     (bool b_global = false) noexcept;
+        // set the mouse cursor position
         bool           set_pos     (point2d_t pos, bool b_global = false) noexcept;
         
-        // get & set the visibility state of the mouse cursor
+        // get the visibility state of the mouse cursor
         bool           get_visible () noexcept;
+        // set the visibility state of the mouse cursor
         bool           set_visible (bool b_visible) noexcept;
 
         // check if the display is receiving mouse input
@@ -89,13 +90,17 @@ mcl {
 
         // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  () noexcept;
+        // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  (cursor_t cur) noexcept;
+        // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  (sys_cursor_t constant) noexcept;
+        // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  (point2d_t hotspot, surface_t surface) noexcept;
+        // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  (point2d_t size, point2d_t hotspot,
             pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
             xor_and_masks) noexcept;
-
+        // set the mouse cursor to a new cursor.  see cursors.h
         bool           set_cursor  (point2d_t size, point2d_t hotspot,
             unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
 

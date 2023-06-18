@@ -48,12 +48,17 @@
 
 #include <cerrno>     // for errno
 #include <cstring>    // for strerrno
+#include <map>
 
 namespace
 mcl {
     
     mcl_window_info_t mcl_control_obj;
     
+    struct mcl_timermape_t { event_t event;
+        int loops; char : 8; char : 8; char : 8; char : 8; };
+    using mcl_timermap_t = std::map<UINT_PTR, mcl_timermape_t>;
+
    /**
     * @function mcl_report_sysexception <cpp/mcl_control.h>
     * @brief
@@ -122,9 +127,8 @@ mcl {
     extern void mcl_do_atquit ();
 
    /**
-    * @function mcl_window_info_t::OnClose <cpp/mcl_control.cpp>
-    * @brief
-    *    Callback function for window closing.
+    * @function mcl_window_info_t::OnXxxxx <cpp/mcl_control.cpp>
+    * @brief Callback function.
     * @param wParam:
     *    constant values related to messages,
     *    or possibly a handle to a window or control
@@ -201,6 +205,11 @@ mcl {
             ::SetCursor (0);
             cucur = nullptr;
         }
+        if (timermap) {
+            delete reinterpret_cast<mcl_timermap_t*>(timermap);
+            timermap = nullptr;
+        }
+        mcl_event_obj._userType = (mcl::mcl_event_t::UserEventMin >> 1);
 
         // window properties           // positions
         threaddr      = 0;             base_w  = base_h   = 0;
@@ -542,6 +551,34 @@ mcl {
             return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
         return 0;
     }
+
+    LRESULT mcl_window_info_t::
+    OnTimer (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (!timermap)
+            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);        
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        if (!timermap)
+            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
+
+        mcl_timermap_t& tmap = *reinterpret_cast<mcl_timermap_t*>(timermap);
+        mcl_timermap_t::iterator it = tmap.find (wParam);
+        if (it == tmap.end ())
+            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
+        
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = it -> second.event.type;
+        ev.window.wParam = it -> second.event.window.wParam;
+        ev.window.lParam = it -> second.event.window.lParam;
+        event.post (ev);
+        
+        if (it -> second.loops) {
+            -- (it -> second.loops);
+            if (!it -> second.loops)
+                tmap.erase (it);
+        }
+        
+        return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
+    }
     
    /**
     * @function mcl_window_info_t::wndProc <cpp/mcl_control.cpp>
@@ -582,6 +619,7 @@ mcl {
             case WM_SYSKEYDOWN:  return OnKeyDown (hWnd, uMessage, wParam, lParam); break;
             case WM_KEYUP:       return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_SYSKEYUP:    return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
+            case WM_TIMER:       return OnTimer       (hWnd, wParam, lParam);    break;
             // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
             default:             return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
@@ -682,6 +720,13 @@ mcl {
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_ ();
             return 0;
         }
+
+#ifndef UOI_TIMERPROC_EXCEPTION_SUPPRESSION
+        int UOI_TIMERPROC_EXCEPTION_SUPPRESSION = 7;
+#endif
+        BOOL bfalse = FALSE;
+        ::SetUserObjectInformationW (::GetCurrentProcess (),
+            UOI_TIMERPROC_EXCEPTION_SUPPRESSION, reinterpret_cast<void*>(&bfalse), sizeof(BOOL));
         
         // if (bopen) ml_ << L"  Loading device contexts..." << std::endl;
         instance = ::GetModuleHandleW (nullptr);

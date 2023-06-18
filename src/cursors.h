@@ -49,7 +49,6 @@ mcl {
     * @ingroup cursors
     * @ingroup mouse
     * @ingroup mclib
-    * @{
     */
     class
     mcl_cursors_t { public:
@@ -90,7 +89,14 @@ mcl {
     };
     extern mcl_cursors_t cursors; // Module for cursor resources.
 
-
+   /**
+    * @class cursor_t <src/cursors.h>
+    * @brief type for representing a cursor
+    * 
+    * @ingroup cursors
+    * @ingroup mouse
+    * @ingroup mclib
+    */
     class
     cursor_t {
     public:
@@ -103,27 +109,36 @@ mcl {
         cursor_t&      operator=(cursor_t&& rhs) noexcept;
         cursor_t&      operator=(decltype(nullptr)) noexcept;
 
+        // Gets the cursor type
         wchar_t const* type     () noexcept;
+        // Gets the cursor type
         char const*    type_a   () noexcept;
 
+        // set_cursor example:
+        //   auto cursor = mcl::cursors.compile(thickarrow_strings);
+        //   mouse.set_cursor({24, 24}, {0, 0}, *cursor);
+
+        // Default constructor
+        explicit       cursor_t () noexcept;
+        // Use system cursor.  See cursors.h .
+        explicit       cursor_t (sys_cursor_t constant) noexcept;
+        // Use color cursor.  All sizes and rgba colors are supported.
+        explicit       cursor_t (point2d_t hotspot, surface_t surface) noexcept;
+        // Use Windows binary cursor. (returned by mcl::cursors.compile)
+        // Width and height must be equal and be a multiple of 8
         explicit       cursor_t (point2d_t size, point2d_t hotspot,
             pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
             xor_and_masks) noexcept;
-                // use Windows binary cursor. (returned by mcl::cursors.compile)
-                // width and height must be equal and be a multiple of 8
-                // for example:
-                //   auto cursor = mcl::cursors.compile(thickarrow_strings);
-                //   mouse.set_cursor({24, 24}, {0, 0}, *cursor);
 
+        // Use Windows binary cursor.
+        // Width and height must be equal and be a multiple of 8.
+        // |  and xor  resultc   |
+        // |   0   0    black    |
+        // |   0   1    white    |
+        // |   1   0  background |
+        // |   1   1     xor     |
         explicit       cursor_t (point2d_t size, point2d_t hotspot,
             unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
-                // use Windows binary cursor.
-                // width and height must be equal and be a multiple of 8
-        explicit       cursor_t (sys_cursor_t constant) noexcept;
-                // use system cursor.  see cursors.h
-        explicit       cursor_t (point2d_t hotspot, surface_t surface) noexcept;
-                // use color cursor.  all sizes and rgba colors are supported
-        explicit       cursor_t () noexcept;
         
     private:
         void* m_dataplus_;

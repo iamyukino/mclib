@@ -37,6 +37,7 @@
 #endif // Relative paths include ".."
 
 #include "../src/mixer.h"
+#include "../src/event.h"
 #include "mcl_base.h"
 
 #ifdef _MSC_VER
@@ -122,6 +123,7 @@ mcl {
     public:
         bool           b_ret_ = false;
         char : 8; char : 8; char : 8;
+        event_t        endEvent{ 0, {{0, 0}} };
 
     public:
         enum: DWORD{ mNoMsg, mNotReady, mExit, mLoad, mUnload,
@@ -458,6 +460,14 @@ mcl {
                 return ;
         
         if (mciMSP.dwReturn != MCI_MODE_PLAY) {
+            if (endEvent.type) {
+                event_t ev{ 0, {{0, 0}} };
+                ev.type          = endEvent.type;
+                ev.window.wParam = endEvent.window.wParam;
+                ev.window.lParam = endEvent.window.lParam;
+                event.post (ev);
+            }
+
             if (!nLoopCnt) {
                 if (iQueueLoop == -2) { dwStatus = MCI_SEEK; return ; }
                 int loops = iQueueLoop;  iQueueLoop = -2; 
@@ -899,8 +909,52 @@ mcl {
  *  @return {bool}: true if the music stream is playing
  */
     bool mcl_mixer_t::mcl_music_t::
-    get_busy() noexcept {
+    get_busy () noexcept {
         return MCI_PLAY == mcl_music_base.dwStatus;
+    }
+
+/**
+ * Have the music send an event when playback stops
+ *  @param {event_t, eventtype_t}: the type of event that will be queued
+ *  @return {event_t}: previous event
+ */
+    event_t mcl_mixer_t::mcl_music_t::
+    set_endevent (event_t type) noexcept {
+        event_t ev{0, {{0, 0}}};
+        ev.type          = mcl_music_base.endEvent.type;
+        ev.window.wParam = mcl_music_base.endEvent.window.wParam;
+        ev.window.lParam = mcl_music_base.endEvent.window.lParam;
+
+        mcl_music_base.endEvent.type          = type.type;
+        mcl_music_base.endEvent.window.wParam = type.window.wParam;
+        mcl_music_base.endEvent.window.lParam = type.window.lParam;
+        return ev;
+    }
+    event_t mcl_mixer_t::mcl_music_t::
+    set_endevent (eventtype_t type) noexcept {
+        event_t ev{0, {{0, 0}}};
+        ev.type          = mcl_music_base.endEvent.type;
+        ev.window.wParam = mcl_music_base.endEvent.window.wParam;
+        ev.window.lParam = mcl_music_base.endEvent.window.lParam;
+
+        mcl_music_base.endEvent.type          = type;
+        mcl_music_base.endEvent.window.wParam = 0;
+        mcl_music_base.endEvent.window.lParam = 0;
+        return ev;
+    }
+
+/**
+ * Get the event a channel sends when playback stops
+ *  @param {void}
+ *  @return {event_t}: event to be sent every time the music finishes playback
+ */
+    event_t mcl_mixer_t::mcl_music_t::
+    get_endevent () noexcept {
+        event_t ev{0, {{0, 0}}};
+        ev.type          = mcl_music_base.endEvent.type;
+        ev.window.wParam = mcl_music_base.endEvent.window.wParam;
+        ev.window.lParam = mcl_music_base.endEvent.window.lParam;
+        return ev;
     }
     
 }

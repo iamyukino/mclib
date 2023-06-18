@@ -1,5 +1,5 @@
 # This file is used to record file suffixes that do not require version tracking.
-# Last change time: 2022-03-30 10:34
+# Last change time: 2023-06-16 10:38
 
 # Visual Studio (Code) cache/config directory
 /.vs/
@@ -41,3 +41,5 @@
 *.wav
 *.m4a
 *.bmp
+*.ico
+*.cur

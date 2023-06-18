@@ -2,22 +2,23 @@
 Most useful stuff:
     color.h       ok
     display.h     ok
-    draw.h        X   <- WAIT 
+    draw.h        X 
     event.h       ok
     font.h        X
-    image.h       ok  <- TODO: support .cur & .ico 
-    key.h         X
+    image.h       ok  <- extended type, mask, low-bit image
+    key.h         X   <- WAIT 
     mixer.h       X
     mouse.h       ok
     surface.h     ok
-    timer.h       ok
+    timer.h       X   <- TODO: timer.Clock 
     music.h       ok
     mclib.h       ok
 
 Advanced stuff:
     cursors.h     ok
-    bufferproxy.h ok
+    mask.h        X
     transform.h   X
+    bufferproxy.h ok
 
 Other:
     pyobj.h
@@ -95,10 +96,18 @@ int main()
     auto tup = cursors.compile (ctest);
     cursor_t arrow({ 24, 24 }, { 0, 0 }, *tup);
 
+    mixer.music.load("..\\test\\sakura.mp3");
+    mixer.music.play(2, 265);
+    mixer.music.set_endevent(event.custom_type());
+
     point2d_t point{0, 0};
     while (1) {
         // test event.get
         for (auto&& ev : event.get ()) {
+            if (ev.type >= event.UserEventMin) {
+                clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << (ev.type);
+                continue;
+            }
             switch (ev.type) {
                 case event.Quit: {
                     ::exit(0);
@@ -116,7 +125,6 @@ int main()
                     clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << (ev.active.state);
                     break;
                 }
-
                 case event.MouseButtonUp: {
                     display.toggle_fullscreen();
                     mouse.set_pos ({20, 20});
@@ -148,23 +156,31 @@ int main()
                             if (!mouse.set_cursor(++ test))
                                 mouse.set_cursor(test = 0);
                         }
-                        else
+                        else if (ev.key.unicode == '4')
                             mouse.set_cursor();
+                        else {
+                            int         ct = ev.key.unicode - '4';
+                            int         in = 2 << ct;
+                            eventtype_t un = static_cast<eventtype_t>(in);
+                            if (mouse.get_visible())
+                                timer.set_timer(un, ct * 500, ct - 1);
+                            else
+                                timer.set_timer(un, 0);
+                        }
                     }
                     // no break
                 }
                 default: {
-                    clog4m[cll4m.Info] << event.event_name (ev.type) << " (" << ev.window.wParam << ", " << ev.window.lParam
-                        << ")   ";
-                    // for (auto i : mouse.get_pressed()) clog4m[cll4m.Info] << i << " _";
+                    clog4m[cll4m.Info] << event.event_name (ev.type) << " ("
+                        << ev.window.wParam << ", " << ev.window.lParam << ")   ";
                     break;
                 }
             }
         }
 
         // test surface.fill & bilt
-        display.get_surface().fill(white);
-        display.get_surface().bilt(bki);
+        display.get_surface().fill(lightblue);
+        display.get_surface().bilt(bki, 0, 0, blend.Ovl_rgba);
         display.get_surface().fill(rgba(255, 181, 181, .5f), { point.x - 150, point.y - 75, 300, 150 }, blend.Ovl_rgba);
         
         // test surface.resize

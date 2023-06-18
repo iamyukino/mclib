@@ -69,7 +69,7 @@ mcl {
         
     public:
         // Return wrapped exporting object.
-        surface_t&     get_surface () const noexcept;
+        surface_t&     parent () const noexcept;
         // The size, in bytes, of the exported buffer.
         size_t         length () const noexcept;
         

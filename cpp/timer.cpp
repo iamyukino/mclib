@@ -38,6 +38,8 @@
 #include "../src/timer.h"
 #include "mcl_control.h"
 
+#include <map>
+
 #ifdef _MSC_VER
 # pragma warning(pop)
 #endif
@@ -123,6 +125,60 @@ mcl {
             elapsed = (stopCount.QuadPart - startCount.QuadPart) * 1000000ll / mcl_base_obj.frequency;
         } while (elapsed < lastus);
         return elapsed;
+    }
+
+   /**
+    * @function mcl_time_t::set_timer <src/timer.h> 
+    * @brief Repeatedly create an event on the event queue.
+    * @param {event_t, eventtype_t} event: denotes event
+    * @param {long} millseconds: 0 if need to disable the timer for such an event
+    * @param {int} loops: the number of events posted. keep getting posted if set to 0
+    * @return bool: true if succeeded
+    */
+    bool mcl_time_t::
+    set_timer (eventtype_t type, long millseconds, int loops) noexcept{
+        return set_timer(event_t{ type, {{0, 0}} }, millseconds, loops);
+    }
+    bool mcl_time_t::
+    set_timer (event_t type, long millseconds, int loops) noexcept{
+        if (!type.type || millseconds < 0 || loops < 0)
+            return false;
+        
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        if (!mcl_control_obj.bIsReady)
+            return false;
+
+        struct mcl_timermape_t { event_t event;
+            int loops; char : 8; char : 8; char : 8; char : 8; };
+        using mcl_timermap_t = std::map<UINT_PTR, mcl_timermape_t>;
+
+        UINT_PTR idevent = static_cast<UINT_PTR>(type.type);
+        mcl_timermap_t*& ptmap = *reinterpret_cast
+            <mcl_timermap_t**>(&mcl_control_obj.timermap);
+        
+        if (!millseconds) {
+            if (!ptmap)
+                return false;
+
+            mcl_timermap_t::iterator it = ptmap -> find (idevent);
+            if (it == ptmap -> end ())
+                return false;
+            
+            if (!::KillTimer (mcl_control_obj.hwnd, idevent))
+                return false;
+            ptmap -> erase (it);
+            return true;
+        }
+
+        if (!ptmap) {
+            ptmap = new (std::nothrow) mcl_timermap_t;
+            if (!ptmap)
+                return false;
+        }
+        (*ptmap)[idevent] = { type, loops };
+
+        return static_cast<bool>(::SetTimer (mcl_control_obj.hwnd,
+            idevent, static_cast<UINT>(millseconds), 0));
     }
 
 } // namespace    

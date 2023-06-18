@@ -106,14 +106,32 @@ mcl {
         if (!filename)
             return *reinterpret_cast<surface_t*>(0);
 
-        // Load the image from file
-        HBITMAP hbmp = static_cast<HBITMAP>(
-            ::LoadImageW (nullptr, filename, IMAGE_BITMAP,
-                size.x, size.y, LR_LOADFROMFILE) );
-        if (!hbmp) {
-            clog4m[cll4m.Info] << L"info:  Failed to load image file \'"
-                << filename << L"\' [-WImage-bmp-loadbmp]\n";
+        // Check the image type
+        wchar_t lpFileExt[_MAX_EXT];
+        if (MCL_WGETFILEEXT(filename, lpFileExt))
             return *reinterpret_cast<surface_t*>(0);
+        UINT type = IMAGE_BITMAP;
+        if (lpFileExt[0]) {
+            if (lpFileExt[1] == 'I' || lpFileExt[1] == 'i') type = IMAGE_ICON;
+            else if (lpFileExt[1] == 'C' || lpFileExt[1] == 'c') type = IMAGE_CURSOR;
+        }
+
+        // Load the image from file
+        HANDLE hhandle = ::LoadImageW (nullptr, filename,
+            type, size.x, size.y, LR_LOADFROMFILE);
+        if (!hhandle) {
+            clog4m[cll4m.Info] << L"info:  Failed to load image file \'"
+                << filename << L"\' [-WImage-loadimg-" << type << "]\n";
+            return *reinterpret_cast<surface_t*>(0);
+        }
+
+        // Convert icon image to bitmap
+        HBITMAP hbmp = 0;
+        if (type == IMAGE_BITMAP) hbmp = static_cast<HBITMAP>(hhandle);
+        else if (type == IMAGE_ICON || type == IMAGE_CURSOR) {
+            ICONINFO iconinfo;
+            ::GetIconInfo (static_cast<HICON>(hhandle), &iconinfo);
+            hbmp = iconinfo.hbmColor; 
         }
         
         // Create a dc that is compatible with the window
@@ -147,7 +165,7 @@ mcl {
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
             return *reinterpret_cast<surface_t*>(0);
-        }            
+        }
 
         // Create a surface
         surface_t surf;
@@ -173,7 +191,7 @@ mcl {
         
         if (!retbilt)
             return *reinterpret_cast<surface_t*>(0);
-        if (cbuf[0]) {
+        if (!type && cbuf[0]) {
             // Convert into per pixel transparency
             for (color_t* p = ibuf -> m_pbuffer,
                 *e = p + static_cast<long long>(ibuf -> m_width) * ibuf -> m_height;

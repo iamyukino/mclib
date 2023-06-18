@@ -63,12 +63,8 @@ mcl {
         // Get the time in microseconds
         long long get_ticks_us () noexcept; 
 
-    //    mcl::timer.get_ticks()
-    //    mcl::timer.get_ticks_us()
-    //      get the time in milliseconds / microseconds
     //      get_ticks() -> time_milliseconds
     //      get_ticks_us() -> time_microseconds
-    //
     //      Return the number of milliseconds / microseconds since
     //      mcl::display.init() was called. Before display is initialized
     //      this will always be 0. 
@@ -76,28 +72,27 @@ mcl {
         // Sleep for an amount of millseconds
         long long wait (long millseconds) noexcept;
 
-    //    mcl::timer.wait()
-    //      pause the program for an amount of time
     //      wait(millseconds) -> time_milliseconds
-    //
-    //      Put the program into sleep and make it inactive for a given number
-    //      of milliseconds.
-    //
-    //      This returns the actual number of milliseconds used.
+    //      Put the program into sleep and make it inactive for a given
+    //      number of milliseconds.
 
         // Pause the program for an amount of time.
         long long delay (long millseconds, long microsecond = 0) noexcept;
 
-    //    mcl::timer.delay()
-    //      pause the program for an amount of time
-    //      delay(milliseconds) -> time_microseconds
     //      delay(milliseconds, microseconds) -> time_microseconds
-    // 
-    //      Will pause for a sum of given numbers of milliseconds and microseconds.
+    //      Pause for a sum of given numbers of milliseconds and microseconds.
     //      This function will use the processor (rather than sleeping) in order
     //      to make the delay more accurate than mcl::timer.wait()
-    //
-    //      This returns the actual number of microseconds used.
+
+        // Repeatedly create an event on the event queue.
+        bool set_timer (event_t type, long millseconds, int loops = 0) noexcept;
+        // Repeatedly create an event on the event queue.
+        bool set_timer (eventtype_t type, long millseconds, int loops = 0) noexcept;
+
+    //      set_timer(type, code, millseconds, int)
+    //      Set an event to appear on the event queue every given number
+    //      of milliseconds. The first event will not appear until the amount
+    //      of time has passed.
     
     };
     extern mcl_time_t timer; // Module for monitoring time.

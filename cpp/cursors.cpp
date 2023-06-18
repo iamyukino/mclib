@@ -90,8 +90,8 @@ mcl {
      */
     pytuple< std::vector<unsigned char>, std::vector<unsigned char> >
     mcl_cursors_t::
-    compile (char const* strings, char cblack, char cwhite, char cxor) noexcept
-    {
+    compile (char const* strings, char cblack, char cwhite, char cxor)
+    noexcept{
         std::vector<unsigned char> andmasks, xormasks;
         char const *str = strings;
         int len = 0, qlen = 1, it = 0;
@@ -99,15 +99,17 @@ mcl {
 
         while (*str) ++ str;
         len = static_cast<int>(str - strings);
-        if (!len || len & 0x3f) // have incomplete byte
-            return maktuple (std::vector<unsigned char>(), std::vector<unsigned char>());
         str = strings;
+        if (!len || len & 0x3f) // have incomplete byte
+            return maktuple (std::vector<unsigned char>(),
+                std::vector<unsigned char>());
         
         len >>= 6;
         while (len > 0) len -= qlen, qlen += 2;
+        -- qlen; qlen >>= 1; // width
         if (len) // not perfect square
-            return maktuple (std::vector<unsigned char>(), std::vector<unsigned char>());
-        -- qlen; qlen >>= 1; // width = qlen
+            return maktuple (std::vector<unsigned char>(),
+                std::vector<unsigned char>());
 
         while (*str) {
             andbit <<= 1; xorbit <<= 1;
@@ -115,29 +117,25 @@ mcl {
                 ++ andbit;
             if (*str == cwhite || *str == cxor)
                 ++ xorbit;
-            ++ it, ++ str;
+            ++ it; ++ str;
             
             if (it == 8) {
                 andmasks.push_back (andbit);
                 xormasks.push_back (xorbit);
                 andbit = 0, xorbit = 0, it = 0;
 
-                if (qlen & 1) {
-                    if (++ len == qlen) {
-                        len = 0;
-                        andmasks.push_back (255);
-                        xormasks.push_back (0);
-                    }    
+                if ((qlen & 1) && (++ len == qlen)) {
+                    len = 0;
+                    andmasks.push_back (255);
+                    xormasks.push_back (0);
                 }
             }
         }
-        if (qlen & 1) {
-            ++ qlen;
-            for (it = qlen << 3; it; -- it) {
+        if (qlen & 1)
+            for (it = ++ qlen << 3; it; -- it) {
                 andmasks.push_back (255);
                 xormasks.push_back (0);
             }
-        }
 
         return maktuple (xormasks, andmasks);
     }
@@ -145,7 +143,7 @@ mcl {
 
     // cursor type
     inline mcl_simpletls_ns::mcl_shared_ptr_t<HCURSOR>&
-        mcl_get_ptr4cur (void* m_dataplus) noexcept {
+    mcl_get_ptr4cur (void* m_dataplus) noexcept{
         return *reinterpret_cast<mcl_simpletls_ns::
             mcl_shared_ptr_t<HCURSOR>*>(m_dataplus);
     }
@@ -165,10 +163,11 @@ mcl {
      * @return none
      */
     cursor_t::cursor_t () noexcept
-        : m_dataplus_(0), m_data_{0} { }
+      : m_dataplus_(0), m_data_{0} { }
 
-    cursor_t::cursor_t (sys_cursor_t constant) noexcept
-        : m_dataplus_(0), m_data_{1} {
+    cursor_t::
+    cursor_t (sys_cursor_t constant) noexcept
+      : m_dataplus_(0), m_data_{1} {
         LPTSTR  sys_cur = nullptr;
         HCURSOR hcur = 0;
         switch (constant) {
@@ -199,13 +198,14 @@ mcl {
         hcur = ::LoadCursor (0, sys_cur);
         if (!hcur) return ;
 
-        m_dataplus_ = new (std::nothrow)
-            mcl_simpletls_ns::mcl_shared_ptr_t<HCURSOR>(hcur, [] { return; });
+        m_dataplus_ = new (std::nothrow) mcl_simpletls_ns::
+            mcl_shared_ptr_t<HCURSOR>(hcur, [] { return; });
     }
 
-    cursor_t::cursor_t (point2d_t size, point2d_t hotspot,
-            unsigned char const* xormasks, unsigned char const* andmasks) noexcept
-        : m_dataplus_(0), m_data_{2} {
+    cursor_t::
+    cursor_t (point2d_t size, point2d_t hotspot, unsigned char const*
+        xormasks, unsigned char const* andmasks) noexcept
+      : m_dataplus_(0), m_data_{2} {
         if (size.x != size.y || size.x & 7) return ;
         if (size.x & 15) size.x += 8;
 
@@ -213,14 +213,15 @@ mcl {
             nullptr, hotspot.x, hotspot.y, size.x, size.x, andmasks, xormasks);
         if (!hcur) return ;
 
-        m_dataplus_ = new (std::nothrow)
-            mcl_simpletls_ns::mcl_shared_ptr_t<HCURSOR>(hcur, [hcur] { ::DestroyCursor (hcur); });
+        m_dataplus_ = new (std::nothrow) mcl_simpletls_ns::
+            mcl_shared_ptr_t<HCURSOR>(hcur, [hcur] { ::DestroyCursor (hcur); });
     }
 
-    cursor_t::cursor_t (point2d_t size, point2d_t hotspot,
+    cursor_t::
+    cursor_t (point2d_t size, point2d_t hotspot,
         pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
         xor_and_masks) noexcept
-        : m_dataplus_(0), m_data_{2} {
+      : m_dataplus_(0), m_data_{2} {
         std::vector<unsigned char> cx = xor_and_masks[0], ca = xor_and_masks[1];
         if (!cx.size() || size.x != size.y || size.x & 7) return ;
         if (size.x & 15) size.x += 8;
@@ -229,12 +230,13 @@ mcl {
             nullptr, hotspot.x, hotspot.y, size.x, size.x, &ca[0], &cx[0]);
         if (!hcur) return ;
 
-        m_dataplus_ = new (std::nothrow)
-            mcl_simpletls_ns::mcl_shared_ptr_t<HCURSOR>(hcur, [hcur] { ::DestroyCursor (hcur); });
+        m_dataplus_ = new (std::nothrow) mcl_simpletls_ns::
+            mcl_shared_ptr_t<HCURSOR>(hcur, [hcur] { ::DestroyCursor (hcur); });
     }
 
-    cursor_t::cursor_t (point2d_t hotspot, surface_t surface) noexcept
-        : m_dataplus_(0), m_data_{3} {
+    cursor_t::
+    cursor_t (point2d_t hotspot, surface_t surface) noexcept
+      : m_dataplus_(0), m_data_{3} {
         point1d_t wid = surface.get_width (), hei = surface.get_height ();
         if (!(wid && hei)) return ;
 
@@ -272,8 +274,8 @@ mcl {
         if (!hdc) return ;
 
         // Create the DIB section with an alpha channel.
-        hBitmap = ::CreateDIBSection (hdc, reinterpret_cast<BITMAPINFO*>(&bi), DIB_RGB_COLORS,
-            reinterpret_cast<void**>(&lpBits), 0, 0);
+        hBitmap = ::CreateDIBSection (hdc, reinterpret_cast<BITMAPINFO*>(&bi),
+            DIB_RGB_COLORS, reinterpret_cast<void**>(&lpBits), 0, 0);
         if (!hBitmap) {
             ::ReleaseDC (0, hdc);
             return ;
@@ -338,21 +340,26 @@ mcl {
             mcl_simpletls_ns::mcl_shared_ptr_t<HCURSOR>(hAlphaCursor,
                 [hAlphaCursor] { ::DestroyCursor (hAlphaCursor); });
     }
-    cursor_t::cursor_t (cursor_t const& rhs) noexcept
-        : m_dataplus_(rhs.m_dataplus_), m_data_{rhs.m_data_[0]} {
-        if (m_dataplus_) mcl_get_ptr4cur(m_dataplus_).add ();
+    cursor_t::
+    cursor_t (cursor_t const& rhs) noexcept
+      : m_dataplus_(rhs.m_dataplus_), m_data_{rhs.m_data_[0]} {
+        if (m_dataplus_)
+            mcl_get_ptr4cur(m_dataplus_).add ();
     }
-    cursor_t::cursor_t (cursor_t&& rhs) noexcept
-        : m_dataplus_(rhs.m_dataplus_), m_data_{rhs.m_data_[0]} {
+    cursor_t::
+    cursor_t (cursor_t&& rhs) noexcept
+      : m_dataplus_(rhs.m_dataplus_), m_data_{rhs.m_data_[0]} {
         rhs.m_dataplus_ = 0;
     }
-    cursor_t::~cursor_t () noexcept{
+    cursor_t::
+    ~cursor_t () noexcept{
         if (m_dataplus_) {
             if (mcl_get_ptr4cur(m_dataplus_).del())
                 delete mcl_get_ptr4cur(m_dataplus_);
         }
     }
-    cursor_t& cursor_t::operator = (cursor_t const& rhs) noexcept {
+    cursor_t& cursor_t::
+    operator= (cursor_t const& rhs) noexcept{
         if (m_dataplus_ == rhs.m_dataplus_)
             return *this;
         if (m_dataplus_)
@@ -363,7 +370,8 @@ mcl {
         if (m_dataplus_) mcl_get_ptr4cur(m_dataplus_).add ();
         return *this;
     }
-    cursor_t& cursor_t::operator = (cursor_t&& rhs) noexcept {
+    cursor_t& cursor_t::
+    operator= (cursor_t&& rhs) noexcept{
         if (m_dataplus_ == rhs.m_dataplus_)
             return *this;
         if (m_dataplus_)
@@ -374,7 +382,8 @@ mcl {
         rhs.m_dataplus_ = 0;
         return *this;
     }
-    cursor_t& cursor_t::operator=(decltype(nullptr)) noexcept {
+    cursor_t& cursor_t::
+    operator= (decltype(nullptr)) noexcept{
         if (m_dataplus_)
             if (mcl_get_ptr4cur(m_dataplus_).del())
                 delete mcl_get_ptr4cur(m_dataplus_);
