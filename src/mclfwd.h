@@ -118,6 +118,7 @@ mcl {
     
     // module for monitoring time.  see timer.h
     class mcl_time_t;
+    class tclock_t;
         
 /** @}  */
 

@@ -6,11 +6,11 @@ Most useful stuff:
     event.h       ok
     font.h        X
     image.h       ok  <- extended type, mask, low-bit image
-    key.h         X   <- WAIT 
+    key.h         X   <- TODO 
     mixer.h       X
     mouse.h       ok
     surface.h     ok
-    timer.h       X   <- TODO: timer.Clock 
+    timer.h       ok
     music.h       ok
     mclib.h       ok
 
@@ -100,6 +100,7 @@ int main()
     mixer.music.play(2, 265);
     mixer.music.set_endevent(event.custom_type());
 
+    tclock_t ck; ck.tick_busy_loop();
     point2d_t point{0, 0};
     while (1) {
         // test event.get
@@ -192,8 +193,8 @@ int main()
         auto sz = display.get_window_size();
         display.update({ 0, 0, sz.x, sz.y });
         
-        timer.wait(20);
-
+        ck.tick(24);
+        // clog4m[cll4m.Trace] << timer.get_ticks() << "(" << ck.get_time_us() << ", " << ck.get_fps() << ")";
     }
 
     return 0;

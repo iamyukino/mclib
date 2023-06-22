@@ -97,6 +97,49 @@ mcl {
     };
     extern mcl_time_t timer; // Module for monitoring time.
 
+   /**
+    * @class tclock_t <src/timer.h>
+    * @brief object to help track time
+    * 
+    * @ingroup time
+    * @ingroup mclib
+    * @ingroup display
+    */
+    class
+    tclock_t {
+    public:
+        enum : char { mcl_averaging_max = 10 };
+
+        explicit    tclock_t  () noexcept;
+                   ~tclock_t  () noexcept;
+                    tclock_t  (tclock_t const& rhs) = delete;
+        tclock_t&   operator= (tclock_t const& rhs) = delete;
+        operator    void*     () const noexcept;
+        bool        operator! () const noexcept; 
+
+        // Update the clock.
+        long long   tick      (float framerate = 0.f) noexcept;
+        // Update the clock.
+        long long   tick_busy_loop (float framerate = 0.f) noexcept;
+        // Time used in the previous tick.  Accurate to milliseconds.
+        long long   get_time  () noexcept;
+        // Time used in the previous tick.  Accurate to mircoseconds.
+        long long   get_time_us () noexcept;
+        // Actual time used in the previous tick.  Accurate to milliseconds.
+        long long   get_rawtime () noexcept;
+        // Actual time used in the previous tick.  Accurate to mircoseconds.
+        long long   get_rawtime_us () noexcept;
+        // Compute the clock framerate.
+        float       get_fps   () noexcept;
+
+    private:
+        void* m_dataplus_;
+        char m_data_[1];
+
+        char : 8; char : 8; char : 8; char : 8;
+        char : 8; char : 8; char : 8;
+    };
+
 } // namespace
 
 #endif // MCL_TIME
