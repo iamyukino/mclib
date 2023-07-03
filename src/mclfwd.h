@@ -96,6 +96,9 @@ mcl {
     // module for working with the mouse.  see mouse.h
     class mcl_mouse_t;
 
+    // module for working with the keyboard.  see key.h
+    class mcl_key_t;
+
     // module for cursor resources.  see cursors.h
     class mcl_cursors_t;
     using sys_cursor_t = unsigned short;

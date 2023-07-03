@@ -67,35 +67,39 @@ mcl {
     
 #if __cplusplus < 201703L
     eventtype_t constexpr mcl_event_t::NoEvent;
+
     eventtype_t constexpr mcl_event_t::Quit;
+    
     eventtype_t constexpr mcl_event_t::ActiveEvent;
+    
     eventtype_t constexpr mcl_event_t::KeyEvent;
+    eventtype_t constexpr mcl_event_t::  KeyDown;
+    eventtype_t constexpr mcl_event_t::  KeyUp;
+    
     eventtype_t constexpr mcl_event_t::MouseEvent;
-    eventtype_t constexpr mcl_event_t::WindowEvent;
-    eventtype_t constexpr mcl_event_t::UserEvent;
-
-    eventtype_t constexpr mcl_event_t::KeyDown;
-    eventtype_t constexpr mcl_event_t::KeyUp;
-
-    eventtype_t constexpr mcl_event_t::MouseMotion;
-    eventtype_t constexpr mcl_event_t::MouseButtonUp;
-    eventtype_t constexpr mcl_event_t::MouseButtonDown;
+    eventtype_t constexpr mcl_event_t::  MouseMotion;
+    eventtype_t constexpr mcl_event_t::  MouseButtonUp;
+    eventtype_t constexpr mcl_event_t::  MouseButtonDown;
+    
     eventtype_t constexpr mcl_event_t::MouseWheel;
 
-    eventtype_t constexpr mcl_event_t::WindowShown;
-    eventtype_t constexpr mcl_event_t::WindowHidden;
-    eventtype_t constexpr mcl_event_t::WindowMoved;
-    eventtype_t constexpr mcl_event_t::WindowResized;
-    eventtype_t constexpr mcl_event_t::WindowMinimized;
-    eventtype_t constexpr mcl_event_t::WindowMaximized;
-    eventtype_t constexpr mcl_event_t::WindowRestored;
-    eventtype_t constexpr mcl_event_t::WindowEnter;
-    eventtype_t constexpr mcl_event_t::WindowLeave;
-    eventtype_t constexpr mcl_event_t::WindowFocusGained;
-    eventtype_t constexpr mcl_event_t::WindowFocusLost;
-    eventtype_t constexpr mcl_event_t::WindowClose;
-
-    eventtype_t constexpr mcl_event_t::UserEventMin;
+    eventtype_t constexpr mcl_event_t::WindowEvent;
+    eventtype_t constexpr mcl_event_t::  WindowShown;
+    eventtype_t constexpr mcl_event_t::  WindowHidden;
+    eventtype_t constexpr mcl_event_t::  WindowMoved;
+    eventtype_t constexpr mcl_event_t::  WindowResized;
+    eventtype_t constexpr mcl_event_t::  WindowMinimized;
+    eventtype_t constexpr mcl_event_t::  WindowMaximized;
+    eventtype_t constexpr mcl_event_t::  WindowRestored;
+    eventtype_t constexpr mcl_event_t::  WindowEnter;
+    eventtype_t constexpr mcl_event_t::  WindowLeave;
+    eventtype_t constexpr mcl_event_t::  WindowFocusGained;
+    eventtype_t constexpr mcl_event_t::  WindowFocusLost;
+    eventtype_t constexpr mcl_event_t::  WindowClose;
+    
+    eventtype_t constexpr mcl_event_t::UserEvent;
+    eventtype_t constexpr mcl_event_t::  UserEventMin;
+    eventtype_t constexpr mcl_event_t::  UserEventMax;
 #endif
     
     mcl_eventqueue_t::
@@ -399,88 +403,88 @@ mcl {
     }
 
     /**
-     * @function mcl_event_t::clear <src/event.h>
-     * @brief Removes all events from the queue. If eventtype
-     *     is given, removes the given event or sequence of
-     *     events. This has the same effect as mcl::event.get()
-     *     except nothing is returned. It can be slightly
-     *     more efficient when clearing a full event queue.
+     * @function mcl_event_t::event_name <src/event.h>
+     * @brief "UserEvent" is returned for all values in
+     *     the user event id range. "Unknown" is returned
+     *     when the event type does not exist.
      */
     wchar_t const* mcl_event_t::
     event_name (eventtype_t type) noexcept{
-        if (type & UserEvent)
-            return L"UserEvent";
-
         switch (type) {
-            case NoEvent:       return L"NoEvent";
-            case Quit:          return L"Quit";
-            case ActiveEvent:   return L"ActiveEvent";
-            case KeyEvent:      return L"KeyEvent";
-            case MouseEvent:    return L"MouseEvent";
-            case WindowEvent:   return L"WindowEvent";
-            case UserEvent:     return L"UserEvent";
+            case NoEvent:         return L"NoEvent";
+            
+            case Quit:            return L"Quit";
+            
+            case ActiveEvent:     return L"ActiveEvent";
+            case KeyDown:         return L"KeyDown";
+            case KeyUp:           return L"KeyUp";
 
-            case KeyDown:       return L"KeyDown";
-            case KeyUp:         return L"KeyUp";
-
-            case MouseMotion:   return L"MouseMotion";
-            case MouseButtonUp: return L"MouseButtonUp";
+            case MouseMotion:     return L"MouseMotion";
+            case MouseButtonUp:   return L"MouseButtonUp";
             case MouseButtonDown: return L"MouseButtonDown";
-            case MouseWheel:    return L"MouseWheel";
 
-            case WindowShown:   return L"WindowShown";
-            case WindowHidden:  return L"WindowHidden";
-            case WindowMoved:   return L"WindowMoved";
-            case WindowResized: return L"WindowResized";
+            case MouseWheel:      return L"MouseWheel";
+
+            case WindowShown:     return L"WindowShown";
+            case WindowHidden:    return L"WindowHidden";
+            case WindowMoved:     return L"WindowMoved";
+            case WindowResized:   return L"WindowResized";
             case WindowMinimized: return L"WindowMinimized";
             case WindowMaximized: return L"WindowMaximized";
-            case WindowRestored: return L"WindowRestored";
-            case WindowEnter:   return L"WindowEnter";
-            case WindowLeave:   return L"WindowLeave";
+            case WindowRestored:  return L"WindowRestored";
+            case WindowEnter:     return L"WindowEnter";
+            case WindowLeave:     return L"WindowLeave";
             case WindowFocusGained: return L"WindowFocusGained";
             case WindowFocusLost: return L"WindowFocusLost";
-            case WindowClose:   return L"WindowClose";
-            default:            break;
+            case WindowClose:     return L"WindowClose";
+            default:              break;
         }
+        if ((type & UserEvent) && !(type & ~UserEvent))
+            return L"UserEvent";
         return L"Unknown";
+    }
+    wchar_t const* mcl_event_t::
+    event_name (event_t type) noexcept{
+        return event_name (type.type);
     }
     char const* mcl_event_t::
     event_name_a (eventtype_t type) noexcept{
-        if (type & UserEvent)
-            return "UserEvent";
-
         switch (type) {
-            case NoEvent:       return "NoEvent";
-            case Quit:          return "Quit";
-            case ActiveEvent:   return "ActiveEvent";
-            case KeyEvent:      return "KeyEvent";
-            case MouseEvent:    return "MouseEvent";
-            case WindowEvent:   return "WindowEvent";
-            case UserEvent:     return "UserEvent";
+            case NoEvent:         return "NoEvent";
+            
+            case Quit:            return "Quit";
+            
+            case ActiveEvent:     return "ActiveEvent";
+            case KeyDown:         return "KeyDown";
+            case KeyUp:           return "KeyUp";
 
-            case KeyDown:       return "KeyDown";
-            case KeyUp:         return "KeyUp";
-
-            case MouseMotion:   return "MouseMotion";
-            case MouseButtonUp: return "MouseButtonUp";
+            case MouseMotion:     return "MouseMotion";
+            case MouseButtonUp:   return "MouseButtonUp";
             case MouseButtonDown: return "MouseButtonDown";
-            case MouseWheel:    return "MouseWheel";
 
-            case WindowShown:   return "WindowShown";
-            case WindowHidden:  return "WindowHidden";
-            case WindowMoved:   return "WindowMoved";
-            case WindowResized: return "WindowResized";
+            case MouseWheel:      return "MouseWheel";
+
+            case WindowShown:     return "WindowShown";
+            case WindowHidden:    return "WindowHidden";
+            case WindowMoved:     return "WindowMoved";
+            case WindowResized:   return "WindowResized";
             case WindowMinimized: return "WindowMinimized";
             case WindowMaximized: return "WindowMaximized";
-            case WindowRestored: return "WindowRestored";
-            case WindowEnter:   return "WindowEnter";
-            case WindowLeave:   return "WindowLeave";
+            case WindowRestored:  return "WindowRestored";
+            case WindowEnter:     return "WindowEnter";
+            case WindowLeave:     return "WindowLeave";
             case WindowFocusGained: return "WindowFocusGained";
             case WindowFocusLost: return "WindowFocusLost";
-            case WindowClose:   return "WindowClose";
-            default:            break;
+            case WindowClose:     return "WindowClose";
+            default:              break;
         }
+        if ((type & UserEvent) && !(type & ~UserEvent))
+            return "UserEvent";
         return "Unknown";
+    }
+    char const* mcl_event_t::
+    event_name_a (event_t type) noexcept{
+        return event_name_a (type.type);
     }
 
     /**
@@ -499,11 +503,11 @@ mcl {
     }
 
     void mcl_event_t::
-    set_blocked (eventtype_t types) noexcept {
-        if (!types)
+    set_blocked (eventtype_t eventtypes) noexcept {
+        if (!eventtypes)
             return set_blocked ();
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
-        mcl_event_obj._blocked |= types;
+        mcl_event_obj._blocked |= eventtypes;
     }
 
     /**
@@ -522,11 +526,11 @@ mcl {
     }
 
     void mcl_event_t::
-    set_allowed (eventtype_t types) noexcept{
-        if (!types)
+    set_allowed (eventtype_t eventtypes) noexcept{
+        if (!eventtypes)
             return set_allowed ();
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
-        mcl_event_obj._blocked &= ~types;
+        mcl_event_obj._blocked &= ~eventtypes;
     }
 
     /**
@@ -536,9 +540,9 @@ mcl {
      *     will return True if any of those event types are blocked.
      */
     bool mcl_event_t::
-    get_blocked (eventtype_t types) noexcept{
+    get_blocked (eventtype_t eventtypes) noexcept{
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
-        return static_cast<bool>(mcl_event_obj._blocked & types);
+        return static_cast<bool>(mcl_event_obj._blocked & eventtypes);
     }
 
     /**
@@ -566,8 +570,17 @@ mcl {
             mcl_control_obj.hWndMouseGrabed = nullptr;
             return ;
         } 
-//        mcl_control_obj.hWndMouseGrabed =
-//            ::SetWindowsHookEx (WH_MOUSE_LL, MyHookFunMouse, mcl_control_obj.instance, 0);
+#       ifdef _MSC_VER
+#           pragma warning(push)
+#           pragma warning(disable: 5039)
+#       endif // never throw an exception passed to extern C function
+        mcl_control_obj.hWndMouseGrabed =
+            ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf (
+                    &mcl_window_info_t::hookMouseProc, &mcl_control_obj
+                ), mcl_control_obj.instance, 0);
+#       ifdef _MSC_VER
+#           pragma warning(pop)
+#       endif
         return ;
     }
 
@@ -594,8 +607,17 @@ mcl {
                 ::UnhookWindowsHookEx (mcl_control_obj.hWndMouseGrabed);
                 mcl_control_obj.hWndMouseGrabed = nullptr;
             } else {
-//                mcl_control_obj.hWndMouseGrabed =
-//                    ::SetWindowsHookEx (WH_MOUSE_LL, MyHookFunMouse, mcl_control_obj.instance, 0);
+#       ifdef _MSC_VER
+#           pragma warning(push)
+#           pragma warning(disable: 5039)
+#       endif // never throw an exception passed to extern C function
+                mcl_control_obj.hWndMouseGrabed =
+                    ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf (
+                            &mcl_window_info_t::hookMouseProc, &mcl_control_obj
+                        ), mcl_control_obj.instance, 0);
+#       ifdef _MSC_VER
+#           pragma warning(pop)
+#       endif
             }
         }
         if (b_grab != static_cast<bool>(mcl_control_obj.hWndKeyGrabed)) {
@@ -653,7 +675,7 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
         if (mcl_event_obj._userType == UserEventMax)
             return event.NoEvent;
-        mcl_event_obj._userType <<= 1;
+        mcl_event_obj._userType += UserEventMin;
         return mcl_event_obj._userType;
     }
 

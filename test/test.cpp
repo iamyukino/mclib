@@ -99,6 +99,7 @@ int main()
     mixer.music.load("..\\test\\sakura.mp3");
     mixer.music.play(2, 265);
     mixer.music.set_endevent(event.custom_type());
+    event.set_grab_mouse (true);
 
     tclock_t ck; ck.tick_busy_loop();
     point2d_t point{0, 0};
@@ -119,7 +120,8 @@ int main()
                     break;
                 }
                 case event.KeyDown: {
-                    clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << ev.key.unicode;
+                    clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << key.name(ev.key.key)
+                        << " (" << ev.key.unicode << ", " << int(ev.key.scancode) << ")";
                     break;
                 }
                 case event.ActiveEvent: {
@@ -127,17 +129,19 @@ int main()
                     break;
                 }
                 case event.MouseButtonUp: {
-                    display.toggle_fullscreen();
-                    mouse.set_pos ({20, 20});
+                    if (ev.mouse.buttons & mouse.BtnCtrl)
+                        display.toggle_fullscreen();
+                    // mouse.set_pos ({20, 20});
                     break;
                 }
                 case event.KeyUp: {
-                    if (ev.key.unicode == 27)
+                    if (ev.key.key == key.VkEscape)
                         ::exit(0);
+                    if (ev.key.mod & key.ModMode)
+                        exit(0);
 
                     static cursor_t cur;
-
-                    if (ev.key.unicode == 'h' || ev.key.unicode == 'H')
+                    if (ev.key.key == key.VkH)
                         mouse.set_visible (false);
                     else if (ev.key.unicode == 's' || ev.key.unicode == 'S')
                         mouse.set_visible (true);
@@ -145,31 +149,39 @@ int main()
                         cur = mouse.get_cursor ();
                     else if (ev.key.unicode == 'w')
                         mouse.set_cursor (cur);
-                    else if (ev.key.unicode >= '1' && ev.key.unicode <= '9') {
-                        surface_t sur = display.get_surface();
-                        sur.resize ({25, 33});
-                        static sys_cursor_t test = 0;
-                        if (ev.key.unicode == '1')
-                            mouse.set_cursor(arrow);
-                        else if (ev.key.unicode == '2')
-                            mouse.set_cursor({ 0, 0 }, sur);
-                        else if (ev.key.unicode == '3') {
-                            if (!mouse.set_cursor(++ test))
-                                mouse.set_cursor(test = 0);
+                    else if (ev.key.key >= key.Vk1 && ev.key.key <= key.Vk9) {
+                        if ((key.get_mods() & key.ModLShift) || key.get_pressed()[key.VkLControl]) {
+                            surface_t sur = display.get_surface();
+                            sur.resize ({25, 33});
+                            static sys_cursor_t test = 0;
+                            if (ev.key.key == key.Vk1)
+                                mouse.set_cursor(arrow);
+                            else if (ev.key.key == key.Vk2)
+                                mouse.set_cursor({ 0, 0 }, sur);
+                            else if (ev.key.key == key.Vk3) {
+                                if (!mouse.set_cursor(++ test))
+                                    mouse.set_cursor(test = 0);
+                            }
+                            else if (ev.key.key == key.Vk4)
+                                mouse.set_cursor();
                         }
-                        else if (ev.key.unicode == '4')
-                            mouse.set_cursor();
                         else {
-                            int         ct = ev.key.unicode - '4';
-                            int         in = 2 << ct;
-                            eventtype_t un = static_cast<eventtype_t>(in);
+                            if (ev.key.key == key.Vk8) {
+                                key.set_repeat(true);
+                                continue;
+                            } else if (ev.key.key == key.Vk9) {
+                                key.set_repeat(false);
+                                continue;
+                            }
+                            int ct = ev.key.key - key.Vk0;
+                            static eventtype_t un = event.custom_type();
                             if (mouse.get_visible())
                                 timer.set_timer(un, ct * 500, ct - 1);
                             else
                                 timer.set_timer(un, 0);
                         }
                     }
-                    // no break
+                    break;
                 }
                 default: {
                     clog4m[cll4m.Info] << event.event_name (ev.type) << " ("
@@ -195,6 +207,14 @@ int main()
         
         ck.tick(24);
         // clog4m[cll4m.Trace] << timer.get_ticks() << "(" << ck.get_time_us() << ", " << ck.get_fps() << ")";
+
+        static char str[100];
+# ifdef _MSC_VER
+        sprintf_s (str, 100, "%dfps", int(ck.get_fps() + 0.5));
+# else
+        sprintf (str, "%dfps", int(ck.get_fps() + 0.5));
+# endif
+        display.set_caption(str);
     }
 
     return 0;

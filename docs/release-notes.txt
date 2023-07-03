@@ -1,7 +1,17 @@
-# mclib v0.5.2-Debug.3469
+# mclib v0.5.2-Debug.3470
 
 Release notes for Mclib
 --------------------------------
+  |
+.3470     June 23rd 2023 - July 2nd 2023
+  |  
+  |  [   NEW    ]    Add key.h .
+  |  [  ADDED   ]    Completed event.set_grab_mouse() .
+  |  [  FIXED   ]    Corrected WM_KEYDOWN & WM_KEYUP .
+  |  [ IMPROVED ]    Improved event.custom_type() .
+  |
+  |
+  |
   |
 .3468-69  June 10th 2023 - June 22nd 2023
   |  

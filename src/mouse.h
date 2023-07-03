@@ -56,56 +56,58 @@ mcl {
                        mcl_mouse_t (mcl_mouse_t const& rhs) = delete;
         mcl_mouse_t&   operator=   (mcl_mouse_t const& rhs) = delete;
 
-        pytuple<bool, bool, bool> mcl_get_pressed_3 () const noexcept;
-        pytuple<bool, bool, bool, bool, bool> mcl_get_pressed_5 () const noexcept;
+    public:
+        using btn_type = char;
+ 
+        static btn_type constexpr BtnNone     =  0x0;
+        static btn_type constexpr BtnLButton  =  0x1;
+        static btn_type constexpr BtnRButton  =  0x2;
+        static btn_type constexpr BtnShift    =  0x4;
+        static btn_type constexpr BtnCtrl     =  0x8;
+        static btn_type constexpr BtnMButton  = 0x10;
+        static btn_type constexpr BtnXButton1 = 0x20;
+        static btn_type constexpr BtnXButton2 = 0x40;
 
     public:
         operator       void*       () const noexcept;
         bool           operator!   () const noexcept;
         
-        // get the state of the mouse buttons.  see event_t::mcl_mouse_event_t
-        // example:  mcl::mouse.get_pressed<3>();
-        template<int num_buttons = 3>
-        constexpr typename std::enable_if< num_buttons == 3,
-            pytuple<bool, bool, bool> >::type get_pressed ()
-        noexcept{ return mcl_get_pressed_3 (); }
-        
-        template<int num_buttons = 3>
-        constexpr typename std::enable_if< num_buttons == 5,
-            pytuple<bool, bool, bool, bool, bool> >::type get_pressed()
-        noexcept{ return mcl_get_pressed_5 (); }
-        
+        // get the state of the mouse buttons.
+        std::vector<bool> get_pressed (int num_buttons = 3) noexcept;
+        // get the state of the mouse buttons and modifier keys.
+        btn_type          get_buttons () noexcept;
+
         // get the mouse cursor position
-        point2d_t      get_pos     (bool b_global = false) noexcept;
+        point2d_t         get_pos     (bool b_global = false) noexcept;
         // set the mouse cursor position
-        bool           set_pos     (point2d_t pos, bool b_global = false) noexcept;
+        bool              set_pos     (point2d_t pos, bool b_global = false) noexcept;
         
         // get the visibility state of the mouse cursor
-        bool           get_visible () noexcept;
+        bool              get_visible () noexcept;
         // set the visibility state of the mouse cursor
-        bool           set_visible (bool b_visible) noexcept;
+        bool              set_visible (bool b_visible) noexcept;
 
         // check if the display is receiving mouse input
-        bool           get_focused () noexcept;
+        bool              get_focused () noexcept;
 
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  () noexcept;
+        bool              set_cursor  () noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  (cursor_t cur) noexcept;
+        bool              set_cursor  (cursor_t cur) noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  (sys_cursor_t constant) noexcept;
+        bool              set_cursor  (sys_cursor_t constant) noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  (point2d_t hotspot, surface_t surface) noexcept;
+        bool              set_cursor  (point2d_t hotspot, surface_t surface) noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  (point2d_t size, point2d_t hotspot,
+        bool              set_cursor  (point2d_t size, point2d_t hotspot,
             pytuple< std::vector<unsigned char>, std::vector<unsigned char> >&&
             xor_and_masks) noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
-        bool           set_cursor  (point2d_t size, point2d_t hotspot,
+        bool              set_cursor  (point2d_t size, point2d_t hotspot,
             unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
 
         // get the current mouse cursor
-        cursor_t       get_cursor  () noexcept;
+        cursor_t          get_cursor  () noexcept;
 
     };
     extern mcl_mouse_t mouse; // Module for interacting with the mouse.

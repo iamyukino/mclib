@@ -39,6 +39,8 @@
 #include "../src/mclfwd.h"
 #include "../src/display.h"
 #include "../src/surface.h"
+#include "../src/mouse.h"
+#include "../src/key.h"
 #include "../src/clog4m.h"
 #include "mcl_control.h"
 
@@ -209,7 +211,13 @@ mcl {
             delete reinterpret_cast<mcl_timermap_t*>(timermap);
             timermap = nullptr;
         }
-        mcl_event_obj._userType = (mcl::mcl_event_t::UserEventMin >> 1);
+        if (keymap) {
+            delete reinterpret_cast<std::vector<BYTE>*>(keymap);
+            keymap = nullptr;
+        }
+        mcl_event_obj._userType = mcl::mcl_event_t::UserEventMin;
+        bMouseKeyState = 0;
+        bModKeyState = 0;
 
         // window properties           // positions
         threaddr      = 0;             base_w  = base_h   = 0;
@@ -232,6 +240,7 @@ mcl {
         bCtrlMsgLoop = false;
         bMouseInClient = false;
         bHideCursor = false;
+        bRepeatCount = false;
         
         // switchs
         if (b_allow_screensaver_before != 2) {
@@ -406,12 +415,15 @@ mcl {
     LRESULT mcl_window_info_t::
     OnMouseMove (HWND, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
-        ev.type = event.MouseMotion;
-        ev.mouse.pos.x = GET_X_LPARAM (lParam);
-        ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-        ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
-        event.post (ev);
+        
+        if (!hWndMouseGrabed) {
+            ev.type = event.MouseMotion;
+            ev.mouse.pos.x = GET_X_LPARAM (lParam);
+            ev.mouse.pos.y = GET_Y_LPARAM (lParam);
+            bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
+            ev.mouse.buttons = bMouseKeyState;
+            event.post (ev);
+        }
 
         if (!bMouseInClient) {
             ev.type = event.WindowEnter;
@@ -460,68 +472,111 @@ mcl {
     }
 
     LRESULT mcl_window_info_t::
-    OnMouseWheel (char type, WPARAM wParam, LPARAM lParam) {
-        event_t ev{ 0, {{0, 0}} };
-        ev.type = event.MouseWheel;
-        ev.mouse.del = GET_WHEEL_DELTA_WPARAM (wParam);
-        ev.mouse.pos.x = GET_X_LPARAM (lParam);
-        ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-        ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam) | (type ? 0x100 : 0x80));
-        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
-        event.post (ev);
+    OnMouseWheel (char type, WPARAM wParam, LPARAM) {
+        if (!hWndMouseGrabed) {
+            event_t ev{ 0, {{0, 0}} };
+            ev.type = event.MouseWheel;
+            if (type) ev.wheel.delta.x = GET_WHEEL_DELTA_WPARAM (wParam);
+            else      ev.wheel.delta.y = GET_WHEEL_DELTA_WPARAM (wParam);
+            bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
+            ev.wheel.buttons = bMouseKeyState;
+            event.post (ev);
+        }
         return 0;
     }
 
     LRESULT mcl_window_info_t::
     OnButtonDown (char type, WPARAM wParam, LPARAM lParam) {
-        ::SetCapture (hwnd);
-        event_t ev{ 0, {{0, 0}} };
-        ev.type = event.MouseButtonDown;
-        ev.mouse.button = type;
-        if (GET_XBUTTON_WPARAM(wParam) == XBUTTON2)
-            ++ ev.mouse.button;
-        ev.mouse.pos.x = GET_X_LPARAM (lParam);
-        ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-        ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
-        event.post (ev);
+        if (!hWndMouseGrabed) {
+            ::SetCapture (hwnd);
+            event_t ev{ 0, {{0, 0}} };
+            ev.type = event.MouseButtonDown;
+            ev.mouse.button = type;
+            if (GET_XBUTTON_WPARAM(wParam) == XBUTTON2)
+                ++ ev.mouse.button;
+            ev.mouse.pos.x = GET_X_LPARAM (lParam);
+            ev.mouse.pos.y = GET_Y_LPARAM (lParam);
+            ev.mouse.buttons = bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
+            event.post (ev);
+        }
         return 0;
     }
 
     LRESULT mcl_window_info_t::
     OnButtonUp (char type, WPARAM wParam, LPARAM lParam) {
-        ::ReleaseCapture ();
-        event_t ev{ 0, {{0, 0}} };
-        ev.type = event.MouseButtonUp;
-        ev.mouse.button = type;
-        if (GET_XBUTTON_WPARAM(wParam) == XBUTTON2)
-            ++ ev.mouse.button;
-        ev.mouse.pos.x = GET_X_LPARAM (lParam);
-        ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-        ev.mouse.buttons = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
-        *(&ev.mouse.buttons + 1) = bMouseKeyState = ev.mouse.buttons;
-        event.post (ev);
+        if (!hWndMouseGrabed) {
+            ::ReleaseCapture ();
+            event_t ev{ 0, {{0, 0}} };
+            ev.type = event.MouseButtonUp;
+            ev.mouse.button = type;
+            if (GET_XBUTTON_WPARAM(wParam) == XBUTTON2)
+                ++ ev.mouse.button;
+            ev.mouse.pos.x = GET_X_LPARAM (lParam);
+            ev.mouse.pos.y = GET_Y_LPARAM (lParam);
+            ev.mouse.buttons = bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
+            event.post (ev);
+        }
         return 0;
+    }
+
+    static void
+    mcl_set_mods_state (unsigned char* keys, wchar_t& mod) noexcept{
+        if (keys[VK_LSHIFT]  & 0x80) mod |= key.ModLShift;
+        if (keys[VK_RSHIFT]  & 0x80) mod |= key.ModRShift;
+        if (keys[VK_LCONTROL]& 0x80) mod |= key.ModLCtrl;
+        if (keys[VK_RCONTROL]& 0x80) mod |= key.ModRCtrl;
+        if (keys[VK_LMENU]   & 0x80) mod |= key.ModLAlt;
+        if (keys[VK_RMENU]   & 0x80) mod |= key.ModRAlt;
+        if (keys[VK_LWIN]    & 0x80) mod |= key.ModLMeta;
+        if (keys[VK_RWIN]    & 0x80) mod |= key.ModRMeta;
+        if (keys[VK_CAPITAL] &  0x1) mod |= key.ModCaps;
+        if (keys[VK_NUMLOCK] &  0x1) mod |= key.ModNum;
+        if ((mod & key.ModLCtrl) && (mod & key.ModRAlt)) mod |= key.ModMode;
+        mcl_control_obj.bModKeyState = mod;
     }
 
     LRESULT mcl_window_info_t::
     OnKeyDown (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
-        if (!(lParam >> 30 & 1)) {
+        WORD keyFlags = HIWORD(lParam);
+        BOOL wasKeyDown = (keyFlags & KF_REPEAT) == KF_REPEAT;
+        if (bRepeatCount || !wasKeyDown) {
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.KeyDown;
-            ev.key.key = static_cast<char>(wParam);
-            // get scancode
-            ev.key.scancode = MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_VSC);
+            ev.key.key = static_cast<unsigned char>(LOWORD(wParam));
+            ev.key.scancode = LOBYTE(keyFlags);
+
             // get unicode
-            std::vector<BYTE> keys(256, 0);
-            wchar_t buffer[2];
-            if (::ToUnicode(static_cast<UINT>(wParam), ev.key.scancode, keys.data(), buffer, 1, 0))
-                ev.key.unicode = buffer[0];
-            // caps unicode
-            if (ev.key.unicode >= 'a' && ev.key.unicode <= 'z')
-                if ((::GetKeyState (VK_CAPITAL) & 1) ^ ((::GetKeyState (VK_SHIFT) >> 8) & 1))
-                    ev.key.unicode += static_cast<wchar_t>('A' - 'a');
+            std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+            if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+            if (keys) {
+                wchar_t buffer[2];
+                void(::GetKeyboardState (keys -> data())); // std::ignore
+                if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
+                    ev.key.unicode = buffer[0];
+                mcl_set_mods_state (keys -> data(), ev.key.mod);
+            }
+
+            // extended keys
+            BOOL isExtendedKey = (keyFlags & KF_EXTENDED) == KF_EXTENDED;
+            if (isExtendedKey)
+                ev.key.scancode = MAKEWORD(ev.key.scancode, 0xe0);
+            
+            // distinguish keys
+            switch (ev.key.key) {
+                case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
+                    ev.key.key = static_cast<unsigned char>(LOWORD(
+                        ::MapVirtualKeyW (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                    break;
+                }
+            }
+
             event.post (ev);
+            
+            if (bRepeatCount) {
+                WORD repeatCount = LOWORD(lParam);
+                while (-- repeatCount)
+                    event.post (ev);
+            }
         }
         if (uMessage == WM_SYSKEYDOWN)
             return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
@@ -530,21 +585,38 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnKeyUp (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+        WORD keyFlags = HIWORD(lParam);
         {
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.KeyUp;
-            ev.key.key = static_cast<char>(wParam);
-            // get scancode
-            ev.key.scancode = MapVirtualKeyW(static_cast<UINT>(wParam), MAPVK_VK_TO_VSC);
+            ev.key.key = static_cast<unsigned char>(LOWORD(wParam));
+            ev.key.scancode = LOBYTE(keyFlags);
+
             // get unicode
-            std::vector<BYTE> keys(256, 0);
-            wchar_t buffer[2];
-            if (::ToUnicode(static_cast<UINT>(wParam), ev.key.scancode, keys.data(), buffer, 1, 0))
-                ev.key.unicode = buffer[0];
-            // caps unicode
-            if (ev.key.unicode >= 'a' && ev.key.unicode <= 'z')
-                if ((::GetKeyState (VK_CAPITAL) & 1) ^ ((::GetKeyState (VK_SHIFT) >> 8) & 1))
-                    ev.key.unicode += static_cast<wchar_t>('A' - 'a');
+            std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+            if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+            if (keys) {
+                wchar_t buffer[2];
+                void(::GetKeyboardState (keys -> data())); // std::ignore
+                if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
+                    ev.key.unicode = buffer[0];
+                mcl_set_mods_state (keys -> data(), ev.key.mod);
+            }
+
+            // extended keys
+            BOOL isExtendedKey = (keyFlags & KF_EXTENDED) == KF_EXTENDED;
+            if (isExtendedKey)
+                ev.key.scancode = MAKEWORD(ev.key.scancode, 0xe0);
+            
+            // distinguish keys
+            switch (ev.key.key) {
+                case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
+                    ev.key.key = static_cast<unsigned char>(LOWORD(
+                        ::MapVirtualKeyW (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                    break;
+                }
+            }
+
             event.post (ev);
         }
         if (uMessage == WM_SYSKEYUP)
@@ -779,6 +851,114 @@ mcl {
             ::exit (0);
         }
         return 0;
+    }
+
+   /**
+    * @function mcl_window_info_t::hookMouseProc <cpp/mcl_control.cpp>
+    * @brief see event.set_grab_mouse (event.cpp)
+    */
+    LRESULT CALLBACK mcl_window_info_t::
+    hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam){
+        PMOUSEHOOKSTRUCTEX pMouseData =
+            reinterpret_cast<PMOUSEHOOKSTRUCTEX>(reinterpret_cast<void*>(lParam));
+        if (nCode >= 0) {
+            switch (wParam) {
+                case WM_MOUSEMOVE:   if (hookOnMouseMove  (pMouseData))    break; return 1;
+                case WM_MOUSEWHEEL:  if (hookOnMouseWheel (0, pMouseData)) break; return 1;
+                case 0x20E /* WM_MOUSEHWHEEL */:
+                                     if (hookOnMouseWheel (1, pMouseData)) break; return 1;
+                case WM_LBUTTONDOWN: if (hookOnButtonDown (1, pMouseData)) break; return 1;
+                case WM_MBUTTONDOWN: if (hookOnButtonDown (2, pMouseData)) break; return 1;
+                case WM_RBUTTONDOWN: if (hookOnButtonDown (3, pMouseData)) break; return 1;
+                case WM_XBUTTONDOWN: if (hookOnButtonDown (4, pMouseData)) break; return 1;
+                case WM_LBUTTONUP:   if (hookOnButtonUp   (1, pMouseData)) break; return 1;
+                case WM_MBUTTONUP:   if (hookOnButtonUp   (2, pMouseData)) break; return 1;
+                case WM_RBUTTONUP:   if (hookOnButtonUp   (3, pMouseData)) break; return 1;
+                case WM_XBUTTONUP:   if (hookOnButtonUp   (4, pMouseData)) break; return 1;
+            }
+        }
+        return ::CallNextHookEx (hWndMouseGrabed, nCode, wParam, lParam);
+    }
+
+    static void
+    mcl_update_mousekeystate (char& buttons) {
+        buttons = 0;
+        if (::GetAsyncKeyState (VK_LBUTTON)  & 0x8000) buttons |= mouse.BtnLButton;
+        if (::GetAsyncKeyState (VK_RBUTTON)  & 0x8000) buttons |= mouse.BtnRButton;
+        if (::GetAsyncKeyState (VK_SHIFT)    & 0x8000) buttons |= mouse.BtnShift;
+        if (::GetAsyncKeyState (VK_CONTROL)  & 0x8000) buttons |= mouse.BtnCtrl;
+        if (::GetAsyncKeyState (VK_MBUTTON)  & 0x8000) buttons |= mouse.BtnMButton;
+        if (::GetAsyncKeyState (VK_XBUTTON1) & 0x8000) buttons |= mouse.BtnXButton1;
+        if (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000) buttons |= mouse.BtnXButton2;
+    }
+
+    bool mcl_window_info_t::
+    hookOnMouseMove (PMOUSEHOOKSTRUCTEX mouseData){
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.MouseMotion;
+        ::ScreenToClient (hwnd, &mouseData -> pt);
+        ev.mouse.pos.x = mouseData -> pt.x;
+        ev.mouse.pos.y = mouseData -> pt.y;
+        
+        mcl_update_mousekeystate (ev.mouse.buttons);
+        bMouseKeyState = ev.mouse.buttons;
+        event.post (ev);
+
+        return true;
+    }
+    bool mcl_window_info_t::
+    hookOnMouseWheel (char type, PMOUSEHOOKSTRUCTEX mouseData){
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.MouseWheel;
+        if (type) ev.wheel.delta.x = GET_WHEEL_DELTA_WPARAM (mouseData -> mouseData);
+        else      ev.wheel.delta.y = GET_WHEEL_DELTA_WPARAM (mouseData -> mouseData);
+        
+        mcl_update_mousekeystate (ev.wheel.buttons);
+        bMouseKeyState = ev.wheel.buttons;
+        event.post (ev);
+
+        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+        return ret;
+    }
+    bool mcl_window_info_t::
+    hookOnButtonDown (char type, PMOUSEHOOKSTRUCTEX mouseData) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.MouseButtonDown;
+        ev.mouse.button = type;
+        if (GET_XBUTTON_WPARAM(mouseData -> mouseData) == XBUTTON2)
+            ++ ev.mouse.button;
+
+        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+
+        ::ScreenToClient (hwnd, &mouseData -> pt);
+        ev.mouse.pos.x = mouseData -> pt.x;
+        ev.mouse.pos.y = mouseData -> pt.y;
+        
+        mcl_update_mousekeystate (ev.mouse.buttons);
+        bMouseKeyState = ev.mouse.buttons;
+        event.post (ev);
+
+        return ret;
+    }
+    bool mcl_window_info_t::
+    hookOnButtonUp (char type, PMOUSEHOOKSTRUCTEX mouseData) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.MouseButtonUp;
+        ev.mouse.button = type;
+        if (GET_XBUTTON_WPARAM(mouseData -> mouseData) == XBUTTON2)
+            ++ ev.mouse.button;
+
+        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+
+        ::ScreenToClient (hwnd, &mouseData -> pt);
+        ev.mouse.pos.x = mouseData -> pt.x;
+        ev.mouse.pos.y = mouseData -> pt.y;
+        
+        mcl_update_mousekeystate (ev.mouse.buttons);
+        bMouseKeyState = ev.mouse.buttons;
+        event.post (ev);
+
+        return ret;
     }
     
 }

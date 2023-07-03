@@ -63,40 +63,48 @@ mcl {
         return !mcl_control_obj.bIsReady;
     }
 
+#if __cplusplus < 201703L
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnNone;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnLButton;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnRButton;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnShift;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnCtrl;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnMButton;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnXButton1;
+    mcl_mouse_t::btn_type constexpr mcl_mouse_t::BtnXButton2;
+#endif
+
     /**
      * @function mcl_mouse_t::get_pressed <src/mouse.h>
      * @brief Get the state of the mouse buttons.
      * @return buttons
      */
-    pytuple<bool, bool, bool> mcl_mouse_t::
-    mcl_get_pressed_3 () const noexcept{
-        bool l = 0, m = 0, r = 0;
-        // l = (::GetAsyncKeyState (VK_LBUTTON) & 0x8000);
-        // m = (::GetAsyncKeyState (VK_MBUTTON) & 0x8000);
-        // r = (::GetAsyncKeyState (VK_RBUTTON) & 0x8000);
-        if (mcl_control_obj.bIsReady) {
-            l = mcl_control_obj.bMouseKeyState & 0x01; // 1
-            m = mcl_control_obj.bMouseKeyState & 0x10; // 5
-            r = mcl_control_obj.bMouseKeyState & 0x02; // 2
-        }
-        return maktuple (l, m, r);
+    std::vector<bool> mcl_mouse_t::
+    get_pressed (int num_buttons) noexcept{
+        if (!mcl_control_obj.bIsReady)
+            return std::vector<bool>(static_cast<size_t>(
+                num_buttons == 3 || num_buttons == 5 ?
+                num_buttons : 0
+            ));
+        if (num_buttons == 3)
+            return std::vector<bool>{
+                bool(mcl_control_obj.bMouseKeyState & BtnLButton),
+                bool(mcl_control_obj.bMouseKeyState & BtnMButton),
+                bool(mcl_control_obj.bMouseKeyState & BtnRButton)
+            };
+        if (num_buttons == 5)
+            return std::vector<bool>{
+                bool(mcl_control_obj.bMouseKeyState & BtnLButton),
+                bool(mcl_control_obj.bMouseKeyState & BtnMButton),
+                bool(mcl_control_obj.bMouseKeyState & BtnRButton),
+                bool(mcl_control_obj.bMouseKeyState & BtnXButton1),
+                bool(mcl_control_obj.bMouseKeyState & BtnXButton2)
+            };
+        return std::vector<bool>();
     }
-    pytuple<bool, bool, bool, bool, bool> mcl_mouse_t::
-    mcl_get_pressed_5 () const noexcept{
-        bool l = 0, m = 0, r = 0, s1 = 0, s2 = 0;
-        // l  = (::GetAsyncKeyState (VK_LBUTTON)  & 0x8000);
-        // m  = (::GetAsyncKeyState (VK_MBUTTON)  & 0x8000);
-        // r  = (::GetAsyncKeyState (VK_RBUTTON)  & 0x8000);
-        // s1 = (::GetAsyncKeyState (VK_XBUTTON1) & 0x8000);
-        // s2 = (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000);
-        if (mcl_control_obj.bIsReady) {
-            l  = mcl_control_obj.bMouseKeyState & 0x01; // 1
-            m  = mcl_control_obj.bMouseKeyState & 0x10; // 5
-            r  = mcl_control_obj.bMouseKeyState & 0x02; // 2
-            s1 = mcl_control_obj.bMouseKeyState & 0x20; // 6
-            s2 = mcl_control_obj.bMouseKeyState & 0x40; // 7
-        }
-        return maktuple (l, m, r, s1, s2);
+    mcl_mouse_t::btn_type mcl_mouse_t::
+    get_buttons () noexcept{
+        return mcl_control_obj.bMouseKeyState;
     }
 
     /**

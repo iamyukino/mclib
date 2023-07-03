@@ -57,7 +57,9 @@ mcl {
         mcl_window_info_t () {
             window_caption[0] = '\0';
         }
-        unsigned threadMessageLoop (void* title);
+
+    public:
+        unsigned threadMessageLoop (void* title); // message loop
         LRESULT CALLBACK wndProc          // callback
             (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
     
@@ -79,12 +81,22 @@ mcl {
         LRESULT OnKeyUp       (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
         LRESULT OnTimer       (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
+    public:
+        LRESULT CALLBACK hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam);
+
+    public:
+        bool hookOnMouseMove  (PMOUSEHOOKSTRUCTEX mouseData);
+        bool hookOnMouseWheel (char type, PMOUSEHOOKSTRUCTEX mouseData);
+        bool hookOnButtonDown (char type, PMOUSEHOOKSTRUCTEX mouseData);
+        bool hookOnButtonUp   (char type, PMOUSEHOOKSTRUCTEX mouseData);
+
     public:   // window properties
         HINSTANCE instance   = nullptr;
         HWND      hwnd       = nullptr;
         HANDLE    taskhandle = nullptr;    // thread handle
         HICON     hicon      = nullptr;
         void*     timermap   = nullptr;
+        void*     keymap     = nullptr;
         LONGLONG  timer      = 0ll;
         unsigned  threaddr   = 0u;         // thread id
         wchar_t   window_caption[_MAX_FNAME];
@@ -112,9 +124,10 @@ mcl {
         bool      bMouseInClient = false;
         char      bMouseKeyState = 0;
         char      bHasIMFocus = 0;
+        wchar_t   bModKeyState = 0;
         bool      bHideCursor = false;
+        bool      bRepeatCount = false;
 
-        char : 8; char : 8; char : 8;
         char : 8; char : 8; char : 8; char : 8;
 
         cursor_t  cucur;
@@ -163,7 +176,7 @@ mcl {
         enum : int { QueueLen = mcl_event_t::MaxLQSize };
 
         eventtype_t _blocked = 0;
-        eventtype_t _userType = (mcl::mcl_event_t::UserEventMin >> 1);
+        eventtype_t _userType = mcl::mcl_event_t::UserEventMin;
     };
     extern mcl_eventqueue_t mcl_event_obj;
 
