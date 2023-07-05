@@ -85,6 +85,8 @@ mcl {
         static type constexpr NoMinimizeBox = 0x40;
         // Display window will be double buffered
         static type constexpr DoubleBuf     = 0x80;
+        // Allow dropping files into display window
+        static type constexpr AllowDropping = 0x100;
     
     };
     using dflags_t = mcl_dflags_t::type; // Display flags type for mcl::display.init() 

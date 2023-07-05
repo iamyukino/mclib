@@ -252,7 +252,7 @@ mcl {
     pt_chars (const wchar_t* begin, const wchar_t* end) noexcept{
     // In this function, the characters are parsed.
         if (begin == end) return ; 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"mcl_logbuf_t::pt_chars");
         if (!mcl_logf_obj.f_u8log) return ;
         if (mcl_logf_obj.u_level > log_level_.value) return ;
         
@@ -485,7 +485,7 @@ mcl {
     init (wchar_t const* directory_path) noexcept{
     // This is called to log where threads open.
         {
-            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_logf_obj.nrtlock_obj);
+            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_logf_obj.nrtlock_obj, L"mcl_clog4m_t::init");
             if (mcl_logf_obj.f_u8log) return *this;
 
             if (directory_path) { // create a new log file
@@ -552,7 +552,7 @@ mcl {
     uninit (int code) noexcept{
         if (!mcl_logf_obj.f_u8log) return *this;
             
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"mcl_clog4m_t::uninit");
         if (!mcl_logf_obj.f_u8log) return *this;
         mcl_logf_obj.dw_indent = 0u;
         
@@ -644,7 +644,7 @@ mcl {
             static_cast<mcl_logbuf_t*>(m_dataplus_)
                 -> bf_fail_ = true;
         }
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"clog4m_t::depth_incr");
         if (mcl_logf_obj.dw_indent != 15) {
             ++ m_data_[0];
             ++ mcl_logf_obj.dw_indent;
@@ -671,7 +671,7 @@ mcl {
             static_cast<mcl_logbuf_t*>(m_dataplus_)
                 -> bf_fail_ = true;
         }
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"clog4m_t::depth_decr");
         if (!mcl_logf_obj.b_newl) {
             ::fputwc ('\n', mcl_logf_obj.f_u8log);
             mcl_logf_obj.b_newl = true;
@@ -748,7 +748,7 @@ mcl {
         if (!m_dataplus_) return ;
         try { this -> flush (); } catch (...) { }
         m_dataplus_ = nullptr;
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"clog4m_t::~clog4m_t");
         mcl_logf_obj.dw_indent -= m_data_[0];
         if (!mcl_logf_obj.b_newl) {
             ::fputwc ('\n', mcl_logf_obj.f_u8log);
@@ -1009,7 +1009,7 @@ mcl {
     separator () noexcept { 
         try { this -> flush (); }
         catch (...) { return *this; }
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_logf_obj.nrtlock_obj, L"clog4m_t::separator");
         if (!mcl_logf_obj.f_u8log || !m_dataplus_) {
             mcl_logbuf_t::get_tl_obj() -> bf_fail_ = true;
             return *this;

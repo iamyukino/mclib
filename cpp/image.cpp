@@ -250,7 +250,7 @@ mcl {
             mcl_get_surface_dataplus (&const_cast<surface_t&>(surface));
         if (!ibuf) return false;
 
-        mcl_simpletls_ns::mcl_spinlock_t lk(ibuf -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(ibuf -> m_nrtlock, L"mcl_image_t::save");
         if (!ibuf -> m_width) return false;
 
         // Write bmp header

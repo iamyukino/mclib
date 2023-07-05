@@ -104,7 +104,7 @@ namespace mcl
         * @brief spinlock
         */
         mcl_spinlock_t::
-        mcl_spinlock_t (lock_t& lk, unsigned long uWaitMs) noexcept
+        mcl_spinlock_t (lock_t& lk, wchar_t const* name, unsigned long uWaitMs) noexcept
           : lk_ (lk), islock_ (true) {
             unsigned long threadid = ::GetCurrentThreadId ();
             if (!::InterlockedCompareExchange (&lk_, threadid, 0))
@@ -124,7 +124,7 @@ namespace mcl
                         oldt = nowt;
                         clog4m[cll4m.Warn]. wprintln (
                            L"\n  mcl::spinlock  | TimeOut "
-                            "{\"own\":\"0x%04lx\", \"cur\":\"0x%04lx\"}", lk_, threadid);
+                            "{\"own\":\"0x%04lx\", \"cur\":\"0x%04lx\", \"curname\":\"%s\"}", lk_, threadid, name);
                         ::InterlockedExchange (&lk_, 0);
                     }  nowt = MCL_GETTICKCOUNT ();
                 }

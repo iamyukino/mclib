@@ -88,23 +88,23 @@ mcl {
             ));
         if (num_buttons == 3)
             return std::vector<bool>{
-                bool(mcl_control_obj.bMouseKeyState & BtnLButton),
-                bool(mcl_control_obj.bMouseKeyState & BtnMButton),
-                bool(mcl_control_obj.bMouseKeyState & BtnRButton)
+                bool(mcl_control_obj.fMouseKeyState & BtnLButton),
+                bool(mcl_control_obj.fMouseKeyState & BtnMButton),
+                bool(mcl_control_obj.fMouseKeyState & BtnRButton)
             };
         if (num_buttons == 5)
             return std::vector<bool>{
-                bool(mcl_control_obj.bMouseKeyState & BtnLButton),
-                bool(mcl_control_obj.bMouseKeyState & BtnMButton),
-                bool(mcl_control_obj.bMouseKeyState & BtnRButton),
-                bool(mcl_control_obj.bMouseKeyState & BtnXButton1),
-                bool(mcl_control_obj.bMouseKeyState & BtnXButton2)
+                bool(mcl_control_obj.fMouseKeyState & BtnLButton),
+                bool(mcl_control_obj.fMouseKeyState & BtnMButton),
+                bool(mcl_control_obj.fMouseKeyState & BtnRButton),
+                bool(mcl_control_obj.fMouseKeyState & BtnXButton1),
+                bool(mcl_control_obj.fMouseKeyState & BtnXButton2)
             };
         return std::vector<bool>();
     }
     mcl_mouse_t::btn_type mcl_mouse_t::
     get_buttons () noexcept{
-        return mcl_control_obj.bMouseKeyState;
+        return mcl_control_obj.fMouseKeyState;
     }
 
     /**
@@ -185,7 +185,7 @@ mcl {
     bool mcl_mouse_t::
     get_focused () noexcept{
         return mcl_control_obj.bIsReady
-            && (mcl_control_obj.bHasIMFocus & 1);
+            && ((mcl_control_obj.bHasIMFocus & 1) || mcl_control_obj.hWndMouseGrabed);
     }
 
     /**

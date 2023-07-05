@@ -46,7 +46,7 @@ int main()
     clog4m.init().enable_event_level(cll4m.All);
     
     // test display.init
-    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf);// | dflags.NoFrame);
+    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf | dflags.AllowDropping);// | dflags.NoFrame);
     display.set_window_alpha(.3);
     if (!display) return 0;
 
@@ -128,12 +128,18 @@ int main()
                     clog4m[cll4m.Info] << event.event_name(ev.type) << ": " << (ev.active.state);
                     break;
                 }
-                case event.MouseButtonUp: {
+                case event.DropFile: {
+                    clog4m[cll4m.Info] << event.event_name(ev.type) << ":";
+                    for (auto i : event.get_details_dropfile())
+                        clog4m[cll4m.Info] << "    " << i;
+                    break;
+                }
+                /*case event.MouseButtonUp: {
                     if (ev.mouse.buttons & mouse.BtnCtrl)
                         display.toggle_fullscreen();
                     // mouse.set_pos ({20, 20});
                     break;
-                }
+                }*/
                 case event.KeyUp: {
                     if (ev.key.key == key.VkEscape)
                         ::exit(0);
@@ -149,6 +155,8 @@ int main()
                         cur = mouse.get_cursor ();
                     else if (ev.key.unicode == 'w')
                         mouse.set_cursor (cur);
+                    else if (ev.key.unicode == 'm')
+                        event.set_grab_mouse (!event.get_grab_mouse());
                     else if (ev.key.key >= key.Vk1 && ev.key.key <= key.Vk9) {
                         if ((key.get_mods() & key.ModLShift) || key.get_pressed()[key.VkLControl]) {
                             surface_t sur = display.get_surface();
@@ -205,7 +213,7 @@ int main()
         auto sz = display.get_window_size();
         display.update({ 0, 0, sz.x, sz.y });
         
-        ck.tick(24);
+        ck.tick (24);
         // clog4m[cll4m.Trace] << timer.get_ticks() << "(" << ck.get_time_us() << ", " << ck.get_fps() << ")";
 
         static char str[100];

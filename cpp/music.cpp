@@ -206,7 +206,7 @@ mcl {
     bool mcl_music_base_t::
     load_thread () {
         if (post_ != mNotReady) return false;
-        mcl_simpletls_ns::mcl_spinlock_t lock (ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (ldlib_lock, L"mcl_music_base_t::load_thread");
         if (post_ != mNotReady) return false;
         post_ = mNoMsg;
         auto fun = mcl_simpletls_ns::bind_mf (&mcl_music_base_t::thread_mci, this);
@@ -250,7 +250,7 @@ mcl {
     }
     void mcl_music_base_t::
     free_lib () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (ldlib_lock, L"mcl_music_base_t::free_lib");
         if (hInsWinmm) {
             post_ = mExit;
             ::FreeLibrary (hInsWinmm);
@@ -299,7 +299,7 @@ mcl {
     load (wchar_t const* filename) noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::load");
         if (mcl_music_base.mExit == mcl_music_base.post_) return false;
         
         mcl_music_base.sparam_ = filename;
@@ -336,7 +336,7 @@ mcl {
     bool mcl_mixer_t::mcl_music_t::
     unload () noexcept {
         if (mcl_music_base.post_ == mcl_music_base.mNotReady) return false;
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::unload");
         if (mcl_music_base.post_ == mcl_music_base.mNotReady
         || mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
@@ -399,7 +399,7 @@ mcl {
     play (int loops, float start_s, float fadein_s) noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::play");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.iparam_  = loops;
@@ -435,7 +435,7 @@ mcl {
     rewind () noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::rewind");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.post_ = mcl_music_base.mRewind;
@@ -507,7 +507,7 @@ mcl {
         if (fade_ == fadeNull) return ;
         
         // lock_used_in_set_volume_and_end_fade
-        mcl_simpletls_ns::mcl_spinlock_t lock2 (fade_setvol_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock2 (fade_setvol_lock, L"mcl_music_base_t::check_fade");
         if (fade_ == fadeNull) return ;
         
         // Judge whether the current time exceeds
@@ -561,7 +561,7 @@ mcl {
     stop () noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::stop");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.post_ = mcl_music_base.mStop;
@@ -600,7 +600,7 @@ mcl {
     fadeout (float fadeout_s) noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::fadeout");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.fparam_ = fadeout_s;
@@ -634,7 +634,7 @@ mcl {
     queue (wchar_t const* filename, int loops) noexcept { 
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::queue");
         if (mcl_music_base.mExit == mcl_music_base.post_) return false;
         
         mcl_music_base.sparam_ = filename;
@@ -670,7 +670,7 @@ mcl {
     pause () noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::pause");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.post_ = mcl_music_base.mPause;
@@ -708,7 +708,7 @@ mcl {
     unpause () noexcept {
         if (mcl_music_base.load_thread ()) return false;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::unpause");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         mcl_music_base.post_ = mcl_music_base.mUnpause;
@@ -745,11 +745,11 @@ mcl {
     }
     float mcl_mixer_t::mcl_music_t::
     get_volume () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::get_volume");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         // lock_used_in_set_volume_and_end_fade
-        mcl_simpletls_ns::mcl_spinlock_t lock2 (mcl_music_base.fade_setvol_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock2 (mcl_music_base.fade_setvol_lock, L"mcl_mixer_t::mcl_music_t::get_volume");
         if (mcl_music_base.fade_ == mcl_music_base.fadeNull) 
                return static_cast<float>(mcl_get_volume ()) / 0xffff;
         else if (mcl_music_base.fade_ == mcl_music_base.fadeIn) 
@@ -794,11 +794,11 @@ mcl {
         if (volume > 1.f) volume = 1.f;
         DWORD vol = static_cast<DWORD>(volume * 0xffff + .5f);
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::set_volume");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
         
         // lock_used_in_set_volume_and_end_fade
-        mcl_simpletls_ns::mcl_spinlock_t lock2 (mcl_music_base.fade_setvol_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock2 (mcl_music_base.fade_setvol_lock, L"mcl_mixer_t::mcl_music_t::set_volume");
         if (mcl_music_base.fade_ == mcl_music_base.fadeNull)
             return mcl_set_volume (vol);
         if (mcl_music_base.fade_ == mcl_music_base.fadeIn) {
@@ -828,7 +828,7 @@ mcl {
     get_pos () noexcept {
         if (mcl_music_base.load_thread ()) return .0f;
 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::get_pos");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return .0f;
 
         mcl_music_base.post_ = mcl_music_base.mGetPos;
@@ -865,7 +865,7 @@ mcl {
     set_pos (float pos_s) noexcept {
         if (mcl_music_base.load_thread ()) return false;
 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::set_pos");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return false;
 
         mcl_music_base.fparam_ = pos_s;
@@ -894,7 +894,7 @@ mcl {
     get_length () noexcept {
         if (mcl_music_base.load_thread ()) return .0f;
 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_music_base.ldlib_lock, L"mcl_mixer_t::mcl_music_t::get_length");
         if (mcl_music_base.post_ == mcl_music_base.mExit) return .0f;
 
         mcl_music_base.post_ = mcl_music_base.mGetLength;

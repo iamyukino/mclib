@@ -93,7 +93,7 @@ mcl {
     mcl_register_quit (std::function<void()> fun)
     noexcept {
         using _onquit_t = std::function<void()>;
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock, L"mcl_register_quit");
         if (mcl_base_obj.atquit_registered
             >= mcl_base_obj.atquit_table_size)
         {
@@ -125,7 +125,7 @@ mcl {
 
     // Execute the registered function
     void mcl_do_atquit () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.quitlock, L"mcl_do_atquit");
         if (mcl_base_obj.atquit_table_size) {
             mcl_base_obj.mcl_threadid_after_exit = ::GetCurrentThreadId ();
             mcl_base_obj.mcl_clog4m_after_exit = mcl_new_mcl_logbuf_t ();

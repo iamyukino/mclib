@@ -118,7 +118,7 @@ mcl {
      */
     bool mcl_imagebuf_t::
     init () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lk(m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(m_nrtlock, L"mcl_imagebuf_t::init");
         // get global dc
         HDC refdc = nullptr;
         if (mcl_control_obj.bIsReady)
@@ -155,7 +155,7 @@ mcl {
 
     void mcl_imagebuf_t::
     uninit () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lk(m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(m_nrtlock, L"mcl_imagebuf_t::uninit");
         if (m_width) {
             m_width = 0;
             mcl_release_imgbuf (this);
@@ -226,7 +226,7 @@ mcl {
         if (!(&src && src.m_dataplus_)) return ;
         mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
 
-        mcl_simpletls_ns::mcl_spinlock_t lk(dsrc -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dsrc -> m_nrtlock, L"surface_t::surface_t");
         if (!dsrc -> m_width) return ;
 
         m_dataplus_ = new(std::nothrow)
@@ -307,7 +307,7 @@ mcl {
         
         if (m_dataplus_) {
             mcl_imagebuf_t* old_dp = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
-            mcl_simpletls_ns::mcl_spinlock_t lk(old_dp -> m_nrtlock);
+            mcl_simpletls_ns::mcl_spinlock_t lk(old_dp -> m_nrtlock, L"surface_t::operator=");
             
             mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(rhs.m_dataplus_);
             mcl_imagebuf_t new_dp(dsrc -> m_width, dsrc -> m_height);
@@ -488,7 +488,7 @@ mcl {
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return opaque; // display surface quit
         if (pos.x < 0 || pos.y < 0) return opaque;
-        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"surface_t::get_at");
         if (pos.x >= dataplus -> m_width || pos.y >= dataplus -> m_height)
             return opaque; // out of clip area
         
@@ -508,7 +508,7 @@ mcl {
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return opaque; // display surface quit
         if (pos.x < 0 || pos.y < 0) return opaque;
-        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"surface_t::set_at");
         if (pos.x >= dataplus -> m_width || pos.y >= dataplus -> m_height)
             return opaque; // out of clip area
 
@@ -565,7 +565,7 @@ mcl {
             return size;
         }
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"surface_t::resize");
         if (size.x == dataplus -> m_width && size.y == dataplus -> m_height || !size.x)
             return { 0, 0 }; // no change
         
@@ -925,7 +925,7 @@ mcl {
         if (mcl_switch_blend_fun_fill (blend_fun, color, special_flags, m_data_))
             return { 0, 0, 0, 0 };
 
-        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"surface_t::fill");
         if (!dataplus -> m_width)
             return { 0, 0, 0, 0 };
 
@@ -973,7 +973,7 @@ mcl {
             return { recta.x, recta.y, 0, 0 };
 
         // prepare for blending
-        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"surface_t::fill");
         if (!dataplus -> m_width)
             return { recta.x, recta.y, 0, 0 }; 
         
@@ -1317,7 +1317,7 @@ mcl {
         std::function<void(color_t& dst, color_t src)> blend_fun;
         bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock, L"surface_t::bilt");
         if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
             return { 0, 0, 0, 0 };
         
@@ -1361,7 +1361,7 @@ mcl {
         std::function<void(color_t& dst, color_t src)> blend_fun;
         bool ret = mcl_switch_blend_fun_bilt(blend_fun, special_flags, m_data_, source.m_data_);
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock, L"surface_t::bilt");
         if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
             return { dest.x, dest.y, 0, 0 };
         
@@ -1421,7 +1421,7 @@ mcl {
         point1d_t tw = src -> m_width - sx, th = src -> m_height - sy;
         w = (w > tw ? tw : w); h = (h > th ? th : h);
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock); 
+        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock, L"surface_t::bilt");
         if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
             return { 0, 0, 0, 0 };
         
@@ -1476,7 +1476,7 @@ mcl {
         point1d_t tw = src -> m_width - sx, th = src -> m_height - sy;
         w = (w > tw ? tw : w); h = (h > th ? th : h);
         
-        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lk(dst -> m_nrtlock, L"surface_t::bilt");
         if (!(dst -> m_width && source.m_dataplus_ && src -> m_width))
             return { dest.x, dest.y, 0, 0 };
         

@@ -43,6 +43,7 @@
 # endif 
 
 # include <vector>
+# include <string>
 
 # ifdef _MSC_VER
 #  pragma warning(pop)
@@ -109,11 +110,13 @@ mcl {
         eventtype_t type;
         char : 8; char : 8; char : 8; char : 8;
         union {
+            // none                    // QuitEvent
             mcl_active_event_t active; // ActiveEvent
             mcl_key_event_t    key;    // KeyEvent
             mcl_mouse_event_t  mouse;  // MouseEvent
-            mcl_mouse_wheel_t  wheel;  // MouseWheel
+            mcl_mouse_wheel_t  wheel;  // MouseWheelEvent
             mcl_window_event_t window; // WindowEvent
+            // none                    // ExtendedEvent
             void*              code;   // UserEvent
         };
     };
@@ -140,7 +143,8 @@ mcl {
 
         static type constexpr NoEvent           =      0x0;
 
-        static type constexpr Quit              =      0x1; // 1
+        static type constexpr QuitEvent         =      0x1; // 1
+        static type constexpr   Quit            =      0x1;
         
         static type constexpr ActiveEvent       =      0x2; // 2
         
@@ -152,8 +156,9 @@ mcl {
         static type constexpr   MouseMotion     =     0x10;
         static type constexpr   MouseButtonDown =     0x20;
         static type constexpr   MouseButtonUp   =     0x30;
-
-        static type constexpr MouseWheel        =     0x40; // 7
+        
+        static type constexpr MouseWheelEvent   =     0x40; // 7
+        static type constexpr   MouseWheel      =     0x40;
         
      // static type constexpr FingerEvent       =    0x180; // 8-9 (reserve)
      // static type constexpr   FingerMotion    =     0x80;
@@ -173,10 +178,14 @@ mcl {
         static type constexpr   WindowFocusGained=  0x1400;
         static type constexpr   WindowFocusLost =   0x1600;
         static type constexpr   WindowClose     =   0x1800;
+        
+        static type constexpr ExtendedEvent     =   0x6000; // 14-15
+        static type constexpr   DropFile        =   0x2000;
+        static type constexpr   ClipboardUpdate =   0x4000;
 
-        static type constexpr UserEvent         = ~0x1fffu; // 14+
-        static type constexpr   UserEventMin    =   0x2000;
-        static type constexpr   UserEventMax    = ~0x1fffu;
+        static type constexpr UserEvent         = ~0x7fffu; // 16+
+        static type constexpr   UserEventMin    =   0x8000;
+        static type constexpr   UserEventMax    = ~0x7fffu;
         
     public:
         operator       void*       () const noexcept;
@@ -223,6 +232,9 @@ mcl {
         bool                 get_grab_mouse () noexcept;
         bool                 get_grab_key () noexcept;
         bool                 get_grab     () noexcept;
+        // get event details from extented events
+        std::vector<std::wstring> get_details_dropfile   () noexcept;
+        std::vector<std::string>  get_details_dropfile_a () noexcept;
         // place a new event on the queue
         bool                 post         (event_t const& Event) noexcept;
         // make custom user event type

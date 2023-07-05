@@ -68,7 +68,8 @@ mcl {
 #if __cplusplus < 201703L
     eventtype_t constexpr mcl_event_t::NoEvent;
 
-    eventtype_t constexpr mcl_event_t::Quit;
+    eventtype_t constexpr mcl_event_t::QuitEvent;
+    eventtype_t constexpr mcl_event_t::  Quit;
     
     eventtype_t constexpr mcl_event_t::ActiveEvent;
     
@@ -80,8 +81,9 @@ mcl {
     eventtype_t constexpr mcl_event_t::  MouseMotion;
     eventtype_t constexpr mcl_event_t::  MouseButtonUp;
     eventtype_t constexpr mcl_event_t::  MouseButtonDown;
-    
-    eventtype_t constexpr mcl_event_t::MouseWheel;
+
+    eventtype_t constexpr mcl_event_t::MouseWheelEvent;
+    eventtype_t constexpr mcl_event_t::  MouseWheel;
 
     eventtype_t constexpr mcl_event_t::WindowEvent;
     eventtype_t constexpr mcl_event_t::  WindowShown;
@@ -96,7 +98,11 @@ mcl {
     eventtype_t constexpr mcl_event_t::  WindowFocusGained;
     eventtype_t constexpr mcl_event_t::  WindowFocusLost;
     eventtype_t constexpr mcl_event_t::  WindowClose;
-    
+
+    eventtype_t constexpr mcl_event_t::ExtendedEvent;
+    eventtype_t constexpr mcl_event_t::  DropFile;
+    eventtype_t constexpr mcl_event_t::  ClipboardUpdate;
+
     eventtype_t constexpr mcl_event_t::UserEvent;
     eventtype_t constexpr mcl_event_t::  UserEventMin;
     eventtype_t constexpr mcl_event_t::  UserEventMax;
@@ -113,7 +119,7 @@ mcl {
         
     mcl_eventqueue_t::
     ~mcl_eventqueue_t () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_eventqueue_t::~mcl_eventqueue_t");
         if (!_f) return ;
         do {
             _r = _f;
@@ -222,7 +228,7 @@ mcl {
      */
     void mcl_event_t::
     uninterested () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::uninterested");
         mcl_control_obj.bCtrlMsgLoop = false;
     }
 
@@ -245,7 +251,7 @@ mcl {
      */
     std::vector<event_t> mcl_event_t::
     get (void*) noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::get");
         mcl_control_obj.bCtrlMsgLoop = true;
         std::vector<event_t> vec;
         event_t ev{ 0, {{0, 0}} };
@@ -258,7 +264,7 @@ mcl {
     get (eventtype_t eventtype, void*) noexcept {
         if (!eventtype)
             return get ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::get");
         mcl_control_obj.bCtrlMsgLoop = true;
         std::vector<event_t> vec;
         mcl_event_obj.process([&vec, &eventtype]
@@ -278,7 +284,7 @@ mcl {
     get (void*, eventtype_t exclude) noexcept {
         if (!exclude)
             return get ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::get");
         mcl_control_obj.bCtrlMsgLoop = true;
         std::vector<event_t> vec;
         mcl_event_obj.process([&vec, &exclude]
@@ -303,7 +309,7 @@ mcl {
      */
     event_t mcl_event_t::
     poll () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::poll");
         mcl_control_obj.bCtrlMsgLoop = true;
         event_t ret{ 0, {{0, 0}} };
         mcl_event_obj.pop(ret);
@@ -321,7 +327,7 @@ mcl {
      */
     event_t mcl_event_t::
     wait (long timeout) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::wait");
         mcl_control_obj.bCtrlMsgLoop = true;
         event_t ret{ 0, {{0, 0}} };
         if (mcl_event_obj.pop (ret))
@@ -347,7 +353,7 @@ mcl {
      */
     bool mcl_event_t::
     peek (void*) noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::peek");
         return static_cast<bool>(mcl_event_obj._len);
     }
 
@@ -355,7 +361,7 @@ mcl {
     peek (eventtype_t eventtype) noexcept {
         if (!eventtype)
             return peek ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::peek");
         bool peeked = false;
         mcl_event_obj.process([&peeked, &eventtype]
         (mcl_eventqueue_t::mcl_lqnode_t* node) -> bool {
@@ -379,7 +385,7 @@ mcl {
      */
     void mcl_event_t::
     clear (void*) noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::clear");
         mcl_control_obj.bCtrlMsgLoop = true;
         mcl_event_obj._r = mcl_event_obj._f;
         mcl_event_obj._len = 0;
@@ -389,7 +395,7 @@ mcl {
     clear (eventtype_t eventtype) noexcept {
         if (!eventtype)
             return clear ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::clear");
         mcl_control_obj.bCtrlMsgLoop = true;
         mcl_event_obj.process([&eventtype]
         (mcl_eventqueue_t::mcl_lqnode_t* node) -> bool {
@@ -416,6 +422,7 @@ mcl {
             case Quit:            return L"Quit";
             
             case ActiveEvent:     return L"ActiveEvent";
+
             case KeyDown:         return L"KeyDown";
             case KeyUp:           return L"KeyUp";
 
@@ -437,6 +444,9 @@ mcl {
             case WindowFocusGained: return L"WindowFocusGained";
             case WindowFocusLost: return L"WindowFocusLost";
             case WindowClose:     return L"WindowClose";
+
+            case DropFile:        return L"DropFile";
+            case ClipboardUpdate: return L"ClipboardUpdate";
             default:              break;
         }
         if ((type & UserEvent) && !(type & ~UserEvent))
@@ -455,6 +465,7 @@ mcl {
             case Quit:            return "Quit";
             
             case ActiveEvent:     return "ActiveEvent";
+
             case KeyDown:         return "KeyDown";
             case KeyUp:           return "KeyUp";
 
@@ -476,6 +487,9 @@ mcl {
             case WindowFocusGained: return "WindowFocusGained";
             case WindowFocusLost: return "WindowFocusLost";
             case WindowClose:     return "WindowClose";
+
+            case DropFile:        return "DropFile";
+            case ClipboardUpdate: return "ClipboardUpdate";
             default:              break;
         }
         if ((type & UserEvent) && !(type & ~UserEvent))
@@ -498,7 +512,7 @@ mcl {
      */
     void mcl_event_t::
     set_blocked (void*) noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::set_blocked");
         mcl_event_obj._blocked = 0xffffffff;
     }
 
@@ -506,7 +520,7 @@ mcl {
     set_blocked (eventtype_t eventtypes) noexcept {
         if (!eventtypes)
             return set_blocked ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::set_blocked");
         mcl_event_obj._blocked |= eventtypes;
     }
 
@@ -521,7 +535,7 @@ mcl {
      */
     void mcl_event_t::
     set_allowed (void*) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::set_allowed");
         mcl_event_obj._blocked = 0;
     }
 
@@ -529,7 +543,7 @@ mcl {
     set_allowed (eventtype_t eventtypes) noexcept{
         if (!eventtypes)
             return set_allowed ();
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::set_allowed");
         mcl_event_obj._blocked &= ~eventtypes;
     }
 
@@ -541,7 +555,7 @@ mcl {
      */
     bool mcl_event_t::
     get_blocked (eventtype_t eventtypes) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::get_blocked");
         return static_cast<bool>(mcl_event_obj._blocked & eventtypes);
     }
 
@@ -562,7 +576,7 @@ mcl {
      */
     void mcl_event_t::
     set_grab_mouse (bool b_grab) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_mouse");
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndMouseGrabed))
             return ;
         if (mcl_control_obj.hWndMouseGrabed) {
@@ -586,7 +600,7 @@ mcl {
 
     void mcl_event_t::
     set_grab_key (bool b_grab) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_key");
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndKeyGrabed))
             return ;
         if (mcl_control_obj.hWndKeyGrabed) {
@@ -601,7 +615,7 @@ mcl {
 
     void mcl_event_t::
     set_grab (bool b_grab) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab");
         if (b_grab != static_cast<bool>(mcl_control_obj.hWndMouseGrabed)) {
             if (mcl_control_obj.hWndMouseGrabed) {
                 ::UnhookWindowsHookEx (mcl_control_obj.hWndMouseGrabed);
@@ -637,32 +651,74 @@ mcl {
      */
     bool mcl_event_t::
     get_grab_mouse() noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::get_grab");
         return static_cast<bool>(mcl_control_obj.hWndMouseGrabed);
     }
 
     bool mcl_event_t::
     get_grab_key () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::get_grab");
         return static_cast<bool>(mcl_control_obj.hWndKeyGrabed);
     }
 
     bool mcl_event_t::
     get_grab () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::get_grab");
         return mcl_control_obj.hWndMouseGrabed || mcl_control_obj.hWndKeyGrabed;
     }
 
     /**
-     * @function mcl_event_t::get_blocked <src/event.h>
-     * @brief Returns True if the given event type is blocked from
-     *     the queue. If a sequence of event types is passed, this
-     *     will return True if any of those event types are blocked.
+     * @function mcl_event_t::post <src/event.h>
+     * @brief Place a new event on the queue.
      */
     bool mcl_event_t::
-    post (event_t const& ev) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
-        return static_cast<bool>(mcl_event_obj.push (ev));
+    post (event_t const& Event) noexcept{
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::post");
+        return static_cast<bool>(mcl_event_obj.push (Event));
+    }
+
+    /**
+     * @function mcl_event_t::get_details_dropfile <src/event.h>
+     * @brief Get event details from DropFile events.
+     */
+    std::vector<std::wstring> mcl_event_t::
+    get_details_dropfile () noexcept{
+        std::vector<std::wstring> vec;
+        wchar_t szPath[_MAX_PATH]{ 0 };
+        HDROP hdrop = 0;
+        {
+            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_base_obj.droplock, L"mcl_event_t::get_details_dropfile");
+            hdrop = mcl_control_obj.droppeddatas;
+            mcl_control_obj.droppeddatas = 0;
+        }
+        UINT cnt = ::DragQueryFileW (hdrop, 0xffffffff, NULL, 0), it = 0;
+        while (it != cnt) {
+            ::DragQueryFileW (hdrop, it, szPath, _MAX_PATH);
+            vec.emplace_back (szPath);
+            ++ it;
+        }
+        ::DragFinish (hdrop);
+        return vec;
+    }
+    
+    std::vector<std::string> mcl_event_t::
+    get_details_dropfile_a () noexcept{
+        std::vector<std::string> vec;
+        char szPath[_MAX_PATH]{ 0 };
+        HDROP hdrop = 0;
+        {
+            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_base_obj.droplock, L"mcl_event_t::get_details_dropfile_a");
+            hdrop = mcl_control_obj.droppeddatas;
+            mcl_control_obj.droppeddatas = 0;
+        }
+        UINT cnt = ::DragQueryFileA (hdrop, 0xffffffff, NULL, 0), it = 0;
+        while (it != cnt) {
+            ::DragQueryFileA (hdrop, it, szPath, _MAX_PATH);
+            vec.emplace_back (szPath);
+            ++ it;
+        }
+        ::DragFinish (hdrop);
+        return vec;
     }
 
     /**
@@ -672,7 +728,7 @@ mcl {
      */
     eventtype_t mcl_event_t::
     custom_type () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock);
+        mcl_simpletls_ns::mcl_spinlock_t lock(mcl_event_obj._lock, L"mcl_event_t::custom_type");
         if (mcl_event_obj._userType == UserEventMax)
             return event.NoEvent;
         mcl_event_obj._userType += UserEventMin;

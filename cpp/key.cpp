@@ -259,7 +259,7 @@ mcl {
     bool mcl_key_t::
     get_focused () noexcept{
         return mcl_control_obj.bIsReady
-            && (mcl_control_obj.bHasIMFocus & 1);
+            && ((mcl_control_obj.bHasIMFocus & 1) || mcl_control_obj.hWndKeyGrabed);
     }
 
     /**
@@ -269,7 +269,7 @@ mcl {
      */
     wchar_t mcl_key_t::
     get_mods () noexcept{
-        return mcl_control_obj.bModKeyState;
+        return mcl_control_obj.fModKeyState;
     }
 
     /**

@@ -71,6 +71,7 @@ mcl {
     dflags_t constexpr mcl_dflags_t::NoFrame;
     dflags_t constexpr mcl_dflags_t::NoMinimizeBox;
     dflags_t constexpr mcl_dflags_t::DoubleBuf;
+    dflags_t constexpr mcl_dflags_t::AllowDropping;
 #endif
     
     mcl_display_t::
@@ -128,7 +129,7 @@ mcl {
     mcl_display_t& mcl_display_t::
     set_caption (wchar_t const* caption) noexcept
     {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_caption");
         mcl_set_caption (caption);
         if (mcl_control_obj.bIsReady) {
             ::SetWindowTextW ( mcl_control_obj.hwnd,
@@ -173,7 +174,7 @@ mcl {
             mcl_get_surface_dataplus(const_cast<surface_t*>(&icon));
         if (!buf) return *this;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_icon");
         if (!mcl_control_obj.bIsReady) return *this;
         
         HDC refdc = nullptr;
@@ -404,7 +405,7 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     init () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::init");
         if (mcl_control_obj.bIsReady) return *this;
         mcl_init_window (nullptr);
         return *this;
@@ -420,7 +421,7 @@ mcl {
     surface_t& mcl_display_t::
     set_mode (point2d_t size) noexcept{
     // Initialize Window & Start Message Loop
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_mode");
         if (mcl_control_obj.bIsReady || mcl_control_obj.bAtQuitInClose) {
         // change form size only
             if (mcl_control_obj.b_fullscreen) {
@@ -457,7 +458,7 @@ mcl {
     surface_t& mcl_display_t::
     set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
     // Initialize Window & Start Message Loop
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_mode");
         if (mcl_control_obj.bIsReady || mcl_control_obj.bAtQuitInClose) {
         // change form style only
             bool bopen = clog4m.get_init ()
@@ -483,6 +484,8 @@ mcl {
                 else                                  last_style &= ~(WS_THICKFRAME | WS_MAXIMIZEBOX);
                 if (dpm_flags & dflags.NoMinimizeBox) last_style &= ~WS_MINIMIZEBOX;
                 else                                  last_style |= WS_MINIMIZEBOX;
+                if (dpm_flags & dflags.AllowDropping) last_exstyle |= WS_EX_ACCEPTFILES;
+                else                                  last_exstyle &= ~WS_EX_ACCEPTFILES;
                 
                 RECT wr = { mcl_control_obj.x_pos, mcl_control_obj.y_pos,
                             mcl_control_obj.x_pos + mcl_control_obj.dc_w,
@@ -550,6 +553,8 @@ mcl {
             ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         LONG_PTR last_style = mcl_control_obj.b_fullscreen ?
             mcl_fullscreen_last_style () : style;
+        LONG_PTR last_exstyle =
+            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
         dflags_t flags = dflags.Hidden | dflags.NoFrame | dflags.NoMinimizeBox;
         if (     style & WS_VISIBLE)      flags &= ~dflags.Hidden;
         if (     style & WS_MINIMIZE)     flags |=  dflags.Minimize;
@@ -558,6 +563,7 @@ mcl {
         if (last_style & WS_MINIMIZEBOX)  flags &= ~dflags.NoMinimizeBox;
         if (last_style & WS_THICKFRAME)   flags |=  dflags.Resizable;
         if (mcl_control_obj.dbuf_surface) flags |=  dflags.DoubleBuf;
+        if (last_exstyle & WS_EX_ACCEPTFILES) flags |= dflags.AllowDropping;
         return flags;
     }
 
@@ -568,8 +574,9 @@ mcl {
             mcl_control_obj.dbuf_surface : mcl_control_obj.cur_surface);
     }
 
-    static void mcl_filp_dbuf_surface () noexcept {
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+    static void
+    mcl_filp_dbuf_surface () noexcept {
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_filp_dbuf_surface");
         if (mcl_control_obj.dbuf_surface) {
             surface_t* t = mcl_control_obj.cur_surface;
             mcl_control_obj.cur_surface = mcl_control_obj.dbuf_surface;
@@ -634,7 +641,7 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     hide (bool b_hide) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::hide");
         if (mcl_control_obj.bIsReady) {
         // hide/show window if inited
             ::ShowWindow ( mcl_control_obj.hwnd,
@@ -656,7 +663,7 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     iconify () noexcept{ 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::iconify");
         LONG_PTR last_style =
             ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
@@ -684,7 +691,7 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     maximize () noexcept{ 
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::maximize");
         LONG_PTR last_style =
             ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
@@ -720,7 +727,7 @@ mcl {
     mcl_display_t& mcl_display_t::
     quit () noexcept{
         {
-            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::quit");
             if (!mcl_control_obj.bIsReady) return *this; 
             ::PostMessage (mcl_control_obj.hwnd, WM_CLOSE, 2, 0);
         }
@@ -782,7 +789,7 @@ mcl {
     */
     mcl_display_t& mcl_display_t::
     toggle_fullscreen () noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::toggle_fullscreen");
         if (get_active ()) {
             ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
 
@@ -853,7 +860,7 @@ mcl {
     */    
     mcl_display_t& mcl_display_t::
     set_window_alpha (double f_alpha) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_window_alpha");
         if (mcl_control_obj.bIsReady) {
             if (f_alpha > 1.f)      f_alpha = 1.f;
             else if (f_alpha < 0.f) f_alpha = 0.f;

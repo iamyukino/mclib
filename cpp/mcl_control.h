@@ -80,6 +80,12 @@ mcl {
         LRESULT OnKeyDown     (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
         LRESULT OnKeyUp       (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam);
         LRESULT OnTimer       (HWND hWnd, WPARAM wParam, LPARAM lParam);
+#if (WINVER >= 0x0600)
+        LRESULT OnClipboardUpdate (HWND hWnd, WPARAM wParam, LPARAM lParam);
+#endif
+        LRESULT OnDrawClipboard (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnChangeCBChain (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnDropFiles   (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:
         LRESULT CALLBACK hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam);
@@ -121,20 +127,31 @@ mcl {
         unsigned  bIsExit  = 0ul;
         bool      bAtQuitInClose = false;
 
+    public:   // mouse & key events
         bool      bMouseInClient = false;
-        char      bMouseKeyState = 0;
         char      bHasIMFocus = 0;
-        wchar_t   bModKeyState = 0;
         bool      bHideCursor = false;
         bool      bRepeatCount = false;
 
-        char : 8; char : 8; char : 8; char : 8;
+        char      fMouseKeyState = 0;
+        wchar_t   fModKeyState = 0;
+        char      fMouseCapture = 0;
+
+        char : 8; char : 8; char : 8;
 
         cursor_t  cucur;
 
         HHOOK     hWndMouseGrabed = nullptr;
         HHOOK     hWndKeyGrabed = nullptr;
-    
+
+    public:
+        HDROP     droppeddatas = nullptr;
+        HWND      hwndNextViewer = nullptr;
+        bool      bUseAddCBL = false;
+
+        char : 8; char : 8; char : 8;
+        char : 8; char : 8; char : 8; char : 8;
+
     public:   // surface
         surface_t* cur_surface = nullptr;  // current surface
         surface_t* dbuf_surface = nullptr; // surface for double buffer

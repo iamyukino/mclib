@@ -53,6 +53,7 @@
 # include <windows.h>
 # include <windowsx.h>
 # include <process.h>
+# include <shellapi.h>
 # undef WIN32_LEAN_AND_MEAN
 
 # ifdef _MSC_VER
@@ -121,7 +122,7 @@ namespace mcl
     mcl_spinlock_t {
     public:
         using lock_t = unsigned long;
-        mcl_spinlock_t (lock_t& lk, unsigned long uWaitMs = 256ul) noexcept;
+        mcl_spinlock_t (lock_t& lk, wchar_t const* name, unsigned long uWaitMs = 256ul) noexcept;
         mcl_spinlock_t& operator= (mcl_spinlock_t&) = delete;
         ~mcl_spinlock_t () noexcept;
     private: lock_t& lk_; bool islock_;
@@ -251,15 +252,21 @@ namespace mcl
         void* mcl_clog4m_after_exit = nullptr;
         unsigned mcl_threadid_after_exit = 0;
         char : 8; char : 8; char : 8; char : 8;
+
     public:
         size_t atquit_registered = 0;
         size_t atquit_table_size = 0;
         std::function<void()>* atquit_table = nullptr;
-    public:
-        typename mcl_simpletls_ns:: // non-reentrant spinlock for display
+
+    public: // non-reentrant spinlock 
+        typename mcl_simpletls_ns:: // for display
             mcl_spinlock_t::lock_t nrtlock = 0ul;
-        typename mcl_simpletls_ns:: // non-reentrant spinlock for atquit
+        typename mcl_simpletls_ns:: // for atquit
             mcl_spinlock_t::lock_t quitlock = 0ul;
+        typename mcl_simpletls_ns:: // for set_timer
+            mcl_spinlock_t::lock_t timerlock = 0ul;
+        typename mcl_simpletls_ns:: // for drop_file
+            mcl_spinlock_t::lock_t droplock = 0ul;
     };
     extern mcl_base_t mcl_base_obj;
     

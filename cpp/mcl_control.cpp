@@ -150,6 +150,8 @@ mcl {
             event.post (ev);
 
             ev.type = event.Quit;
+            ev.window.lParam = 0;
+            ev.window.wParam = 0;
             event.post (ev);
             return 1;
         }
@@ -165,7 +167,7 @@ mcl {
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_;
         
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_window_info_t::OnClose");
         if (bopen) {
             ml_[cll4m.Int] << L"\n"
             L"==== Shutting down ====\n"
@@ -180,6 +182,35 @@ mcl {
         }
         if (bopen) ml_ << "\"}\n" << L"Reseting..." << std::endl;
         ::ShowWindow (hwnd, SW_HIDE);
+#if (WINVER >= 0x0600)
+        if (bUseAddCBL) {
+            typedef BOOL (WINAPI *LPFN_ACFL)(HWND);
+            HMODULE hModUser32 = ::GetModuleHandleW (L"user32");
+            if (hModUser32) {
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4191)
+# endif // C4191: 'Function cast' : unsafe conversion.
+                LPFN_ACFL lpRemoveClipboardFormatListener =
+                    reinterpret_cast<LPFN_ACFL>(::GetProcAddress (
+                        hModUser32, "RemoveClipboardFormatListener"));
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
+                if (lpRemoveClipboardFormatListener)
+                    lpRemoveClipboardFormatListener (hwnd);
+                ::FreeLibrary (hModUser32);
+            }
+            bUseAddCBL = false;
+        }
+        else {
+            ::ChangeClipboardChain (hwnd, hwndNextViewer);
+            hwndNextViewer = nullptr;
+        }
+#else
+        ::ChangeClipboardChain (hwnd, hwndNextViewer);
+        hwndNextViewer = nullptr;
+#endif
         // if (bopen) ml_ << L"  Destroying window..." << std::endl;
         if (!::DestroyWindow (hwnd)) {
             mcl_report_sysexception (L"Failed to destroy window.");
@@ -208,16 +239,25 @@ mcl {
             cucur = nullptr;
         }
         if (timermap) {
-            delete reinterpret_cast<mcl_timermap_t*>(timermap);
-            timermap = nullptr;
+            mcl_simpletls_ns::mcl_spinlock_t timerlock (mcl_base_obj.timerlock, L"mcl_window_info_t::OnClose");
+            if (timermap) {
+                delete reinterpret_cast<mcl_timermap_t*>(timermap);
+                timermap = nullptr;
+            }
         }
         if (keymap) {
             delete reinterpret_cast<std::vector<BYTE>*>(keymap);
             keymap = nullptr;
         }
+        if (droppeddatas) {
+            mcl_simpletls_ns::mcl_spinlock_t droplock (mcl_base_obj.droplock, L"mcl_window_info_t::OnClose");
+            ::DragFinish (droppeddatas);
+            droppeddatas = nullptr;
+        }
         mcl_event_obj._userType = mcl::mcl_event_t::UserEventMin;
-        bMouseKeyState = 0;
-        bModKeyState = 0;
+        fMouseKeyState = 0;
+        fModKeyState = 0;
+        fMouseCapture = 0;
 
         // window properties           // positions
         threaddr      = 0;             base_w  = base_h   = 0;
@@ -354,7 +394,7 @@ mcl {
 
         mcl_imagebuf_t* buf = mcl_get_surface_dataplus (mcl_control_obj.cur_surface);
         if (buf) {
-            mcl_simpletls_ns::mcl_spinlock_t lock (buf -> m_nrtlock);
+            mcl_simpletls_ns::mcl_spinlock_t lock (buf -> m_nrtlock, L"mcl_window_info_t::OnPaint");
             ::BitBlt (hdc, rect.left, rect.top, rect.right, rect.bottom,
                 buf -> m_hdc, rect.left, rect.top, SRCCOPY);
         }
@@ -389,12 +429,17 @@ mcl {
 
         // post Active Event
         ev.type = event.ActiveEvent;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+
         if (fActive == WA_INACTIVE) ev.active.gain = 0, bHasIMFocus = 0;
         else                        ev.active.gain = 1, bHasIMFocus |= 1;
         if (fActive == WA_CLICKACTIVE) bHasIMFocus |= 2;
         
         constexpr int MouseFocus = 1, InputFocus = 2, MouseActive = 4;
         if (bHasIMFocus & 1)        ev.active.state |= (MouseFocus | InputFocus);
+        else if (hWndMouseGrabed)   ev.active.state |= MouseFocus;
+        else if (hWndKeyGrabed)     ev.active.state |= InputFocus;
         if (bHasIMFocus & 2)        ev.active.state |= MouseActive;
 
         event.post (ev);
@@ -420,24 +465,24 @@ mcl {
             ev.type = event.MouseMotion;
             ev.mouse.pos.x = GET_X_LPARAM (lParam);
             ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-            bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
-            ev.mouse.buttons = bMouseKeyState;
+            fMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
+            ev.mouse.buttons = fMouseKeyState;
             event.post (ev);
-        }
+            
+            if (!bMouseInClient) {
+                ev.type = event.WindowEnter;
+                ev.window.wParam = wParam;
+                ev.window.lParam = lParam;
+                event.post (ev);
 
-        if (!bMouseInClient) {
-            ev.type = event.WindowEnter;
-            ev.window.wParam = wParam;
-            ev.window.lParam = lParam;
-            event.post (ev);
-
-            bMouseInClient = true;
-            TRACKMOUSEEVENT tme{0, 0, 0, 0};
-            tme.cbSize = sizeof(TRACKMOUSEEVENT);
-            tme.dwFlags = TME_LEAVE;
-            tme.hwndTrack = hwnd;
-            tme.dwHoverTime = HOVER_DEFAULT;
-            ::TrackMouseEvent (&tme);
+                bMouseInClient = true;
+                TRACKMOUSEEVENT tme{0, 0, 0, 0};
+                tme.cbSize = sizeof(TRACKMOUSEEVENT);
+                tme.dwFlags = TME_LEAVE;
+                tme.hwndTrack = hwnd;
+                tme.dwHoverTime = HOVER_DEFAULT;
+                ::TrackMouseEvent (&tme);
+            }
         }
         return 0;
     }
@@ -478,8 +523,8 @@ mcl {
             ev.type = event.MouseWheel;
             if (type) ev.wheel.delta.x = GET_WHEEL_DELTA_WPARAM (wParam);
             else      ev.wheel.delta.y = GET_WHEEL_DELTA_WPARAM (wParam);
-            bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
-            ev.wheel.buttons = bMouseKeyState;
+            fMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM(wParam));
+            ev.wheel.buttons = fMouseKeyState;
             event.post (ev);
         }
         return 0;
@@ -487,8 +532,11 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnButtonDown (char type, WPARAM wParam, LPARAM lParam) {
-        if (!hWndMouseGrabed) {
+        if (!fMouseCapture)
             ::SetCapture (hwnd);
+        fMouseCapture |= (1 << type);
+
+        if (!hWndMouseGrabed) {
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.MouseButtonDown;
             ev.mouse.button = type;
@@ -496,7 +544,7 @@ mcl {
                 ++ ev.mouse.button;
             ev.mouse.pos.x = GET_X_LPARAM (lParam);
             ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-            ev.mouse.buttons = bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
+            ev.mouse.buttons = fMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
             event.post (ev);
         }
         return 0;
@@ -504,8 +552,12 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnButtonUp (char type, WPARAM wParam, LPARAM lParam) {
+        if (fMouseCapture) {
+            fMouseCapture &= ~(1 << type);
+            if (!fMouseCapture)
+                ::ReleaseCapture ();
+        }
         if (!hWndMouseGrabed) {
-            ::ReleaseCapture ();
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.MouseButtonUp;
             ev.mouse.button = type;
@@ -513,7 +565,7 @@ mcl {
                 ++ ev.mouse.button;
             ev.mouse.pos.x = GET_X_LPARAM (lParam);
             ev.mouse.pos.y = GET_Y_LPARAM (lParam);
-            ev.mouse.buttons = bMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
+            ev.mouse.buttons = fMouseKeyState = static_cast<char>(GET_KEYSTATE_WPARAM (wParam));
             event.post (ev);
         }
         return 0;
@@ -532,7 +584,7 @@ mcl {
         if (keys[VK_CAPITAL] &  0x1) mod |= key.ModCaps;
         if (keys[VK_NUMLOCK] &  0x1) mod |= key.ModNum;
         if ((mod & key.ModLCtrl) && (mod & key.ModRAlt)) mod |= key.ModMode;
-        mcl_control_obj.bModKeyState = mod;
+        mcl_control_obj.fModKeyState = mod;
     }
 
     LRESULT mcl_window_info_t::
@@ -626,30 +678,90 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnTimer (HWND hWnd, WPARAM wParam, LPARAM lParam) {
-        if (!timermap)
-            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);        
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
-        if (!timermap)
-            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
-
-        mcl_timermap_t& tmap = *reinterpret_cast<mcl_timermap_t*>(timermap);
-        mcl_timermap_t::iterator it = tmap.find (wParam);
-        if (it == tmap.end ())
-            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
-        
         event_t ev{ 0, {{0, 0}} };
-        ev.type = it -> second.event.type;
-        ev.window.wParam = it -> second.event.window.wParam;
-        ev.window.lParam = it -> second.event.window.lParam;
-        event.post (ev);
+        do {
+            if (!timermap) break;
+            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.timerlock, L"mcl_window_info_t::OnTimer");
+            if (!timermap) break;
+
+            mcl_timermap_t& tmap = *reinterpret_cast<mcl_timermap_t*>(timermap);
+            mcl_timermap_t::iterator it = tmap.find (wParam);
+            if (it == tmap.end ()) break;
         
-        if (it -> second.loops) {
-            -- (it -> second.loops);
-            if (!it -> second.loops)
-                tmap.erase (it);
-        }
+            ev.type = it -> second.event.type;
+            ev.window.wParam = it -> second.event.window.wParam;
+            ev.window.lParam = it -> second.event.window.lParam;
         
+            if (it -> second.loops) {
+                -- (it -> second.loops);
+                if (!it -> second.loops)
+                    tmap.erase (it);
+            }
+        } while (0);
+        
+        if (ev.type) 
+            event.post (ev);
+
         return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
+    }
+#if (WINVER >= 0x0600)
+    LRESULT mcl_window_info_t::
+    OnClipboardUpdate (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (!bUseAddCBL)
+            return ::DefWindowProc (hWnd, WM_CLIPBOARDUPDATE, wParam, lParam);
+
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.ClipboardUpdate;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+        event.post (ev);
+        return 0;
+    }
+#endif
+    LRESULT mcl_window_info_t::
+    OnDrawClipboard (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (bUseAddCBL)
+            return ::DefWindowProc (hWnd, WM_DRAWCLIPBOARD, wParam, lParam);
+
+        if (hwndNextViewer)
+            ::SendMessage (hwndNextViewer, WM_DRAWCLIPBOARD, wParam, lParam);
+
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.ClipboardUpdate;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+        event.post (ev);
+        return 0;
+    }
+    LRESULT mcl_window_info_t::
+    OnChangeCBChain (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (bUseAddCBL)
+            return ::DefWindowProc (hWnd, WM_CHANGECBCHAIN, wParam, lParam);
+
+        if (reinterpret_cast<HWND>(reinterpret_cast<void*>(wParam)) == hwndNextViewer)
+            hwndNextViewer = reinterpret_cast<HWND>(reinterpret_cast<void*>(lParam));
+        else if (hwndNextViewer)
+            ::SendMessage (hwndNextViewer, WM_CHANGECBCHAIN, wParam, lParam);
+        return 0;
+    }
+
+    LRESULT mcl_window_info_t::
+    OnDropFiles (HWND, WPARAM wParam, LPARAM) {
+        HDROP hDrop = reinterpret_cast<HDROP>(reinterpret_cast<void*>(wParam)), hOldDrop = 0;
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.DropFile;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+        {
+            mcl_simpletls_ns::mcl_spinlock_t lock(mcl_base_obj.droplock, L"mcl_window_info_t::OnDropFiles");
+            hOldDrop = droppeddatas;
+            droppeddatas = hDrop;
+        }
+        event.post (ev);
+
+        if (hOldDrop)
+            ::DragFinish (hOldDrop);
+        return 0;
     }
     
    /**
@@ -692,6 +804,12 @@ mcl {
             case WM_KEYUP:       return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_SYSKEYUP:    return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_TIMER:       return OnTimer       (hWnd, wParam, lParam);    break;
+#if (WINVER >= 0x0600)
+            case WM_CLIPBOARDUPDATE: return OnClipboardUpdate (hWnd, wParam, lParam); break;
+#endif
+            case WM_DRAWCLIPBOARD:   return OnDrawClipboard (hWnd, wParam, lParam); break;
+            case WM_CHANGECBCHAIN:   return OnChangeCBChain (hWnd, wParam, lParam); break;
+            case WM_DROPFILES:   return OnDropFiles   (hWnd, wParam, lParam);    break;
             // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
             default:             return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
@@ -764,6 +882,7 @@ mcl {
         if (flags & dflags.Hidden)        fstyle &= ~WS_VISIBLE, fvisi = false;
         if (flags & dflags.Minimize)      fstyle |= WS_MINIMIZE, fvisi = false;
         if (flags & dflags.Maximize)      fstyle |= WS_MAXIMIZE;
+        if (flags & dflags.AllowDropping) fexstyle |= WS_EX_ACCEPTFILES;
         
         // Adjusting window rect
         RECT wr = {0, 0, dc_w, dc_h};
@@ -822,8 +941,35 @@ mcl {
         if (fvisi) {
             if (!b_maximize)
                 ::ShowWindow (hwnd, SW_SHOWDEFAULT); 
-            ::SetFocus (mcl_control_obj.hwnd);
+            ::SetFocus (hwnd);
         }
+
+        // event.ClipboardUpdate
+#if (WINVER >= 0x0600)
+        typedef BOOL (WINAPI *LPFN_ACFL)(HWND);
+        HMODULE hModUser32 = ::GetModuleHandleW (L"user32");
+        if (hModUser32) {
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4191)
+# endif // C4191: 'Function cast' : unsafe conversion.
+            LPFN_ACFL lpAddClipboardFormatListener =
+                reinterpret_cast<LPFN_ACFL>(::GetProcAddress(
+                    hModUser32, "AddClipboardFormatListener"));
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
+            if (lpAddClipboardFormatListener) {
+                lpAddClipboardFormatListener (hwnd);
+                bUseAddCBL = true;
+            }
+            ::FreeLibrary (hModUser32);
+        }
+        if (!bUseAddCBL)
+            hwndNextViewer = ::SetClipboardViewer (hwnd);
+#else
+        hwndNextViewer = ::SetClipboardViewer (hwnd);
+#endif
     
 #        undef MCL_RELEASE_HDC_
 #        undef MCL_DESTROY_WINDOW_
@@ -901,7 +1047,7 @@ mcl {
         ev.mouse.pos.y = mouseData -> pt.y;
         
         mcl_update_mousekeystate (ev.mouse.buttons);
-        bMouseKeyState = ev.mouse.buttons;
+        fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
         return true;
@@ -914,7 +1060,7 @@ mcl {
         else      ev.wheel.delta.y = GET_WHEEL_DELTA_WPARAM (mouseData -> mouseData);
         
         mcl_update_mousekeystate (ev.wheel.buttons);
-        bMouseKeyState = ev.wheel.buttons;
+        fMouseKeyState = ev.wheel.buttons;
         event.post (ev);
 
         bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
@@ -935,7 +1081,7 @@ mcl {
         ev.mouse.pos.y = mouseData -> pt.y;
         
         mcl_update_mousekeystate (ev.mouse.buttons);
-        bMouseKeyState = ev.mouse.buttons;
+        fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
         return ret;
@@ -955,7 +1101,7 @@ mcl {
         ev.mouse.pos.y = mouseData -> pt.y;
         
         mcl_update_mousekeystate (ev.mouse.buttons);
-        bMouseKeyState = ev.mouse.buttons;
+        fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
         return ret;

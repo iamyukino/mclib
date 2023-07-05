@@ -137,7 +137,7 @@ mcl {
             return { recta.x, recta.y, 0, 0 };
 
         // start drawing
-        mcl_simpletls_ns::mcl_spinlock_t lock (dataplus -> m_nrtlock);
+        mcl_simpletls_ns::mcl_spinlock_t lock (dataplus -> m_nrtlock, L"mcl_draw_t::rect");
         if (!dataplus -> m_width)
             return { recta.x, recta.y, 0, 0 };
 

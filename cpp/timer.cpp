@@ -142,7 +142,7 @@ mcl {
         UINT_PTR idevent = static_cast<UINT_PTR>(type.type);
 
         { // spinlock
-            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock);
+            mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.timerlock, L"mcl_time_t::set_timer");
             if (!mcl_control_obj.bIsReady)
                 return false;
 
@@ -153,29 +153,29 @@ mcl {
             mcl_timermap_t*& ptmap = *reinterpret_cast
                 <mcl_timermap_t**>(&mcl_control_obj.timermap);
 
-            if (!millseconds) {
+            if (millseconds) {
+                if (!ptmap) {
+                    ptmap = new (std::nothrow) mcl_timermap_t;
+                    if (!ptmap)
+                        return false;
+                }
+                (*ptmap)[idevent] = { type, loops };
+                
+            } else {
                 if (!ptmap)
                     return false;
 
                 mcl_timermap_t::iterator it = ptmap -> find (idevent);
                 if (it == ptmap -> end ())
                     return false;
-            
-                if (!::KillTimer (mcl_control_obj.hwnd, idevent))
-                    return false;
                 ptmap -> erase (it);
-                return true;
             }
-
-            if (!ptmap) {
-                ptmap = new (std::nothrow) mcl_timermap_t;
-                if (!ptmap)
-                    return false;
-            }
-            (*ptmap)[idevent] = { type, loops };
         }
-        return static_cast<bool>(::SetTimer (mcl_control_obj.hwnd,
-            idevent, static_cast<UINT>(millseconds), 0));
+        return static_cast<bool>(millseconds ? 
+            ::SetTimer (mcl_control_obj.hwnd,
+                idevent, static_cast<UINT>(millseconds), 0) : 
+            ::KillTimer (mcl_control_obj.hwnd, idevent)
+        );
     }
 
 
