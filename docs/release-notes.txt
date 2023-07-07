@@ -3,13 +3,14 @@
 Release notes for Mclib
 --------------------------------
   |
-.3470     June 23rd 2023 - July 5th 2023
+.3470     June 23rd 2023 - July 7th 2023
   |  
   |  [   NEW    ]    Add key.h .
   |  [  ADDED   ]    Completed event.set_grab_mouse() .
   |  [  FIXED   ]    Corrected WM_KEYDOWN & WM_KEYUP .
   |  [ IMPROVED ]    Improved event.custom_type() .
   |  [  ADDED   ]    Add event.ClipboardUpdate & event.DropFile .
+  |  [  ADDED   ]    Add IME support.
   |
   |
   |

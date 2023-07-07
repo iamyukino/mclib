@@ -39,7 +39,6 @@
 #include "mcl_control.h"
 
 #include "../src/event.h"
-#include "../src/clog4m.h"
 #include "../src/timer.h"
 
 #ifdef _MSC_VER
@@ -98,6 +97,10 @@ mcl {
     eventtype_t constexpr mcl_event_t::  WindowFocusGained;
     eventtype_t constexpr mcl_event_t::  WindowFocusLost;
     eventtype_t constexpr mcl_event_t::  WindowClose;
+
+    eventtype_t constexpr mcl_event_t::TextInputEvent;
+    eventtype_t constexpr mcl_event_t::  TextEditing;
+    eventtype_t constexpr mcl_event_t::  TextInput;
 
     eventtype_t constexpr mcl_event_t::ExtendedEvent;
     eventtype_t constexpr mcl_event_t::  DropFile;
@@ -445,6 +448,9 @@ mcl {
             case WindowFocusLost: return L"WindowFocusLost";
             case WindowClose:     return L"WindowClose";
 
+            case TextEditing:     return L"TextEditing";
+            case TextInput:       return L"TextInput";
+
             case DropFile:        return L"DropFile";
             case ClipboardUpdate: return L"ClipboardUpdate";
             default:              break;
@@ -487,6 +493,9 @@ mcl {
             case WindowFocusGained: return "WindowFocusGained";
             case WindowFocusLost: return "WindowFocusLost";
             case WindowClose:     return "WindowClose";
+
+            case TextEditing:     return "TextEditing";
+            case TextInput:       return "TextInput";
 
             case DropFile:        return "DropFile";
             case ClipboardUpdate: return "ClipboardUpdate";
@@ -719,6 +728,110 @@ mcl {
         }
         ::DragFinish (hdrop);
         return vec;
+    }
+    static std::wstring
+    mcl_imm_getstr (DWORD type, size_t* psz = 0) noexcept{
+        using igcs_t = decltype(ImmGetCompositionStringW);
+        igcs_t* fpImmGetCompositionStringW = mcl_get_immfunc<igcs_t>("ImmGetCompositionStringW");
+        if (!fpImmGetCompositionStringW) return std::wstring(L"");
+
+        using igc_t = decltype(ImmGetContext);
+        igc_t* fpImmGetContext = mcl_get_immfunc<igc_t>("ImmGetContext");
+        if (!fpImmGetContext) return std::wstring(L"");
+
+        using irc_t = decltype(ImmReleaseContext);
+        irc_t* fpImmReleaseContext = mcl_get_immfunc<irc_t>("ImmReleaseContext");
+        if (!fpImmReleaseContext) return std::wstring(L"");
+
+        HIMC hImc = fpImmGetContext (mcl_control_obj.hwnd);
+        if (!hImc) return std::wstring(L"");
+
+        DWORD dwSize = static_cast<DWORD>(fpImmGetCompositionStringW (hImc, type, NULL, 0));
+        dwSize += sizeof(wchar_t);
+        HGLOBAL hstr = ::GlobalAlloc (GHND, dwSize);
+        if (!hstr) {
+            fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+            return std::wstring(L"");
+        }
+
+        if (psz) {
+            LONG sz = fpImmGetCompositionStringW (hImc, GCS_CURSORPOS, 0, 0);
+            *psz = static_cast<size_t>(sz >= 0 ? sz : 0);
+        }
+        
+        LPVOID lpstr = ::GlobalLock (hstr);
+        if (!lpstr) {
+            fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+            ::GlobalFree (hstr);
+            return std::wstring(L"");
+        }
+        fpImmGetCompositionStringW (hImc, type, lpstr, dwSize);
+        std::wstring retstr(reinterpret_cast<wchar_t*>(lpstr));
+        fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+        // add this string into text buffer of application
+        ::GlobalUnlock (hstr);
+        ::GlobalFree (hstr);
+        return retstr;
+    }
+    static std::string
+    mcl_imm_getstr_a (DWORD type, size_t* psz = 0) noexcept{
+        using igcs_t = decltype(ImmGetCompositionStringA);
+        igcs_t* fpImmGetCompositionStringA = mcl_get_immfunc<igcs_t>("ImmGetCompositionStringA");
+        if (!fpImmGetCompositionStringA) return std::string("");
+
+        using igc_t = decltype(ImmGetContext);
+        igc_t* fpImmGetContext = mcl_get_immfunc<igc_t>("ImmGetContext");
+        if (!fpImmGetContext) return std::string("");
+
+        using irc_t = decltype(ImmReleaseContext);
+        irc_t* fpImmReleaseContext = mcl_get_immfunc<irc_t>("ImmReleaseContext");
+        if (!fpImmReleaseContext) return std::string("");
+
+        HIMC hImc = fpImmGetContext (mcl_control_obj.hwnd);
+        if (!hImc) return std::string("");
+
+        DWORD dwSize = static_cast<DWORD>(fpImmGetCompositionStringA (hImc, type, NULL, 0));
+        dwSize += sizeof(wchar_t);
+        HGLOBAL hstr = ::GlobalAlloc (GHND, dwSize);
+        if (!hstr) {
+            fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+            return std::string("");
+        }
+
+        if (psz) {
+            LONG sz = fpImmGetCompositionStringA (hImc, GCS_CURSORPOS, 0, 0);
+            *psz = static_cast<size_t>(sz >= 0 ? sz : 0);
+        }
+        
+        LPVOID lpstr = ::GlobalLock (hstr);
+        if (!lpstr) {
+            fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+            ::GlobalFree (hstr);
+            return std::string("");
+        }
+        fpImmGetCompositionStringA (hImc, type, lpstr, dwSize);
+        std::string retstr(reinterpret_cast<char*>(lpstr));
+        fpImmReleaseContext (mcl_control_obj.hwnd, hImc);
+        // add this string into text buffer of application
+        ::GlobalUnlock (hstr);
+        ::GlobalFree (hstr);
+        return retstr;
+    }
+    std::wstring mcl_event_t::
+    get_details_textediting (size_t* curpos) noexcept{
+        return mcl_imm_getstr (GCS_COMPSTR, curpos);
+    }
+    std::wstring mcl_event_t::
+    get_details_textinput () noexcept{
+        return mcl_imm_getstr (GCS_RESULTSTR);
+    }
+    std::string mcl_event_t::
+    get_details_textediting_a (size_t* curpos) noexcept{
+        return mcl_imm_getstr_a (GCS_COMPSTR, curpos);
+    }
+    std::string mcl_event_t::
+    get_details_textinput_a () noexcept{
+        return mcl_imm_getstr_a (GCS_RESULTSTR);
     }
 
     /**

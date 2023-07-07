@@ -71,7 +71,6 @@ mcl {
         };   // ActiveEvent
 
         struct mcl_key_event_t {
-        // mod is unfinished
             wchar_t       unicode;
             wchar_t       mod; // see key.ModXxxx
             unsigned      scancode;
@@ -82,8 +81,6 @@ mcl {
         };   // KeyEvent
 
         struct mcl_mouse_event_t {
-        // buttons is not the same as pygame
-        // if needed, use mcl::mouse.get_pressed
             point2d_t pos;
             char      buttons; // see mouse.BtnXxxx 
             char      button;
@@ -110,13 +107,14 @@ mcl {
         eventtype_t type;
         char : 8; char : 8; char : 8; char : 8;
         union {
-            // none                    // QuitEvent
+            // nothing                 // QuitEvent
             mcl_active_event_t active; // ActiveEvent
             mcl_key_event_t    key;    // KeyEvent
             mcl_mouse_event_t  mouse;  // MouseEvent
             mcl_mouse_wheel_t  wheel;  // MouseWheelEvent
             mcl_window_event_t window; // WindowEvent
-            // none                    // ExtendedEvent
+            // event.get_details_xx    // TextInputEvent
+            // event.get_details_xx    // ExtendedEvent
             void*              code;   // UserEvent
         };
     };
@@ -178,14 +176,18 @@ mcl {
         static type constexpr   WindowFocusGained=  0x1400;
         static type constexpr   WindowFocusLost =   0x1600;
         static type constexpr   WindowClose     =   0x1800;
-        
-        static type constexpr ExtendedEvent     =   0x6000; // 14-15
-        static type constexpr   DropFile        =   0x2000;
-        static type constexpr   ClipboardUpdate =   0x4000;
 
-        static type constexpr UserEvent         = ~0x7fffu; // 16+
-        static type constexpr   UserEventMin    =   0x8000;
-        static type constexpr   UserEventMax    = ~0x7fffu;
+        static type constexpr TextInputEvent    =   0x6000; // 14-15
+        static type constexpr   TextEditing     =   0x2000;
+        static type constexpr   TextInput       =   0x4000;
+        
+        static type constexpr ExtendedEvent     =  0x18000; // 16-17
+        static type constexpr   DropFile        =   0x8000;
+        static type constexpr   ClipboardUpdate =  0x10000;
+
+        static type constexpr UserEvent         =~0x1ffffu; // 18+
+        static type constexpr   UserEventMin    =  0x20000;
+        static type constexpr   UserEventMax    =~0x1ffffu;
         
     public:
         operator       void*       () const noexcept;
@@ -233,8 +235,12 @@ mcl {
         bool                 get_grab_key () noexcept;
         bool                 get_grab     () noexcept;
         // get event details from extented events
-        std::vector<std::wstring> get_details_dropfile   () noexcept;
+        std::vector<std::wstring> get_details_dropfile () noexcept;
         std::vector<std::string>  get_details_dropfile_a () noexcept;
+        std::wstring         get_details_textediting (size_t* curpos = 0) noexcept;
+        std::string          get_details_textediting_a (size_t* curpos = 0) noexcept;
+        std::wstring         get_details_textinput () noexcept;
+        std::string          get_details_textinput_a () noexcept;
         // place a new event on the queue
         bool                 post         (event_t const& Event) noexcept;
         // make custom user event type

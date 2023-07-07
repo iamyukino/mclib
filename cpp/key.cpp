@@ -665,4 +665,86 @@ mcl {
         return "unknown";
     }
 
+    void mcl_key_t::
+    start_text_input () noexcept{
+        using iace_t = decltype(ImmAssociateContextEx);
+        iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
+        if (!fpImmAssociateContextEx) return ;
+
+        fpImmAssociateContextEx (mcl_control_obj.hwnd, NULL, IACE_DEFAULT);
+    }
+
+    void mcl_key_t::
+    stop_text_input () noexcept{
+        using iace_t = decltype(ImmAssociateContextEx);
+        iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
+        if (!fpImmAssociateContextEx) return ;
+        
+        ::SendMessage (mcl_control_obj.hwnd, WM_IME_NOTIFY, 0, 0);
+        fpImmAssociateContextEx (mcl_control_obj.hwnd, NULL, IACE_CHILDREN);
+    }
+
+    void mcl_key_t::
+    set_text_input_rect (rect_t rect, point2d_t start) noexcept{
+        using igdiw_t = decltype(ImmGetDefaultIMEWnd);
+        igdiw_t* fpImmGetDefaultIMEWnd = mcl_get_immfunc<igdiw_t>("ImmGetDefaultIMEWnd");
+        if (!fpImmGetDefaultIMEWnd) return ;
+
+        if (rect.w < 0) rect.x += rect.w + 1, rect.w = -rect.w;
+        if (rect.h < 0) rect.y += rect.h + 1, rect.h = -rect.h;
+
+        COMPOSITIONFORM cpf{ 0, {0, 0}, {0, 0, 0, 0} };
+        cpf.dwStyle = CFS_FORCE_POSITION | CFS_RECT;
+        cpf.rcArea.left = rect.x;
+        cpf.rcArea.top  = rect.y;
+        cpf.rcArea.right = rect.x + rect.w;
+        cpf.rcArea.bottom = rect.y + rect.h;
+        
+        /*
+        // Make sure that the rect is inside the display window
+        if (cpf.rcArea.left   >= mcl_control_obj.dc_w) cpf.rcArea.left   = mcl_control_obj.dc_w - 1;
+        if (cpf.rcArea.top    >= mcl_control_obj.dc_h) cpf.rcArea.top    = mcl_control_obj.dc_h - 1;
+        if (cpf.rcArea.right  >  mcl_control_obj.dc_w) cpf.rcArea.right  = mcl_control_obj.dc_w;
+        if (cpf.rcArea.bottom >  mcl_control_obj.dc_h) cpf.rcArea.bottom = mcl_control_obj.dc_h;
+
+        if (cpf.rcArea.left   <  0) cpf.rcArea.left   = 0;
+        if (cpf.rcArea.top    <  0) cpf.rcArea.top    = 0;
+        if (cpf.rcArea.right  <= 0) cpf.rcArea.right  = 1;
+        if (cpf.rcArea.bottom <= 0) cpf.rcArea.bottom = 1;
+        */
+        
+        if (start.x == -1 && start.y == -1) {
+            cpf.ptCurrentPos.x = cpf.rcArea.left;
+            cpf.ptCurrentPos.y = cpf.rcArea.top;
+        } else {
+            cpf.ptCurrentPos.x = start.x;
+            cpf.ptCurrentPos.y = start.y;
+
+            if (cpf.ptCurrentPos.x <  cpf.rcArea.left)   cpf.ptCurrentPos.x = cpf.rcArea.left;
+            if (cpf.ptCurrentPos.y <  cpf.rcArea.top)    cpf.ptCurrentPos.y = cpf.rcArea.top;
+            if (cpf.ptCurrentPos.x >= cpf.rcArea.right)  cpf.ptCurrentPos.x = cpf.rcArea.right - 1;
+            if (cpf.ptCurrentPos.y >= cpf.rcArea.bottom) cpf.ptCurrentPos.y = cpf.rcArea.bottom - 1;
+        }
+
+        if (cpf.ptCurrentPos.x != mcl_control_obj.immcpf.ptCurrentPos.x || 
+            cpf.ptCurrentPos.y != mcl_control_obj.immcpf.ptCurrentPos.y ||
+            cpf.rcArea.left    != mcl_control_obj.immcpf.rcArea.left    ||
+            cpf.rcArea.top     != mcl_control_obj.immcpf.rcArea.top     ||
+            cpf.rcArea.right   != mcl_control_obj.immcpf.rcArea.right   ||
+            cpf.rcArea.bottom  != mcl_control_obj.immcpf.rcArea.bottom
+        ) {
+            HWND idefhwnd = fpImmGetDefaultIMEWnd (mcl_control_obj.hwnd);
+            if (!idefhwnd) return ;
+            ::SendMessageW (idefhwnd, WM_IME_CONTROL, IMC_SETCOMPOSITIONWINDOW,
+                reinterpret_cast<LPARAM>(reinterpret_cast<void*>(&cpf)));
+            // Also: Use IMN_SETCOMPOSITIONFONT to change font size.
+            mcl_control_obj.immcpf = cpf;
+        }
+    }
+
+    void mcl_key_t::
+    set_text_input_rect (rect_t rect) noexcept{
+        set_text_input_rect (rect, { -1, -1 });
+    }
+
 }

@@ -86,6 +86,9 @@ mcl {
         LRESULT OnDrawClipboard (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnChangeCBChain (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnDropFiles   (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnIMEComposition (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnIMENotify   (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnIMEEndComposition (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:
         LRESULT CALLBACK hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam);
@@ -146,11 +149,12 @@ mcl {
 
     public:
         HDROP     droppeddatas = nullptr;
+        HMODULE   hModImm32 = nullptr;
         HWND      hwndNextViewer = nullptr;
+        COMPOSITIONFORM immcpf{ 0, {0, 0}, {0, 0, 0, 0} };
         bool      bUseAddCBL = false;
 
         char : 8; char : 8; char : 8;
-        char : 8; char : 8; char : 8; char : 8;
 
     public:   // surface
         surface_t* cur_surface = nullptr;  // current surface
@@ -229,6 +233,22 @@ mcl {
     inline char* mcl_get_surface_data (surface_t* s) {
         return reinterpret_cast<char*>(reinterpret_cast<mcl_imagebuf_t**>(s) + 1);
     }
+
+# ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable: 4191)
+# endif // C4191: 'Function cast' : unsafe conversion.
+    template <typename fun_t>
+    fun_t* mcl_get_immfunc (char const* funcname){
+        if (!mcl_control_obj.hModImm32)
+            return nullptr;
+        return reinterpret_cast<fun_t*>(
+            ::GetProcAddress (mcl_control_obj.hModImm32, funcname)
+        );
+    }
+# ifdef _MSC_VER
+#  pragma warning(pop)
+# endif
 
 
 } // namespace

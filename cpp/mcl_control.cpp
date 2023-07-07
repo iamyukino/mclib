@@ -254,6 +254,11 @@ mcl {
             ::DragFinish (droppeddatas);
             droppeddatas = nullptr;
         }
+        if (hModImm32) {
+            ::FreeLibrary (hModImm32);
+            hModImm32 = nullptr;
+        }
+        immcpf = { 0, {0, 0}, {0, 0, 0, 0} };
         mcl_event_obj._userType = mcl::mcl_event_t::UserEventMin;
         fMouseKeyState = 0;
         fModKeyState = 0;
@@ -763,6 +768,51 @@ mcl {
             ::DragFinish (hOldDrop);
         return 0;
     }
+
+    LRESULT mcl_window_info_t::
+    OnIMEComposition (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.TextEditing;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+        event.post (ev);
+        return ::DefWindowProc (hWnd, WM_IME_COMPOSITION, wParam, lParam);
+    }
+    
+    LRESULT mcl_window_info_t::
+    OnIMEEndComposition (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.TextInput;
+        ev.window.lParam = 0;
+        ev.window.wParam = 0;
+        event.post (ev);
+        return ::DefWindowProc (hWnd, WM_IME_ENDCOMPOSITION, wParam, lParam);
+    }
+
+    LRESULT mcl_window_info_t::
+    OnIMENotify (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (wParam == 0 && lParam == 0) {
+            // key.stop_text_input()
+            using igc_t = decltype(ImmGetContext);
+            igc_t* fpImmGetContext = mcl_get_immfunc<igc_t>("ImmGetContext");
+            if (!fpImmGetContext) return 0;
+
+            using irc_t = decltype(ImmReleaseContext);
+            irc_t* fpImmReleaseContext = mcl_get_immfunc<irc_t>("ImmReleaseContext");
+            if (!fpImmReleaseContext) return 0;
+
+            using ini_t = decltype(ImmNotifyIME);
+            ini_t* fpImmNotifyIME = mcl_get_immfunc<ini_t>("ImmNotifyIME");
+            if (!fpImmNotifyIME) return 0;
+
+            HIMC hImc = fpImmGetContext (hwnd);
+            fpImmNotifyIME (hImc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
+            fpImmNotifyIME (hImc, NI_CLOSECANDIDATE, 0, 0);
+            fpImmReleaseContext (hwnd, hImc);
+            return 0;
+        }
+        return ::DefWindowProc (hWnd, WM_IME_NOTIFY, wParam, lParam);
+    }
     
    /**
     * @function mcl_window_info_t::wndProc <cpp/mcl_control.cpp>
@@ -804,15 +854,18 @@ mcl {
             case WM_KEYUP:       return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_SYSKEYUP:    return OnKeyUp   (hWnd, uMessage, wParam, lParam); break;
             case WM_TIMER:       return OnTimer       (hWnd, wParam, lParam);    break;
+            case WM_DROPFILES:   return OnDropFiles   (hWnd, wParam, lParam);    break;
 #if (WINVER >= 0x0600)
             case WM_CLIPBOARDUPDATE: return OnClipboardUpdate (hWnd, wParam, lParam); break;
 #endif
-            case WM_DRAWCLIPBOARD:   return OnDrawClipboard (hWnd, wParam, lParam); break;
-            case WM_CHANGECBCHAIN:   return OnChangeCBChain (hWnd, wParam, lParam); break;
-            case WM_DROPFILES:   return OnDropFiles   (hWnd, wParam, lParam);    break;
+            case WM_DRAWCLIPBOARD: return OnDrawClipboard (hWnd, wParam, lParam);break;
+            case WM_CHANGECBCHAIN: return OnChangeCBChain (hWnd, wParam, lParam);break;
+            case WM_IME_COMPOSITION: return OnIMEComposition (hWnd, wParam, lParam); break;
+            case WM_IME_NOTIFY:  return OnIMENotify (hWnd, wParam, lParam);      break;
+            case WM_IME_ENDCOMPOSITION: return OnIMEEndComposition (hWnd, wParam, lParam); break;
             // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
-            default:             return ::DefWindowProcW (hWnd, uMessage, wParam, lParam);
+            default:             return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
         }
         return 0;
     }
@@ -970,6 +1023,9 @@ mcl {
 #else
         hwndNextViewer = ::SetClipboardViewer (hwnd);
 #endif
+        if (!hModImm32)
+            hModImm32 = ::GetModuleHandleW (L"Imm32.dll");
+        
     
 #        undef MCL_RELEASE_HDC_
 #        undef MCL_DESTROY_WINDOW_

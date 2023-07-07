@@ -264,10 +264,11 @@ mcl {
         // get the name of a key identifier
         wchar_t const*    name        (type vkey) noexcept;
         char const*       name_a      (type vkey) noexcept;
-        // start handling Unicode text input events.  unfinished. 
+        // start handling unicode text input events
         void              start_text_input () noexcept;
         void              stop_text_input () noexcept;
         void              set_text_input_rect (rect_t rect) noexcept;
+        void              set_text_input_rect (rect_t rect, point2d_t start) noexcept;
 
     };
     extern mcl_key_t key; // Module for working with the keyboard.
