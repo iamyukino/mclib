@@ -102,6 +102,17 @@ mcl {
             unsigned long long wParam;
             long long          lParam;
         };   // WindowEvent
+
+        struct mcl_text_input_t {
+        // if unicode == 0
+        // use event.get_details_xx instead
+            wchar_t unicode;
+            
+            char : 8; char : 8;
+            char : 8; char : 8; char : 8; char : 8;
+            char : 8; char : 8; char : 8; char : 8;
+            char : 8; char : 8; char : 8; char : 8;
+        };   // MouseWheel
         
     public:
         eventtype_t type;
@@ -113,7 +124,7 @@ mcl {
             mcl_mouse_event_t  mouse;  // MouseEvent
             mcl_mouse_wheel_t  wheel;  // MouseWheelEvent
             mcl_window_event_t window; // WindowEvent
-            // event.get_details_xx    // TextInputEvent
+            mcl_text_input_t   text;   // TextInputEvent
             // event.get_details_xx    // ExtendedEvent
             void*              code;   // UserEvent
         };
@@ -145,6 +156,7 @@ mcl {
         static type constexpr   Quit            =      0x1;
         
         static type constexpr ActiveEvent       =      0x2; // 2
+        static type constexpr   Active          =      0x2;
         
         static type constexpr KeyEvent          =      0xc; // 3-4
         static type constexpr   KeyDown         =      0x4;
@@ -227,9 +239,9 @@ mcl {
         // test if a type of event is blocked from the queue
         bool                 get_blocked  (eventtype_t eventtypes) noexcept;
         // control the sharing of input devices with other applications
-        void                 set_grab_mouse (bool b_grab) noexcept; // unfinished
-        void                 set_grab_key (bool b_grab) noexcept; // unfinished
-        void                 set_grab     (bool b_grab) noexcept; // unfinished
+        void                 set_grab_mouse (bool b_grab) noexcept;
+        void                 set_grab_key (bool b_grab) noexcept;
+        void                 set_grab     (bool b_grab) noexcept;
         // test if the program is sharing input devices
         bool                 get_grab_mouse () noexcept;
         bool                 get_grab_key () noexcept;

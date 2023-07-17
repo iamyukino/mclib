@@ -258,6 +258,10 @@ mcl {
         std::vector<bool> get_pressed () noexcept;
         // determine which modifier keys are being held
         wchar_t           get_mods    () noexcept;
+        // determine whether a key is up or down. focus not required
+        bool              get_async_pressed (type vk_index) noexcept;
+        // determine whether a modifier key is up or down. focus not required
+        bool              get_async_mods (mod_type mod_mask) noexcept;
         // control how held keys are repeated
         bool              set_repeat  (bool b_repeat = false) noexcept;
         bool              get_repeat  () noexcept;

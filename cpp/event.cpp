@@ -71,6 +71,7 @@ mcl {
     eventtype_t constexpr mcl_event_t::  Quit;
     
     eventtype_t constexpr mcl_event_t::ActiveEvent;
+    eventtype_t constexpr mcl_event_t::  Active;
     
     eventtype_t constexpr mcl_event_t::KeyEvent;
     eventtype_t constexpr mcl_event_t::  KeyDown;
@@ -424,7 +425,7 @@ mcl {
             
             case Quit:            return L"Quit";
             
-            case ActiveEvent:     return L"ActiveEvent";
+            case Active:          return L"ActiveEvent";
 
             case KeyDown:         return L"KeyDown";
             case KeyUp:           return L"KeyUp";
@@ -470,7 +471,7 @@ mcl {
             
             case Quit:            return "Quit";
             
-            case ActiveEvent:     return "ActiveEvent";
+            case Active:          return "ActiveEvent";
 
             case KeyDown:         return "KeyDown";
             case KeyUp:           return "KeyUp";
@@ -585,73 +586,118 @@ mcl {
      */
     void mcl_event_t::
     set_grab_mouse (bool b_grab) noexcept{
+        constexpr int MouseFocus = 1, InputFocus = 2;
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.Active;
+        ev.active.gain = 0;
+        
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_mouse");
+        {
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndMouseGrabed))
             return ;
+
         if (mcl_control_obj.hWndMouseGrabed) {
-            ::UnhookWindowsHookEx (mcl_control_obj.hWndMouseGrabed);
+        // unhook mouse hook
+            if (!::UnhookWindowsHookEx (mcl_control_obj.hWndMouseGrabed))
+                return ;
             mcl_control_obj.hWndMouseGrabed = nullptr;
+
+            // post Active Event
+            if (!(mcl_control_obj.bHasIMFocus & 1)) {
+                ev.active.state = 0;
+                if (mcl_control_obj.hWndKeyGrabed)
+                    ev.active.state |= InputFocus;
+                event.post (ev);
+            }
             return ;
         } 
+
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 5039)
 #       endif // never throw an exception passed to extern C function
+
+        // lock all mouse input into your program
         mcl_control_obj.hWndMouseGrabed =
             ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf (
                     &mcl_window_info_t::hookMouseProc, &mcl_control_obj
                 ), mcl_control_obj.instance, 0);
+
 #       ifdef _MSC_VER
 #           pragma warning(pop)
 #       endif
-        return ;
+        }
+        if (!mcl_control_obj.hWndMouseGrabed)
+            return ;
+
+        // post Active Event
+        if (!(mcl_control_obj.bHasIMFocus & 1)) {
+            ev.active.state = MouseFocus;
+            if (mcl_control_obj.hWndKeyGrabed)
+                ev.active.state |= InputFocus;
+            event.post (ev);
+        }
     }
 
     void mcl_event_t::
     set_grab_key (bool b_grab) noexcept{
+        constexpr int MouseFocus = 1, InputFocus = 2;
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.Active;
+        ev.active.gain = 0;
+
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_key");
+        {
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndKeyGrabed))
             return ;
+        
         if (mcl_control_obj.hWndKeyGrabed) {
-            ::UnhookWindowsHookEx (mcl_control_obj.hWndKeyGrabed);
+        // unhook key hook
+            if (!::UnhookWindowsHookEx (mcl_control_obj.hWndKeyGrabed) && 0)
+                return ;
             mcl_control_obj.hWndKeyGrabed = nullptr;
+
+            // post Active Event
+            if (!(mcl_control_obj.bHasIMFocus & 1)) {
+                ev.active.state = 0;
+                if (mcl_control_obj.hWndMouseGrabed)
+                    ev.active.state |= MouseFocus;
+                event.post(ev);
+            }
             return ;
         } 
-//        mcl_control_obj.hWndKeyGrabed =
-//            ::SetWindowsHookEx (WH_KEYBOARD_LL, MyHookFunKey, mcl_control_obj.instance, 0);
-        return ;
-    }
 
-    void mcl_event_t::
-    set_grab (bool b_grab) noexcept{
-        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab");
-        if (b_grab != static_cast<bool>(mcl_control_obj.hWndMouseGrabed)) {
-            if (mcl_control_obj.hWndMouseGrabed) {
-                ::UnhookWindowsHookEx (mcl_control_obj.hWndMouseGrabed);
-                mcl_control_obj.hWndMouseGrabed = nullptr;
-            } else {
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 5039)
 #       endif // never throw an exception passed to extern C function
-                mcl_control_obj.hWndMouseGrabed =
-                    ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf (
-                            &mcl_window_info_t::hookMouseProc, &mcl_control_obj
-                        ), mcl_control_obj.instance, 0);
+
+        // lock all keyboard input into your program
+        mcl_control_obj.hWndKeyGrabed =
+            ::SetWindowsHookEx (WH_KEYBOARD_LL, mcl_simpletls_ns::bind_mf (
+                    &mcl_window_info_t::hookKeyBdProc, &mcl_control_obj
+                ), mcl_control_obj.instance, 0);
+
 #       ifdef _MSC_VER
 #           pragma warning(pop)
 #       endif
-            }
         }
-        if (b_grab != static_cast<bool>(mcl_control_obj.hWndKeyGrabed)) {
-            if (mcl_control_obj.hWndKeyGrabed) {
-                ::UnhookWindowsHookEx (mcl_control_obj.hWndKeyGrabed);
-                mcl_control_obj.hWndKeyGrabed = nullptr;
-            } else {
-//                mcl_control_obj.hWndKeyGrabed =
-//                    ::SetWindowsHookEx (WH_KEYBOARD_LL, MyHookFunKey, mcl_control_obj.instance, 0);
-            }
+        if (!mcl_control_obj.hWndKeyGrabed)
+            return ;
+
+        // post Active Event
+        if (!(mcl_control_obj.bHasIMFocus & 1)) {
+            ev.active.state = InputFocus;
+            if (mcl_control_obj.hWndMouseGrabed)
+                ev.active.state |= MouseFocus;
+            event.post (ev);
         }
+    }
+
+    void mcl_event_t::
+    set_grab (bool b_grab) noexcept{
+        set_grab_mouse (b_grab);
+        set_grab_key   (b_grab);
     }
 
     /**

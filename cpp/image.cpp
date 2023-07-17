@@ -148,7 +148,7 @@ mcl {
 
         // Get the bmp's params
         BITMAP qbmp{ 0, 0, 0, 0, 0, 0, 0 };
-        int retgo = ::GetObjectW (reinterpret_cast<HGDIOBJ>(hbmp),
+        int retgo = ::GetObject (reinterpret_cast<HGDIOBJ>(hbmp),
             sizeof (BITMAP), reinterpret_cast<LPVOID>(&qbmp));
         if (!retgo) {
             ::DeleteDC (hldc);

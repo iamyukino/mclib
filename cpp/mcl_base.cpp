@@ -53,12 +53,14 @@ namespace mcl
     [[noreturn]] static void
     mcl_term_func () noexcept{
         clog4m[cll4m.Fatal].println("::abort() was called.");
+        mcl_reset_check ();
         clog4m.uninit (-1);
         ::abort ();
     }
     void
     mcl_quick_exit_func () noexcept{
         clog4m[cll4m.Info].println("::quick_exit() was called.");
+        mcl_reset_check ();
         clog4m.uninit (-2);
     }
 
@@ -180,6 +182,28 @@ namespace mcl
             ::MultiByteToWideChar ( CP_ACP, 0, begin,
                 end ? static_cast<int>(end - begin) : -1, auto_ptr_,
                 static_cast<int>(len_));
+        }
+        mcl_m2w_str_t::mcl_m2w_str_t (wchar_t const* begin, wchar_t const* end) noexcept
+        : len_ (static_cast<size_t>(end - begin)), auto_ptr_ (len_ + 1u) {
+            if (!auto_ptr_) { len_ = 0; return; }
+            MCL_WCSNCPY (auto_ptr_, begin, len_);
+        }
+        
+        mcl_w2m_str_t::mcl_w2m_str_t (wchar_t const* begin, wchar_t const* end) noexcept
+        : len_ (static_cast<size_t>(::WideCharToMultiByte(
+            CP_ACP, 0, begin,
+            end ? static_cast<int>(end - begin) : -1,
+            nullptr, 0, nullptr, nullptr
+        ))), auto_ptr_ (len_ + 1u) {
+            if (!auto_ptr_) { len_ = 0; return ; }
+            ::WideCharToMultiByte ( CP_ACP, 0, begin,
+                end ? static_cast<int>(end - begin) : -1, auto_ptr_,
+                static_cast<int>(len_), nullptr, nullptr);
+        }
+        mcl_w2m_str_t::mcl_w2m_str_t (char const* begin, char const* end) noexcept
+        : len_ (static_cast<size_t>(end - begin)), auto_ptr_ (len_ + 1u) {
+            if (!auto_ptr_) { len_ = 0; return; }
+            MCL_STRNCPY (auto_ptr_, begin, len_);
         }
         
         

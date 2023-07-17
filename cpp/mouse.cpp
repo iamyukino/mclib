@@ -157,7 +157,7 @@ mcl {
             return b_visible;
 
         mcl_control_obj.bHideCursor = !b_visible;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return !b_visible;
     }
     
@@ -197,7 +197,7 @@ mcl {
     set_cursor () noexcept{
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = nullptr;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 
@@ -206,7 +206,7 @@ mcl {
         if (!cur) return false;
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = cur;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 
@@ -216,7 +216,7 @@ mcl {
         if (!cur) return false;
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = cur;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 
@@ -228,7 +228,7 @@ mcl {
         if (!cur) return false;
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = cur;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 
@@ -241,7 +241,7 @@ mcl {
         if (!cur) return false;
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = cur;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 
@@ -252,7 +252,7 @@ mcl {
         if (!cur) return false;
         cursor_t it = mcl_control_obj.cucur;
         mcl_control_obj.cucur = cur;
-        ::SendMessageW (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_SETCURSOR, 0, HTCLIENT);
         return true;
     }
 

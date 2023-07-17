@@ -47,6 +47,7 @@
 #  pragma warning(disable: 4365 5039)
 # endif
 
+# include <tchar.h>
 # include <functional>
 # include <utility>
 # define WIN32_LEAN_AND_MEAN
@@ -73,6 +74,8 @@
 
 # ifdef _MSC_VER
 #  define MCL_GETTICKCOUNT() (::GetTickCount64 ())
+#  define MCL_TCSNCPY(de, sc, cnt) (::_tcsncpy_s (de, cnt, sc, cnt))
+#  define MCL_STRNCPY(de, sc, cnt) (::strncpy_s (de, cnt, sc, cnt))
 #  define MCL_WCSNCPY(de, sc, cnt) (::wcsncpy_s (de, cnt, sc, cnt))
 #  define MCL_WFOPEN(file, name, mode) \
       (static_cast<FILE*>(::_wfopen_s (&(file), name, mode) ? ((file) = nullptr) : (file)))
@@ -82,18 +85,20 @@
       (cnt ? ::_snwprintf_s (buf, cnt, cnt, fmt, __VA_ARGS__) : ::_scwprintf (fmt, __VA_ARGS__))
 #  define MCL_VSNWPRINTF(buf, cnt, fmt, list) \
       (cnt ? ::_vsnwprintf_s (buf, cnt, cnt, fmt, list) : ::_vscwprintf (fmt, list))
-#  define MCL_WGETFILENAME(path, f) \
-      (::_wsplitpath_s (path, nullptr, 0, nullptr, 0, f, _MAX_FNAME, nullptr, 0))
+#  define MCL_TGETFILENAME(path, f) \
+      (::_tsplitpath_s (path, nullptr, 0, nullptr, 0, f, _MAX_FNAME, nullptr, 0))
 #  define MCL_WGETFILEEXT(path, f) \
       (::_wsplitpath_s (path, nullptr, 0, nullptr, 0, nullptr, 0, f, _MAX_EXT))
 # else
 #  define MCL_GETTICKCOUNT() (::GetTickCount ())
+#  define MCL_TCSNCPY(de, sc, cnt) (::_tcsncpy (de, sc, cnt))
+#  define MCL_STRNCPY(de, sc, cnt) (::strncpy (de, sc, cnt))
 #  define MCL_WCSNCPY(de, sc, cnt) (::wcsncpy (de, sc, cnt))
 #  define MCL_WFOPEN(file, name, mode) ((file) = ::_wfopen (name, mode))
 #  define MCL_WFREOPEN(file, name, mode, s) ((file) = ::_wfreopen (name, mode, s))
 #  define MCL_SNWPRINTF(buf, cnt, fmt, ...)    (::_snwprintf (buf, cnt, fmt, __VA_ARGS__))
 #  define MCL_VSNWPRINTF(buf, cnt, fmt, list) (::_vsnwprintf (buf, cnt, fmt, list))
-#  define MCL_WGETFILENAME(path, f) (::_wsplitpath (path, nullptr, nullptr, f, nullptr), 0)
+#  define MCL_TGETFILENAME(path, f) (::_tsplitpath (path, nullptr, nullptr, f, nullptr), 0)
 #  define MCL_WGETFILEEXT(path, f) (::_wsplitpath (path, nullptr, nullptr, nullptr, f), 0)
 # endif
 
@@ -108,11 +113,12 @@ namespace mcl
     */
     constexpr char const*    mcl_version_number_a (){ return        "0.5.2";            }
     constexpr wchar_t const* mcl_version_number ()  { return       L"0.5.2";            }
-    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.2-Debug.3470"; }
+    constexpr char const*    mcl_name_a ()          { return  "mclib 0.5.2-Debug.3471"; }
+    constexpr wchar_t const* mcl_name ()            { return L"mclib 0.5.2-Debug.3471"; }
     constexpr int            mcl_major_number ()    { return         0; }
     constexpr int            mcl_minor_number ()    { return           5; }
     constexpr int            mcl_patch_number ()    { return             2; }
-    constexpr int            mcl_revision_number () { return                     3470; }
+    constexpr int            mcl_revision_number () { return                     3471; }
     
    /**
     * @class mcl_spinlock_t <cpp/mcl_base.h>
@@ -189,8 +195,23 @@ namespace mcl
     public:
         explicit mcl_m2w_str_t (char const* begin,
             char const* end = nullptr) noexcept;
+        explicit mcl_m2w_str_t (wchar_t const* begin,
+            wchar_t const* end = nullptr) noexcept;
         ~mcl_m2w_str_t () noexcept{ }
         inline operator wchar_t* () const noexcept{ return auto_ptr_; }
+        inline size_t len () const noexcept { return len_; }
+    };
+    class
+    mcl_w2m_str_t {
+        size_t len_; // must be the first
+        mcl_auto_ptr_t<char> auto_ptr_;
+    public:
+        explicit mcl_w2m_str_t (char const* begin,
+            char const* end = nullptr) noexcept;
+        explicit mcl_w2m_str_t (wchar_t const* begin,
+            wchar_t const* end = nullptr) noexcept;
+        ~mcl_w2m_str_t () noexcept{ }
+        inline operator char* () const noexcept{ return auto_ptr_; }
         inline size_t len () const noexcept { return len_; }
     };
     
@@ -267,6 +288,9 @@ namespace mcl
             mcl_spinlock_t::lock_t timerlock = 0ul;
         typename mcl_simpletls_ns:: // for drop_file
             mcl_spinlock_t::lock_t droplock = 0ul;
+        typename mcl_simpletls_ns:: // for keymap
+            mcl_spinlock_t::lock_t keymaplock = 0ul;
+        char : 8; char : 8; char : 8; char : 8;
     };
     extern mcl_base_t mcl_base_obj;
     

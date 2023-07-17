@@ -3,7 +3,7 @@ Most useful stuff:
     color.h       ok
     display.h     ok
     draw.h        X 
-    event.h       ok  <- set_grab_key 
+    event.h       ok
     font.h        X
     image.h       ok  <- extended type, mask, low-bit image 
     key.h         ok  <- font of IME editor 
@@ -22,7 +22,7 @@ Advanced stuff:
 
 Other:
     pyobj.h
-    clog4m.h
+    clog4m.h          <- use tchar 
     mcl_base.h
     mcl_control.h
 */
@@ -73,21 +73,31 @@ int main()
             case event.MouseMotion: { point = ev.mouse.pos; break; }
             case event.KeyUp: {
                 if (ev.key.key == key.VkEscape) ::exit(0);
-                else if (ev.key.key == key.VkLControl) binput = !binput,
+                else if (ev.key.key == key.VkTab) binput = !binput,
                     binput ? key.start_text_input() : key.stop_text_input();
                 break;
             }
-
+            
             // test text editing event
+            case event.KeyDown: {
+                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
+                    << key.name (ev.key.key);
+                break;
+            }
             case event.TextInput: {
                 clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
-                    << event.get_details_textinput();
+                    << (ev.text.unicode ? std::wstring {ev.text.unicode, 0} : event.get_details_textinput());
                 break;
             }
             case event.TextEditing: {
                 size_t sz = 0;
                 clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
                     << event.get_details_textediting(&sz) << " (" << sz << ")";
+                break;
+            }
+            case event.Active: {
+                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
+                    << ev.active.gain << ", " << ev.active.state;
                 break;
             }
             }
@@ -101,6 +111,10 @@ int main()
 
         display.flip ();
         ck.tick (24);
+
+        // event.set_grab_mouse (key.get_async_mods (key.ModNum));
+        event.set_grab_key (key.get_async_mods (key.ModNum));
+        // key.set_repeat (key.get_async_mods (key.ModCaps));
 
         // test clock.get_fps
         static char str[100];

@@ -96,19 +96,19 @@ mcl {
     }
     
     static void
-    mcl_set_caption (wchar_t const* caption) noexcept 
+    mcl_set_caption (TCHAR const* caption) noexcept 
     {
         if (caption) {
         // caption title is given
-            MCL_WCSNCPY (mcl_control_obj.window_caption, caption, _MAX_FNAME);
+            MCL_TCSNCPY (mcl_control_obj.window_caption, caption, _MAX_FNAME);
             return ;
         }
         
-        wchar_t lpFileRealName[MAX_PATH];
-        DWORD ret = ::GetModuleFileNameW (nullptr, lpFileRealName, MAX_PATH);
+        TCHAR lpFileRealName[MAX_PATH];
+        DWORD ret = ::GetModuleFileName (nullptr, lpFileRealName, MAX_PATH);
         if (ret) {
         // succeeded. then get the file name
-            MCL_WGETFILENAME ( lpFileRealName, mcl_control_obj.window_caption );
+            MCL_TGETFILENAME ( lpFileRealName, mcl_control_obj.window_caption );
             return ;
         }
         
@@ -117,7 +117,7 @@ mcl {
            L"title = \nerror:  Failed to get module path "
            L"[-Wdisplay-winapi-" << ::GetLastError () << L"]\n, default ";
         if (!mcl_control_obj.window_caption[0])
-            ::memcpy (mcl_control_obj.window_caption, L"mclib", 6 * sizeof (wchar_t));
+            ::memcpy (mcl_control_obj.window_caption, _T("mclib"), 6 * sizeof (TCHAR));
     }
     
    /**
@@ -127,16 +127,21 @@ mcl {
     * @return mcl_display_t&
     */
     mcl_display_t& mcl_display_t::
-    set_caption (wchar_t const* caption) noexcept
-    {
+    set_caption (wchar_t const* caption) noexcept{
+        if (!caption) caption = L"";
+#ifndef UNICODE
+        mcl_simpletls_ns::mcl_w2m_str_t str (caption);
+        return set_caption (str);
+#else
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_caption");
         mcl_set_caption (caption);
         if (mcl_control_obj.bIsReady) {
-            ::SetWindowTextW ( mcl_control_obj.hwnd,
-                               mcl_control_obj.window_caption );
-            ::UpdateWindow   ( mcl_control_obj.hwnd );  // for vc6
+            ::SetWindowText ( mcl_control_obj.hwnd,
+                              mcl_control_obj.window_caption );
+            ::UpdateWindow  ( mcl_control_obj.hwnd );  // for vc6
         }
         return *this;
+#endif
     }
     
    /**
@@ -148,18 +153,35 @@ mcl {
     mcl_display_t& mcl_display_t::
     set_caption (char const* caption) noexcept{
         if (!caption) caption = "";
+#ifdef UNICODE
         mcl_simpletls_ns::mcl_m2w_str_t wstr (caption);
         return set_caption (wstr);
+#else
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_caption");
+        mcl_set_caption (caption);
+        if (mcl_control_obj.bIsReady) {
+            ::SetWindowText ( mcl_control_obj.hwnd,
+                              mcl_control_obj.window_caption );
+            ::UpdateWindow  ( mcl_control_obj.hwnd );  // for vc6
+        }
+        return *this;
+#endif
     }
     
    /**
     * @function mcl_display_t::get_caption <src/display.h>
     * @brief Get the current window caption
-    * @return wchar_t const*
+    * @return std::wstring
     */
-    wchar_t const* mcl_display_t::
+    std::wstring mcl_display_t::
     get_caption () const noexcept{
-        return mcl_control_obj.window_caption;
+        mcl_simpletls_ns::mcl_m2w_str_t wstr(mcl_control_obj.window_caption);
+        return std::wstring(wstr);
+    }
+    std::string mcl_display_t::
+    get_caption_a () const noexcept{
+        mcl_simpletls_ns::mcl_w2m_str_t str(mcl_control_obj.window_caption);
+        return std::string(str);
     }
 
    /**
@@ -439,8 +461,8 @@ mcl {
             if (bopen)
                 ml_.wprintln (L"mcl.display.set_mode({%ld, %ld})",
                               mcl_control_obj.dc_w, mcl_control_obj.dc_h );
-            LONG_PTR new_style   = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
-            LONG_PTR new_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
+            LONG_PTR new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
+            LONG_PTR new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
             RECT wr = { mcl_control_obj.x_pos, mcl_control_obj.y_pos,
                         mcl_control_obj.x_pos + mcl_control_obj.dc_w,
                         mcl_control_obj.y_pos + mcl_control_obj.dc_h };
@@ -467,9 +489,9 @@ mcl {
             mcl_set_size (&size);
             
             LONG_PTR last_style =
-                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+                ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
             LONG_PTR last_exstyle =
-                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE );
+                ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE );
             if (bopen)
                 ml_.wprintf (L"mcl.display.set_mode({%ld, %ld}, 0x%08lx)\n"
                              L"  Setting styles... 0x%08lx -> ",
@@ -492,7 +514,7 @@ mcl {
                             mcl_control_obj.y_pos + mcl_control_obj.dc_h };
                 ::AdjustWindowRectEx ( &wr, static_cast<DWORD>(last_style),
                                        FALSE, static_cast<DWORD>(last_exstyle) );
-                ::SetWindowLongPtrW  ( mcl_control_obj.hwnd,
+                ::SetWindowLongPtr   ( mcl_control_obj.hwnd,
                                        GWL_STYLE, static_cast<DWORD>(last_style) );
                 ::SetWindowPos       ( mcl_control_obj.hwnd, nullptr,
                                        wr.left, wr.top, wr.right - wr.left,
@@ -522,7 +544,7 @@ mcl {
             
             ::UpdateWindow (mcl_control_obj.hwnd);  // for vc6
             last_style =
-                ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+                ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
             if ((last_style & WS_VISIBLE) && !(last_style & WS_MINIMIZE))
                 ::SetFocus (mcl_control_obj.hwnd);
             
@@ -550,11 +572,11 @@ mcl {
     get_flags () const noexcept {
     // get dpm_flags from form style
         LONG_PTR style =
-            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+            ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
         LONG_PTR last_style = mcl_control_obj.b_fullscreen ?
             mcl_fullscreen_last_style () : style;
         LONG_PTR last_exstyle =
-            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
+            ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
         dflags_t flags = dflags.Hidden | dflags.NoFrame | dflags.NoMinimizeBox;
         if (     style & WS_VISIBLE)      flags &= ~dflags.Hidden;
         if (     style & WS_MINIMIZE)     flags |=  dflags.Minimize;
@@ -665,7 +687,7 @@ mcl {
     iconify () noexcept{ 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::iconify");
         LONG_PTR last_style =
-            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+            ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
             if (!(last_style & WS_VISIBLE))
                 ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
@@ -693,7 +715,7 @@ mcl {
     maximize () noexcept{ 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::maximize");
         LONG_PTR last_style =
-            ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+            ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
         if (mcl_control_obj.bIsReady) {
             if (!(last_style & WS_VISIBLE))
                 ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
@@ -756,12 +778,12 @@ mcl {
     bool mcl_display_t::
     set_allow_screensaver (bool b_allow) noexcept{
         BOOL b_allow_before = 0;
-        ::SystemParametersInfoW (SPI_GETSCREENSAVEACTIVE, 0u, &b_allow_before, 0u);
+        ::SystemParametersInfo (SPI_GETSCREENSAVEACTIVE, 0u, &b_allow_before, 0u);
         if (b_allow_before && !b_allow) {
-            if (!::SystemParametersInfoW (SPI_SETSCREENSAVEACTIVE, 0u, nullptr, 0u))
+            if (!::SystemParametersInfo (SPI_SETSCREENSAVEACTIVE, 0u, nullptr, 0u))
                 mcl_report_sysexception (L"Failed to disable the screensaver.");
         } else if (!b_allow_before && b_allow) {
-            if (!::SystemParametersInfoW (SPI_SETSCREENSAVEACTIVE, TRUE, nullptr, 0u))
+            if (!::SystemParametersInfo (SPI_SETSCREENSAVEACTIVE, TRUE, nullptr, 0u))
                 mcl_report_sysexception (L"Failed to enable the screensaver.");
         }
         ::InterlockedCompareExchange (
@@ -778,7 +800,7 @@ mcl {
     bool mcl_display_t::
     get_allow_screensaver () const noexcept{
         BOOL b_allow = 0;
-        ::SystemParametersInfoW (SPI_GETSCREENSAVEACTIVE, 0, &b_allow, 0);
+        ::SystemParametersInfo (SPI_GETSCREENSAVEACTIVE, 0, &b_allow, 0);
         return b_allow;
     }
     
@@ -797,8 +819,8 @@ mcl {
             static LONG_PTR last_exstyle;
             
             LONG_PTR& last_style  = mcl_fullscreen_last_style ();
-            LONG_PTR  new_style   = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
-            LONG_PTR  new_exstyle = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_EXSTYLE);
+            LONG_PTR  new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
+            LONG_PTR  new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
             
             if (!mcl_control_obj.b_fullscreen) {
                 // full screen
@@ -815,8 +837,8 @@ mcl {
                 RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),
                                        FALSE, static_cast<DWORD>(new_exstyle) );
-                ::SetWindowLongPtrW  (mcl_control_obj.hwnd, GWL_STYLE,   new_style);
-                ::SetWindowLongPtrW  (mcl_control_obj.hwnd, GWL_EXSTYLE, new_exstyle);
+                ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_STYLE,   new_style);
+                ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_EXSTYLE, new_exstyle);
                 ::SetWindowPos       (mcl_control_obj.hwnd, HWND_TOPMOST, wr.left, wr.top,
                                        wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
                 
@@ -838,9 +860,9 @@ mcl {
                 RECT wr = {0, 0, last_w, last_h};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(last_style),
                                        FALSE, static_cast<DWORD>(last_exstyle));
-                ::SetWindowLongPtrW  (mcl_control_obj.hwnd,
+                ::SetWindowLongPtr   (mcl_control_obj.hwnd,
                                        GWL_STYLE, static_cast<DWORD>(last_style));
-                ::SetWindowLongPtrW  (mcl_control_obj.hwnd,
+                ::SetWindowLongPtr   (mcl_control_obj.hwnd,
                                        GWL_EXSTYLE, static_cast<DWORD>(last_exstyle));
                 ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST,
                                        wr.left + last_x, wr.top + last_y,
@@ -1015,7 +1037,7 @@ mcl {
     */
     bool mcl_display_t::get_active() const noexcept{
         if (!mcl_control_obj.bIsReady) return false;
-        LONG_PTR last_style = ::GetWindowLongPtrW (mcl_control_obj.hwnd, GWL_STYLE);
+        LONG_PTR last_style = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
         return !(last_style & WS_MINIMIZE) && (last_style & WS_VISIBLE) && mcl_control_obj.bIsReady;
     }
     bool mcl_display_t::get_fullscreen () const noexcept{

@@ -48,30 +48,6 @@
 #include <limits>
 #include <string>
 
-/* 
-// Code within this comment is part of header digitalv.h.
-// This header is used by Windows Multimedia. However, most
-// mci devices do not support this instruction.
-
-extern "C" {
-    typedef struct tagMCI_DGV_SETAUDIO_PARMSW {
-        DWORD_PTR dwCallback;
-        DWORD     dwItem;
-        DWORD     dwValue;
-        DWORD     dwOver;
-        LPWSTR    lpstrAlgorithm;
-        LPWSTR    lpstrQuality;
-    } MCI_DGV_SETAUDIO_PARMSW, MCI_DGV_SETAUDIO_PARMS;
-
-# ifndef MCI_DGV_SETAUDIO_VOLUME
-#   define MCI_DGV_SETAUDIO_ITEM               0x00800000L
-#   define MCI_DGV_SETAUDIO_VALUE              0x01000000L
-#   define MCI_DGV_SETAUDIO_VOLUME             0x00004002L
-#   define MCI_SETAUDIO                        0x0873
-# endif
-} // digitalv.h
-*/
-
 namespace
 mcl {
     
@@ -232,7 +208,7 @@ mcl {
         using             mci_pfun_t       = decltype (&mciSendCommandW);
         static mci_pfun_t mci_sendstring_f = nullptr;
         if (!mci_sendstring_f) {
-            if (!hInsWinmm) hInsWinmm = ::LoadLibraryW (L"winmm.dll");
+            if (!hInsWinmm) hInsWinmm = ::LoadLibrary (_T("winmm.dll"));
             if (hInsWinmm) {
 #       ifdef _MSC_VER
 #           pragma warning(push)
@@ -728,7 +704,7 @@ mcl {
         DWORD             volume          = 0ul;
         if (!wav_getvolume_f) {
             if (!mcl_music_base.hInsWinmm)
-                mcl_music_base.hInsWinmm = ::LoadLibraryW (L"winmm.dll");
+                mcl_music_base.hInsWinmm = ::LoadLibrary (_T("winmm.dll"));
             if (mcl_music_base.hInsWinmm)
 #       ifdef _MSC_VER
 #           pragma warning(push)

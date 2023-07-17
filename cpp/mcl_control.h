@@ -86,18 +86,24 @@ mcl {
         LRESULT OnDrawClipboard (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnChangeCBChain (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnDropFiles   (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnChar        (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnIMEChar     (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnIMEComposition (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnIMENotify   (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnIMEEndComposition (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:
         LRESULT CALLBACK hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam);
+        LRESULT CALLBACK hookKeyBdProc (int nCode, WPARAM wParam, LPARAM lParam);
 
     public:
         bool hookOnMouseMove  (PMOUSEHOOKSTRUCTEX mouseData);
         bool hookOnMouseWheel (char type, PMOUSEHOOKSTRUCTEX mouseData);
         bool hookOnButtonDown (char type, PMOUSEHOOKSTRUCTEX mouseData);
         bool hookOnButtonUp   (char type, PMOUSEHOOKSTRUCTEX mouseData);
+
+        bool hookOnKeyDown    (UINT uMessage, PKBDLLHOOKSTRUCT keybdData);
+        bool hookOnKeyUp      (UINT uMessage, PKBDLLHOOKSTRUCT keybdData);
 
     public:   // window properties
         HINSTANCE instance   = nullptr;
@@ -108,7 +114,7 @@ mcl {
         void*     keymap     = nullptr;
         LONGLONG  timer      = 0ll;
         unsigned  threaddr   = 0u;         // thread id
-        wchar_t   window_caption[_MAX_FNAME];
+        TCHAR     window_caption[_MAX_FNAME];
 
     public:   // positions
         point1d_t base_w  = 0;             // screen size
@@ -164,7 +170,7 @@ mcl {
     extern mcl_window_info_t mcl_control_obj;
     unsigned long mcl_set_dbi_awareness (bool awareness = false) noexcept;
     void mcl_report_sysexception (wchar_t const* what);
-
+    void mcl_reset_check () noexcept;
 
 
     /**
@@ -200,7 +206,7 @@ mcl {
         eventtype_t _userType = mcl::mcl_event_t::UserEventMin;
     };
     extern mcl_eventqueue_t mcl_event_obj;
-
+    
 
    /**
     * @class mcl_imagebuf_t <src/surface.cpp>

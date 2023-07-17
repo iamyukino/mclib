@@ -351,7 +351,7 @@ mcl {
         unsigned long& dwMinorVer, unsigned long& dwBuildNumber)
     noexcept {
     // Get windows system version
-        HMODULE hModNtdll = ::LoadLibraryW(L"ntdll.dll");
+        HMODULE hModNtdll = ::LoadLibrary (_T("ntdll.dll"));
         bool    ret = false;
         if (hModNtdll) {
             using pfRTLGETNTVERSIONNUMBERS = 
@@ -388,7 +388,7 @@ mcl {
     MCL_NODISCARD_CXX17 static unsigned long
     mcl_get_sys_localinfo (int& bRet, int& iTimeZone)
     noexcept{
-        HMODULE hModKernel32 = ::GetModuleHandleW(L"kernel32");
+        HMODULE hModKernel32 = ::GetModuleHandle (_T("kernel32"));
         bool    ret          = false;
         if (hModKernel32) {
             // Get the number of system bits
@@ -513,9 +513,14 @@ mcl {
             else { // open the console
                 mcl_logf_obj.b_console = true;
                 ::AllocConsole();
+#ifdef UNICODE
+                MCL_WFREOPEN(mcl_logf_obj.f_u8log, L"CONOUT$", L"w+t, ccs=UTF-8", stderr);
+                if (!mcl_logf_obj.f_u8log) return *this;
+#else
                 MCL_WFREOPEN(mcl_logf_obj.f_u8log, L"CONOUT$", L"w+t", stderr);
                 if (!mcl_logf_obj.f_u8log) return *this;
                 ::_wsystem(L"chcp 65001");
+#endif
             }
 
             mcl_ptnewline(cll4m.Off);

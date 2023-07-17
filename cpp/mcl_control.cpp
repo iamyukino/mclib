@@ -88,7 +88,7 @@ mcl {
     unsigned long
     mcl_set_dbi_awareness (bool awareness) noexcept {
     // Get windows system version
-        HMODULE hModShcoredll = ::LoadLibraryW(L"Shcore.dll");
+        HMODULE hModShcoredll = ::LoadLibrary (_T("Shcore.dll"));
         bool    ret = false;
 
         typedef enum tagPROCESS_DPI_AWARENESS {
@@ -127,6 +127,10 @@ mcl {
     } 
     
     extern void mcl_do_atquit ();
+
+    void mcl_reset_check () noexcept{
+        // called when ends abnormally
+    }
 
    /**
     * @function mcl_window_info_t::OnXxxxx <cpp/mcl_control.cpp>
@@ -185,7 +189,7 @@ mcl {
 #if (WINVER >= 0x0600)
         if (bUseAddCBL) {
             typedef BOOL (WINAPI *LPFN_ACFL)(HWND);
-            HMODULE hModUser32 = ::GetModuleHandleW (L"user32");
+            HMODULE hModUser32 = ::GetModuleHandle (_T("user32"));
             if (hModUser32) {
 # ifdef _MSC_VER
 #  pragma warning(push)
@@ -217,7 +221,7 @@ mcl {
             bErrorCode = true;
         }
         // if (bopen) ml_ << L"  Unregistering class..." << std::endl;
-        if (!::UnregisterClassW (L"mclibTclass", instance)) {
+        if (!::UnregisterClass (_T("mclibTclass"), instance)) {
             mcl_report_sysexception (L"Failed to unregister class.");
             bErrorCode = true;
         }
@@ -246,6 +250,7 @@ mcl {
             }
         }
         if (keymap) {
+            mcl_simpletls_ns::mcl_spinlock_t keymaplock (mcl_base_obj.keymaplock, L"mcl_window_info_t::OnClose");
             delete reinterpret_cast<std::vector<BYTE>*>(keymap);
             keymap = nullptr;
         }
@@ -302,10 +307,10 @@ mcl {
     LRESULT mcl_window_info_t::
     OnNCHitTest (HWND hWnd, WPARAM wParam, LPARAM lParam) {
     // WM_NCHITTEST
-        LRESULT hit = ::DefWindowProcW(hWnd, WM_NCHITTEST, wParam, lParam);
+        LRESULT hit = ::DefWindowProc (hWnd, WM_NCHITTEST, wParam, lParam);
 /*
         if (b_fullscreen ||
-            (::GetWindowLongPtrW (hWnd, GWL_STYLE) & WS_CAPTION)
+            (::GetWindowLongPtr (hWnd, GWL_STYLE) & WS_CAPTION)
         ) return hit;
         if (hit == HTCLIENT) return HTCAPTION;
 */
@@ -337,8 +342,8 @@ mcl {
         if (wParam == SIZE_MAXIMIZED) {
             this -> b_maximize = true;
             if (b_fullscreen) {
-                LONG_PTR llstyle = ::GetWindowLongPtrW (hWnd, GWL_STYLE);
-                LONG_PTR exstyle = ::GetWindowLongPtrW (hWnd, GWL_EXSTYLE);
+                LONG_PTR llstyle = ::GetWindowLongPtr (hWnd, GWL_STYLE);
+                LONG_PTR exstyle = ::GetWindowLongPtr (hWnd, GWL_EXSTYLE);
                 llstyle = (llstyle & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
                 exstyle = exstyle | WS_EX_CLIENTEDGE;
                 
@@ -347,8 +352,8 @@ mcl {
                                         FALSE, static_cast<DWORD>(exstyle));
                 
                 b_fullscreen = false;
-                ::SetWindowLongPtrW  (hWnd, GWL_STYLE, static_cast<DWORD>(llstyle));
-                ::SetWindowLongPtrW  (hWnd, GWL_EXSTYLE, static_cast<DWORD>(exstyle));
+                ::SetWindowLongPtr   (hWnd, GWL_STYLE, static_cast<DWORD>(llstyle));
+                ::SetWindowLongPtr   (hWnd, GWL_EXSTYLE, static_cast<DWORD>(exstyle));
                 ::SetWindowPos       (hWnd, HWND_TOPMOST, wr.left, wr.top,
                                        wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
                 b_fullscreen = true;
@@ -376,7 +381,7 @@ mcl {
     LRESULT mcl_window_info_t::
     OnMove (HWND hWnd, WPARAM wParam, LPARAM lParam) {
     // WM_MOVE
-        LONG_PTR lstyle = ::GetWindowLongPtrW (hWnd, GWL_STYLE);
+        LONG_PTR lstyle = ::GetWindowLongPtr (hWnd, GWL_STYLE);
         if (!(lstyle & WS_MINIMIZE)) {
             this -> x_pos = GET_X_LPARAM (lParam);
             this -> y_pos = GET_Y_LPARAM (lParam);
@@ -433,7 +438,7 @@ mcl {
         }
 
         // post Active Event
-        ev.type = event.ActiveEvent;
+        ev.type = event.Active;
         ev.window.lParam = 0;
         ev.window.wParam = 0;
 
@@ -594,6 +599,9 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnKeyDown (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+        if (hWndKeyGrabed)
+            return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
+
         WORD keyFlags = HIWORD(lParam);
         BOOL wasKeyDown = (keyFlags & KF_REPEAT) == KF_REPEAT;
         if (bRepeatCount || !wasKeyDown) {
@@ -603,14 +611,17 @@ mcl {
             ev.key.scancode = LOBYTE(keyFlags);
 
             // get unicode
-            std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
-            if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
-            if (keys) {
-                wchar_t buffer[2];
-                void(::GetKeyboardState (keys -> data())); // std::ignore
-                if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
-                    ev.key.unicode = buffer[0];
-                mcl_set_mods_state (keys -> data(), ev.key.mod);
+            {
+                mcl_simpletls_ns::mcl_spinlock_t lock(mcl_base_obj.keymaplock, L"mcl_window_info_t::OnKeyDown");
+                std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+                if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+                if (keys) {
+                    wchar_t buffer[2];
+                    void(::GetKeyboardState (keys -> data())); // std::ignore
+                    if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
+                        ev.key.unicode = buffer[0];
+                    mcl_set_mods_state (keys -> data(), ev.key.mod);
+                }
             }
 
             // extended keys
@@ -622,7 +633,7 @@ mcl {
             switch (ev.key.key) {
                 case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
                     ev.key.key = static_cast<unsigned char>(LOWORD(
-                        ::MapVirtualKeyW (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                        ::MapVirtualKey (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
                     break;
                 }
             }
@@ -642,6 +653,9 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnKeyUp (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
+        if (hWndKeyGrabed)
+            return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
+
         WORD keyFlags = HIWORD(lParam);
         {
             event_t ev{ 0, {{0, 0}} };
@@ -650,14 +664,17 @@ mcl {
             ev.key.scancode = LOBYTE(keyFlags);
 
             // get unicode
-            std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
-            if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
-            if (keys) {
-                wchar_t buffer[2];
-                void(::GetKeyboardState (keys -> data())); // std::ignore
-                if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
-                    ev.key.unicode = buffer[0];
-                mcl_set_mods_state (keys -> data(), ev.key.mod);
+            {
+                mcl_simpletls_ns::mcl_spinlock_t lock(mcl_base_obj.keymaplock, L"mcl_window_info_t::OnKeyUp");
+                std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+                if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+                if (keys) {
+                    wchar_t buffer[2];
+                    void(::GetKeyboardState (keys -> data())); // std::ignore
+                    if (::ToUnicode (static_cast<UINT>(wParam), ev.key.scancode, keys -> data(), buffer, 1, 0))
+                        ev.key.unicode = buffer[0];
+                    mcl_set_mods_state (keys -> data(), ev.key.mod);
+                }
             }
 
             // extended keys
@@ -669,7 +686,7 @@ mcl {
             switch (ev.key.key) {
                 case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
                     ev.key.key = static_cast<unsigned char>(LOWORD(
-                        ::MapVirtualKeyW (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                        ::MapVirtualKey (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
                     break;
                 }
             }
@@ -770,6 +787,20 @@ mcl {
     }
 
     LRESULT mcl_window_info_t::
+    OnChar (HWND, WPARAM wParam, LPARAM) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.TextInput;
+        ev.text.unicode = static_cast<wchar_t>(wParam);
+        event.post (ev);
+        return 0;
+    }
+
+    LRESULT mcl_window_info_t::
+    OnIMEChar (HWND, WPARAM, LPARAM) {
+        return 0;
+    }
+
+    LRESULT mcl_window_info_t::
     OnIMEComposition (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.TextEditing;
@@ -783,8 +814,7 @@ mcl {
     OnIMEEndComposition (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.TextInput;
-        ev.window.lParam = 0;
-        ev.window.wParam = 0;
+        ev.text.unicode = 0;
         event.post (ev);
         return ::DefWindowProc (hWnd, WM_IME_ENDCOMPOSITION, wParam, lParam);
     }
@@ -797,18 +827,37 @@ mcl {
             igc_t* fpImmGetContext = mcl_get_immfunc<igc_t>("ImmGetContext");
             if (!fpImmGetContext) return 0;
 
-            using irc_t = decltype(ImmReleaseContext);
-            irc_t* fpImmReleaseContext = mcl_get_immfunc<irc_t>("ImmReleaseContext");
-            if (!fpImmReleaseContext) return 0;
-
             using ini_t = decltype(ImmNotifyIME);
             ini_t* fpImmNotifyIME = mcl_get_immfunc<ini_t>("ImmNotifyIME");
             if (!fpImmNotifyIME) return 0;
 
+            using iace_t = decltype(ImmAssociateContextEx);
+            iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
+            if (!fpImmAssociateContextEx) return 0;
+
+            using idc_t = decltype(ImmDestroyContext);
+            idc_t* fpImmDestroyContext = mcl_get_immfunc<idc_t>("ImmDestroyContext");
+            if (!fpImmDestroyContext) return 0;
+
             HIMC hImc = fpImmGetContext (hwnd);
             fpImmNotifyIME (hImc, NI_COMPOSITIONSTR, CPS_CANCEL, 0);
             fpImmNotifyIME (hImc, NI_CLOSECANDIDATE, 0, 0);
-            fpImmReleaseContext (hwnd, hImc);
+            fpImmAssociateContextEx (hwnd, NULL, IACE_CHILDREN);
+            fpImmDestroyContext (hImc);
+            immcpf = { 0, {0, 0}, {0, 0, 0, 0} };
+            return 0;
+        } else if (wParam == 0 && lParam == 1) {
+            // key.start_text_input()
+            using icc_t = decltype(ImmCreateContext);
+            icc_t* fpImmCreateContext = mcl_get_immfunc<icc_t>("ImmCreateContext");
+            if (!fpImmCreateContext) return 0;
+
+            using iace_t = decltype(ImmAssociateContextEx);
+            iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
+            if (!fpImmAssociateContextEx) return 0;
+
+            HIMC hImc = fpImmCreateContext ();
+            fpImmAssociateContextEx (mcl_control_obj.hwnd, hImc, IACE_CHILDREN);
             return 0;
         }
         return ::DefWindowProc (hWnd, WM_IME_NOTIFY, wParam, lParam);
@@ -860,8 +909,10 @@ mcl {
 #endif
             case WM_DRAWCLIPBOARD: return OnDrawClipboard (hWnd, wParam, lParam);break;
             case WM_CHANGECBCHAIN: return OnChangeCBChain (hWnd, wParam, lParam);break;
+            case WM_CHAR:        return OnChar        (hWnd, wParam, lParam);    break;
+            case WM_IME_CHAR:    return OnIMEChar     (hWnd, wParam, lParam);    break;
             case WM_IME_COMPOSITION: return OnIMEComposition (hWnd, wParam, lParam); break;
-            case WM_IME_NOTIFY:  return OnIMENotify (hWnd, wParam, lParam);      break;
+            case WM_IME_NOTIFY:  return OnIMENotify   (hWnd, wParam, lParam);    break;
             case WM_IME_ENDCOMPOSITION: return OnIMEEndComposition (hWnd, wParam, lParam); break;
             // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
@@ -883,7 +934,7 @@ mcl {
         bool bopen = clog4m.get_init () && clog4m.get_event_level ().value <= cll4m.Int.value;
         clog4m_t ml_; ml_[cll4m.Int];
         
-        WNDCLASSEXW wc; // A properties struct of our window
+        WNDCLASSEX wc; // A properties struct of our window
         ::memset (&wc, 0, sizeof (wc));
                 // Zero out the struct and set the stuff we want to modify.
         wc.cbSize        = sizeof (WNDCLASSEXW);
@@ -891,7 +942,7 @@ mcl {
         wc.lpfnWndProc = mcl_simpletls_ns::bind_mf(&mcl_window_info_t::wndProc, this);
         wc.hCursor       = ::LoadCursor (nullptr, IDC_ARROW);
         wc.hbrBackground = nullptr; // alternative: HBRUSH (COLOR_BACKGROUND + 1)
-        wc.lpszClassName = L"mclibTclass";
+        wc.lpszClassName = _T("mclibTclass");
         wc.hIcon         = ::LoadIcon (nullptr, IDI_APPLICATION);
                 // Load a standard icon
         wc.hIconSm       = ::LoadIcon (nullptr, IDI_APPLICATION);
@@ -910,7 +961,7 @@ mcl {
         ::InterlockedExchange (&bIsReady, 1);
         
 #        define MCL_UNREGISTERING_WINDOW_()                         \
-        if (!::UnregisterClassW (L"mclibTclass", instance))         \
+        if (!::UnregisterClass (_T("mclibTclass"), instance))       \
             mcl_report_sysexception (L"Failed to unregister class.")
         
 #        define MCL_DESTROY_WINDOW_()                               \
@@ -919,7 +970,7 @@ mcl {
             mcl_report_sysexception (L"Failed to destroy window.")
         
         // if (bopen) ml_ << L"  Registering class..." << std::endl;
-        if (!::RegisterClassExW (&wc)) {
+        if (!::RegisterClassEx (&wc)) {
             mcl_report_sysexception (L"Failed to register class.");
             MCL_TERMINATED_THREAD_MESSAGELOOP_AND_SET_FLAG_ ();
             return 0;
@@ -948,10 +999,10 @@ mcl {
         }
         
         if (bopen) ml_.wprintln (L"Creating window... {\"flags\":\"0x%08lx\"}", flags).flush ();
-        hwnd = ::CreateWindowExW(
+        hwnd = ::CreateWindowEx (
             static_cast<DWORD>(fexstyle),
-            LPCWSTR(wc.lpszClassName),
-            LPCWSTR(window_caption),
+            LPCTSTR(wc.lpszClassName),
+            LPCTSTR(window_caption),
             static_cast<DWORD>(fstyle),
             wr.left + x_pos, // CW_USEDEFAULT
             wr.top + y_pos, // CW_USEDEFAULT
@@ -969,11 +1020,11 @@ mcl {
         int UOI_TIMERPROC_EXCEPTION_SUPPRESSION = 7;
 #endif
         BOOL bfalse = FALSE;
-        ::SetUserObjectInformationW (::GetCurrentProcess (),
+        ::SetUserObjectInformation (::GetCurrentProcess (),
             UOI_TIMERPROC_EXCEPTION_SUPPRESSION, reinterpret_cast<void*>(&bfalse), sizeof(BOOL));
         
         // if (bopen) ml_ << L"  Loading device contexts..." << std::endl;
-        instance = ::GetModuleHandleW (nullptr);
+        instance = ::GetModuleHandle (nullptr);
         cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h });
         if (!cur_surface || !*cur_surface) {
             ml_[cll4m.Fatal] << "Failed to create surface." << std::endl;
@@ -1000,7 +1051,7 @@ mcl {
         // event.ClipboardUpdate
 #if (WINVER >= 0x0600)
         typedef BOOL (WINAPI *LPFN_ACFL)(HWND);
-        HMODULE hModUser32 = ::GetModuleHandleW (L"user32");
+        HMODULE hModUser32 = ::GetModuleHandle (_T("user32"));
         if (hModUser32) {
 # ifdef _MSC_VER
 #  pragma warning(push)
@@ -1024,7 +1075,7 @@ mcl {
         hwndNextViewer = ::SetClipboardViewer (hwnd);
 #endif
         if (!hModImm32)
-            hModImm32 = ::GetModuleHandleW (L"Imm32.dll");
+            hModImm32 = ::GetModuleHandle (_T("Imm32.dll"));
         
     
 #        undef MCL_RELEASE_HDC_
@@ -1150,7 +1201,7 @@ mcl {
         if (GET_XBUTTON_WPARAM(mouseData -> mouseData) == XBUTTON2)
             ++ ev.mouse.button;
 
-        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+        // bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
 
         ::ScreenToClient (hwnd, &mouseData -> pt);
         ev.mouse.pos.x = mouseData -> pt.x;
@@ -1160,7 +1211,113 @@ mcl {
         fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
-        return ret;
+        return true; // ret;
+    }
+  
+   /**
+    * @function mcl_window_info_t::hookKeyBdProc <cpp/mcl_control.cpp>
+    * @brief see event.set_grab_key (event.cpp)
+    */
+    LRESULT CALLBACK mcl_window_info_t::
+    hookKeyBdProc (int nCode, WPARAM wParam, LPARAM lParam){
+        PKBDLLHOOKSTRUCT pVirKey =
+            reinterpret_cast<PKBDLLHOOKSTRUCT>(reinterpret_cast<void*>(lParam));
+        if (nCode >= 0) {
+            switch (wParam) {
+                case WM_KEYDOWN:    if (hookOnKeyDown (static_cast<UINT>(wParam), pVirKey)) break; return 1;
+                case WM_SYSKEYDOWN: if (hookOnKeyDown (static_cast<UINT>(wParam), pVirKey)) break; return 1;
+                case WM_KEYUP:      if (hookOnKeyUp   (static_cast<UINT>(wParam), pVirKey)) break; return 1;
+                case WM_SYSKEYUP:   if (hookOnKeyUp   (static_cast<UINT>(wParam), pVirKey)) break; return 1;
+            }
+        }
+        return ::CallNextHookEx (hWndKeyGrabed, nCode, wParam, lParam);
+    }
+        
+    bool mcl_window_info_t::
+    hookOnKeyDown (UINT uMessage, PKBDLLHOOKSTRUCT keybdData) {
+        bool bExt = uMessage == WM_SYSKEYDOWN || keybdData -> flags & LLKHF_ALTDOWN ||
+            keybdData -> vkCode == VK_NUMLOCK || keybdData -> vkCode == VK_CAPITAL;
+        event_t ev{ 0, {{0, 0}} };
+
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.keymaplock, L"mcl_window_info_t::hookOnKeyDown");
+        {
+        std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+        if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+        
+        bool bKeyCount = bRepeatCount || !keys || !((*keys)[keybdData -> vkCode] & 0x80);
+        if (!bKeyCount) return bExt;
+
+        ev.type = event.KeyDown;
+        ev.key.key = static_cast<unsigned char>(keybdData -> vkCode);
+        ev.key.scancode = keybdData -> scanCode;
+
+        // get unicode
+        if (keys) {
+            wchar_t buffer[2];
+            // void(::GetKeyboardState (keys -> data())); // std::ignore
+            keys -> data()[keybdData -> vkCode] = (keybdData -> flags & LLKHF_UP ? 0x80u : 0x81u);
+            if (::ToUnicode (keybdData -> vkCode, ev.key.scancode, keys -> data(), buffer, 1, 0))
+                ev.key.unicode = buffer[0];
+            mcl_set_mods_state (keys -> data(), ev.key.mod);
+        }
+        }
+        
+        // extended keys
+        BOOL isExtendedKey = (keybdData -> flags & LLKHF_EXTENDED) == LLKHF_EXTENDED;
+        if (isExtendedKey)
+            ev.key.scancode = MAKEWORD(ev.key.scancode, 0xe0);
+            
+        // distinguish keys
+        switch (ev.key.key) {
+            case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
+                ev.key.key = static_cast<unsigned char>(LOWORD(
+                    ::MapVirtualKey (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                break;
+            }
+        }
+
+        event.post (ev);
+        return bExt;
+    }
+
+    bool mcl_window_info_t::
+    hookOnKeyUp (UINT, PKBDLLHOOKSTRUCT keybdData) {
+        event_t ev{ 0, {{0, 0}} };
+        ev.type = event.KeyUp;
+        ev.key.key = static_cast<unsigned char>(keybdData -> vkCode);
+        ev.key.scancode = keybdData -> scanCode;
+        
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.keymaplock, L"mcl_window_info_t::hookOnKeyUp");
+        {
+            // get unicode
+            std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&keymap);
+            if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
+            if (keys) {
+                wchar_t buffer[2];
+                // void(::GetKeyboardState (keys -> data())); // std::ignore
+                keys -> data()[keybdData -> vkCode] = (keybdData -> flags & LLKHF_UP ? 0x00u : 0x01u);
+                if (::ToUnicode (keybdData -> vkCode, ev.key.scancode, keys -> data(), buffer, 1, 0))
+                    ev.key.unicode = buffer[0];
+                mcl_set_mods_state (keys -> data(), ev.key.mod);
+            }
+        }
+        
+        // extended keys
+        BOOL isExtendedKey = (keybdData -> flags & LLKHF_EXTENDED) == LLKHF_EXTENDED;
+        if (isExtendedKey)
+            ev.key.scancode = MAKEWORD(ev.key.scancode, 0xe0);
+            
+        // distinguish keys
+        switch (ev.key.key) {
+            case VK_SHIFT:  case VK_CONTROL:  case VK_MENU: {
+                ev.key.key = static_cast<unsigned char>(LOWORD(
+                    ::MapVirtualKey (ev.key.scancode, MAPVK_VSC_TO_VK_EX)));
+                break;
+            }
+        }
+
+        event.post (ev);
+        return true;
     }
     
 }

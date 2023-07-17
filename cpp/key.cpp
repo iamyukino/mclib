@@ -280,12 +280,48 @@ mcl {
     std::vector<bool> mcl_key_t::
     get_pressed () noexcept{
         std::vector<bool> lhs(256, 0);
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.keymaplock, L"mcl_key_t::get_pressed");
+        {
         std::vector<BYTE>* rhs =
             reinterpret_cast<std::vector<BYTE>*>(mcl_control_obj.keymap);        
         if (rhs)
             for (size_t i = 0; i != 256u; ++ i)
                 lhs[i] = bool((*rhs)[i] & 0x80);
+        }
         return lhs;
+    }
+
+    /**
+     * @function mcl_key_t::get_async_pressed <src/key.h>
+     * @brief Determine whether a key is up or down. focus not required
+     * @return bool
+     */
+    bool mcl_key_t::
+    get_async_pressed (type vk_index) noexcept{
+        return ::GetAsyncKeyState (vk_index) & 0x8000;
+    }
+
+    /**
+     * @function mcl_key_t::get_async_mods <src/key.h>
+     * @brief Determine whether a modifier key is up or down. focus not required
+     * @return bool
+     */
+    bool mcl_key_t::
+    get_async_mods (mod_type mod_mask) noexcept{
+        mod_type mods = 0;
+        if (mod_mask & ModLShift) mods |= (::GetAsyncKeyState (VK_LSHIFT)   & 0x8000 ? 1 : 2);
+        if (mod_mask & ModRShift) mods |= (::GetAsyncKeyState (VK_RSHIFT)   & 0x8000 ? 1 : 2);
+        if (mod_mask & ModLCtrl)  mods |= (::GetAsyncKeyState (VK_LCONTROL) & 0x8000 ? 1 : 2);
+        if (mod_mask & ModRCtrl)  mods |= (::GetAsyncKeyState (VK_RCONTROL) & 0x8000 ? 1 : 2);
+        if (mod_mask & ModLAlt)   mods |= (::GetAsyncKeyState (VK_LMENU)    & 0x8000 ? 1 : 2);
+        if (mod_mask & ModRAlt)   mods |= (::GetAsyncKeyState (VK_RMENU)    & 0x8000 ? 1 : 2);
+        if (mod_mask & ModLMeta)  mods |= (::GetAsyncKeyState (VK_LWIN)     & 0x8000 ? 1 : 2);
+        if (mod_mask & ModRMeta)  mods |= (::GetAsyncKeyState (VK_RWIN)     & 0x8000 ? 1 : 2);
+        if (mod_mask & ModCaps)   mods |= (::GetKeyState      (VK_CAPITAL)  & 0x1    ? 1 : 2);
+        if (mod_mask & ModNum)    mods |= (::GetKeyState      (VK_NUMLOCK)  & 0x1    ? 1 : 2);
+        if (mod_mask & ModMode)   mods |= (::GetAsyncKeyState (VK_LCONTROL)
+                                           &::GetAsyncKeyState(VK_RMENU)    & 0x8000 ? 1 : 2);
+        return (mods & 1) && !(mods & 2);
     }
 
     /**
@@ -667,21 +703,12 @@ mcl {
 
     void mcl_key_t::
     start_text_input () noexcept{
-        using iace_t = decltype(ImmAssociateContextEx);
-        iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
-        if (!fpImmAssociateContextEx) return ;
-
-        fpImmAssociateContextEx (mcl_control_obj.hwnd, NULL, IACE_DEFAULT);
+        ::SendMessage (mcl_control_obj.hwnd, WM_IME_NOTIFY, 0, 1);
     }
 
     void mcl_key_t::
     stop_text_input () noexcept{
-        using iace_t = decltype(ImmAssociateContextEx);
-        iace_t* fpImmAssociateContextEx = mcl_get_immfunc<iace_t>("ImmAssociateContextEx");
-        if (!fpImmAssociateContextEx) return ;
-        
         ::SendMessage (mcl_control_obj.hwnd, WM_IME_NOTIFY, 0, 0);
-        fpImmAssociateContextEx (mcl_control_obj.hwnd, NULL, IACE_CHILDREN);
     }
 
     void mcl_key_t::
@@ -690,6 +717,8 @@ mcl {
         igdiw_t* fpImmGetDefaultIMEWnd = mcl_get_immfunc<igdiw_t>("ImmGetDefaultIMEWnd");
         if (!fpImmGetDefaultIMEWnd) return ;
 
+        if (!rect.w) rect.w = 1;
+        if (!rect.h) rect.h = 1;
         if (rect.w < 0) rect.x += rect.w + 1, rect.w = -rect.w;
         if (rect.h < 0) rect.y += rect.h + 1, rect.h = -rect.h;
 
@@ -735,7 +764,7 @@ mcl {
         ) {
             HWND idefhwnd = fpImmGetDefaultIMEWnd (mcl_control_obj.hwnd);
             if (!idefhwnd) return ;
-            ::SendMessageW (idefhwnd, WM_IME_CONTROL, IMC_SETCOMPOSITIONWINDOW,
+            ::SendMessage (idefhwnd, WM_IME_CONTROL, IMC_SETCOMPOSITIONWINDOW,
                 reinterpret_cast<LPARAM>(reinterpret_cast<void*>(&cpf)));
             // Also: Use IMN_SETCOMPOSITIONFONT to change font size.
             mcl_control_obj.immcpf = cpf;

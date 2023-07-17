@@ -231,7 +231,9 @@ mcl {
         // Set the current window caption
         mcl_display_t&    set_caption   (wchar_t const* caption = nullptr) noexcept;
         // Get the current window caption
-        wchar_t const*    get_caption   () const noexcept;
+        std::wstring      get_caption   () const noexcept;
+        // Get the current window caption
+        std::string       get_caption_a () const noexcept;
         // Change the system image for the display window
         mcl_display_t&    set_icon      (surface_t const& icon) noexcept;
         // Set WS_EX_LAYERED on this window.

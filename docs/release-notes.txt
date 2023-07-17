@@ -1,7 +1,16 @@
-# mclib v0.5.2-Debug.3470
+# mclib v0.5.2-Debug.3471
 
 Release notes for Mclib
 --------------------------------
+  |
+.3471     July 13th 2023 - July 17th 2023
+  |  
+  |  [  FIXED   ]    Use TCHAR if possible.
+  |  [  ADDED   ]    Completed event.set_grab_key() .
+  |  [  ADDED   ]    Completed event.TextInputEvent .
+  |
+  |
+  |
   |
 .3470     June 23rd 2023 - July 7th 2023
   |  
