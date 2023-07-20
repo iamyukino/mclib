@@ -9,7 +9,7 @@ Most useful stuff:
     key.h         ok  <- font of IME editor 
     mixer.h       X
     mouse.h       ok
-    surface.h     ok
+    surface.h     ok  <- set_colorkey and set_alpha 
     timer.h       ok
     music.h       ok
     mclib.h       ok
@@ -46,8 +46,8 @@ int main()
     clog4m.init().enable_event_level(cll4m.All);
     
     // test display.init
-    display.set_mode(nullptr, dflags.Resizable | dflags.DoubleBuf | dflags.AllowDropping);
-    display.set_window_alpha(.3);
+    display.set_mode(0, dflags.Resizable | dflags.DoubleBuf | dflags.AllowDropping);
+    // display.set_window_alpha(.3);
     if (!display) return 0;
 
     // test image.load
@@ -63,9 +63,11 @@ int main()
     // test tclock_t
     point2d_t point{ 0, 0 };
     bool binput = true;
-    tclock_t ck; ck.tick();
+    tclock_t ck;
     
     while (1) {
+        ck.tick (24);
+        
         // test event.get
         for (auto&& ev : event.get ()) {
             switch (ev.type) {
@@ -82,39 +84,44 @@ int main()
             case event.KeyDown: {
                 clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
                     << key.name (ev.key.key);
-                break;
-            }
-            case event.TextInput: {
-                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
-                    << (ev.text.unicode ? std::wstring {ev.text.unicode, 0} : event.get_details_textinput());
-                break;
-            }
-            case event.TextEditing: {
-                size_t sz = 0;
-                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
-                    << event.get_details_textediting(&sz) << " (" << sz << ")";
-                break;
-            }
-            case event.Active: {
-                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
-                    << ev.active.gain << ", " << ev.active.state;
+
+                // test transform.flip
+                if (ev.key.key == key.VkUp || ev.key.key == key.VkDown)
+                    bki = transform.flip (bki, 0, 1);
+                if (ev.key.key == key.VkLeft || ev.key.key == key.VkRight)
+                    bki = transform.flip (bki, 1, 0);
+                
+                // test transform.scale_by
+                static float t = 1;
+                static short m = 2;
+                static surface_t ss = bki;
+                if (ev.key.key >= key.Vk0 && ev.key.key <= key.Vk9) {
+                    m = ev.key.key - key.Vk0;
+                    bki = transform.scale_by (ss, t, t, m);
+                }
+                if (ev.key.key == key.VkOEMPlus) {
+                    t += .1f;
+                    bki = transform.scale_by (ss, t, t, m);
+                }
+                if (ev.key.key == key.VkOEMMinus) {
+                    t -= .1f;
+                    bki = transform.scale_by (ss, t, t, m);
+                }
                 break;
             }
             }
         }
 
         // test surface.fill & bilt
-        display.get_surface().fill(lightblue);
+        display.get_surface().fill(white);
         display.get_surface().bilt(bki, 0, 0, blend.Ovl_rgba);
         display.get_surface().fill(rgba(255, 181, 181, .5f), { point.x - 150, point.y - 75, 300, 150 }, blend.Ovl_rgba);
         key.set_text_input_rect({ point.x - 150, point.y - 75, 300, 150 });
-
         display.flip ();
-        ck.tick (24);
 
         // event.set_grab_mouse (key.get_async_mods (key.ModNum));
         event.set_grab_key (key.get_async_mods (key.ModNum));
-        // key.set_repeat (key.get_async_mods (key.ModCaps));
+        key.set_repeat (key.get_async_mods (key.ModCaps));
 
         // test clock.get_fps
         static char str[100];

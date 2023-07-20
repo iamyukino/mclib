@@ -63,7 +63,7 @@ mcl {
     surface_t mcl_image_t::
     load (char const* filename, void*) noexcept{
         if (!filename)
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         mcl_simpletls_ns::mcl_m2w_str_t wstr(filename);
         return load (static_cast<wchar_t*>(wstr), {0, 0});
     }
@@ -78,7 +78,7 @@ mcl {
     surface_t mcl_image_t::
     load (char const* filename, point2d_t size) noexcept{
         if (!filename)
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         mcl_simpletls_ns::mcl_m2w_str_t wstr(filename);
         return load (static_cast<wchar_t*>(wstr), size);
     }
@@ -104,12 +104,12 @@ mcl {
     surface_t mcl_image_t::
     load (wchar_t const* filename, point2d_t size) noexcept{
         if (!filename)
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
 
         // Check the image type
         wchar_t lpFileExt[_MAX_EXT];
         if (MCL_WGETFILEEXT(filename, lpFileExt))
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         UINT type = IMAGE_BITMAP;
         if (lpFileExt[0]) {
             if (lpFileExt[1] == 'I' || lpFileExt[1] == 'i') type = IMAGE_ICON;
@@ -122,7 +122,7 @@ mcl {
         if (!hhandle) {
             clog4m[cll4m.Info] << L"info:  Failed to load image file \'"
                 << filename << L"\' [-WImage-loadimg-" << type << "]\n";
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
 
         // Convert icon image to bitmap
@@ -143,7 +143,7 @@ mcl {
         if (!hldc) {
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
 
         // Get the bmp's params
@@ -154,7 +154,7 @@ mcl {
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
             
         // Select loaded bmp into dc
@@ -164,7 +164,7 @@ mcl {
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
 
         // Create a surface
@@ -176,7 +176,7 @@ mcl {
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
         
         // Blit the dc
@@ -190,7 +190,7 @@ mcl {
         ::DeleteObject (hbmp);
         
         if (!retbilt)
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         if (!type && cbuf[0]) {
             // Convert into per pixel transparency
             for (color_t* p = ibuf -> m_pbuffer,
@@ -304,7 +304,7 @@ mcl {
      */
     surface_t mcl_image_t::
     frombuffer (color_t* bytes, point2d_t size) noexcept{
-        if (!(bytes && size.x && size.y)) return *reinterpret_cast<surface_t*>(0);
+        if (!(bytes && size.x && size.y)) return sf_nullptr;
         
         BITMAP bmp{ 0, 0, 0, 0, 0, 0, 0 };
         bmp.bmWidth = size.x;
@@ -325,7 +325,7 @@ mcl {
         if (!hldc) {
             ::DeleteObject (hbmp);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
 
         // Select loaded bmp into dc
@@ -338,7 +338,7 @@ mcl {
             ::DeleteObject (hbmp);
             ::DeleteDC (hldc);
             if (refdc) ::ReleaseDC (mcl_control_obj.hwnd, refdc);
-            return *reinterpret_cast<surface_t*>(0);
+            return sf_nullptr;
         }
         ibuf -> m_hbmp = hbmp;
         ibuf -> m_hdc = hldc;

@@ -284,6 +284,7 @@ mcl {
         }
         // if x or Y is set to 0 
         // calculated according to the screen scale
+        mcl_set_dbi_awareness (true);
         int cxmin = ::GetSystemMetrics (SM_CXMIN);
         if (!ptrsize -> x) {
             if (mcl_control_obj.base_h > mcl_control_obj.base_w) {
@@ -368,7 +369,7 @@ mcl {
             ml_ << mcl_control_obj.dc_w << 'x' << mcl_control_obj.dc_h
                 << std::endl << L"  output 0: pos = (";
         mcl_control_obj.x_pos = (mcl_control_obj.base_w - mcl_control_obj.dc_w) >> 1;
-        mcl_control_obj.y_pos = (mcl_control_obj.base_h - mcl_control_obj.dc_h) >> 1;
+        mcl_control_obj.y_pos = ((mcl_control_obj.base_h - mcl_control_obj.dc_h) >> 1) - 1;
         if (bopen) ml_ << mcl_control_obj.x_pos << L", "
                        << mcl_control_obj.y_pos << L"), " << std::flush;
         
@@ -450,7 +451,7 @@ mcl {
                 clog4m[cll4m.Debug] << L"mcl.display.set_mode()\n"
                    L"    warning:  Not take effect.  In full screen "
                    L"mode [-display-window-togglefullscreen]\n";
-                return *(mcl_control_obj.cur_surface);
+                return mcl_control_obj.cur_surface ? *mcl_control_obj.cur_surface : sf_nullptr;
             }
             bool bopen = clog4m.get_init ()
                          && clog4m.get_event_level ().value <= cll4m.Int.value;
@@ -475,7 +476,7 @@ mcl {
         } else 
             mcl_init_window (&size); 
         
-        return *(mcl_control_obj.cur_surface);
+        return mcl_control_obj.cur_surface ? *mcl_control_obj.cur_surface : sf_nullptr;
     }
     surface_t& mcl_display_t::
     set_mode (point2d_t size, dflags_t dpm_flags) noexcept {
@@ -559,7 +560,7 @@ mcl {
         } else
             mcl_init_window (&size, dpm_flags);
             
-        return *(mcl_control_obj.cur_surface);
+        return mcl_control_obj.cur_surface ? *mcl_control_obj.cur_surface : sf_nullptr;
     }
     
     MCL_NODISCARD_CXX17 static LONG_PTR&
@@ -592,8 +593,9 @@ mcl {
     surface_t& mcl_display_t::get_surface() const noexcept {
     // Return a reference to the currently set display Surface.
     // If no display mode has been set this will return None.
-        return *(mcl_control_obj.dbuf_surface ?
+        surface_t* sf = (mcl_control_obj.dbuf_surface ?
             mcl_control_obj.dbuf_surface : mcl_control_obj.cur_surface);
+        return sf ? *sf : sf_nullptr;
     }
 
     static void
@@ -1014,15 +1016,30 @@ mcl {
     }
     point2d_t mcl_display_t::
     get_desktop_size () const noexcept{
+        mcl_set_dbi_awareness (true);
         return mcl_control_obj.bIsReady ?
                 point2d_t{ mcl_control_obj.base_w,  mcl_control_obj.base_h } :
                 point2d_t{::GetSystemMetrics (SM_CXSCREEN), ::GetSystemMetrics (SM_CYSCREEN)};
     }
     rect_t mcl_display_t::
     get_desktop_rect () const noexcept{
+        mcl_set_dbi_awareness (true);
         return mcl_control_obj.bIsReady ?
             rect_t{ 0, 0, mcl_control_obj.base_w,  mcl_control_obj.base_h } :
             rect_t{ 0, 0, ::GetSystemMetrics (SM_CXSCREEN), ::GetSystemMetrics (SM_CYSCREEN)};
+    }
+    mcl_display_t& mcl_display_t::
+    set_window_pos (point2d_t topleft) noexcept{
+        mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_display_t::set_window_pos");
+        if (mcl_control_obj.bIsReady) {
+            LONG_PTR style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
+            LONG_PTR exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
+            RECT wr = {topleft.x, topleft.y, topleft.x + mcl_control_obj.dc_w, topleft.y + mcl_control_obj.dc_h};
+            ::AdjustWindowRectEx (&wr, static_cast<DWORD>(style), FALSE, static_cast<DWORD>(exstyle) );
+            ::SetWindowPos       (mcl_control_obj.hwnd, nullptr, wr.left, wr.top,
+                                    wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+        }
+        return *this;
     }
 
    /**

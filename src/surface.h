@@ -168,6 +168,8 @@ mcl {
         char : 8; char : 8; char : 8;
     };
 
+    extern surface_t sf_nullptr;
+
 } // namespace
 
 #endif // MCL_SURFACE

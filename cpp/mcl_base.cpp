@@ -112,9 +112,10 @@ namespace mcl
             if (!::InterlockedCompareExchange (&lk_, threadid, 0))
                 return ;
             if (lk_ == threadid) {
-                clog4m[cll4m.Debug]. putws (
+                clog4m[cll4m.Debug]. wprintln (
                    L"\n  mcl::spinlock  | "
-                    "Same thread acquires the same spinlock twice. ");
+                    "Same thread acquires the same spinlock twice. "
+                    "{\"curname\":\"%s\"}", name);
                 return ; 
             }
             if (uWaitMs != 0ul) {

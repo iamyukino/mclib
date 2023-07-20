@@ -83,6 +83,9 @@
 //  This header is for image transfer.
 #   include "image.h"
 
+//  This header is for surfaces transfer.
+#   include "transform.h"
+
 //  This header is for loading and playing sounds.
 //  inline include music.h
 #   include "mixer.h"

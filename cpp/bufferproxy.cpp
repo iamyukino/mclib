@@ -144,9 +144,9 @@ mcl {
      */
     surface_t& bufferproxy_t::
     parent () const noexcept {
-        if (!m_dataplus_)
-            return *reinterpret_cast<surface_t*>(reinterpret_cast<void*>(0));
-        return *reinterpret_cast<mcl_proxy_impl_t*>(m_dataplus_) -> surf;
+        if (!m_dataplus_) return sf_nullptr;
+        surface_t* sf = reinterpret_cast<mcl_proxy_impl_t*>(m_dataplus_) -> surf;
+        return sf ? *sf : sf_nullptr;
     }
 
     /**

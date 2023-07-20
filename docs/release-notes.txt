@@ -3,11 +3,12 @@
 Release notes for Mclib
 --------------------------------
   |
-.3471     July 13th 2023 - July 17th 2023
+.3471     July 13th 2023 - July 20th 2023
   |  
   |  [  FIXED   ]    Use TCHAR if possible.
   |  [  ADDED   ]    Completed event.set_grab_key() .
   |  [  ADDED   ]    Completed event.TextInputEvent .
+  |  [   NEW    ]    Add transform.h .
   |
   |
   |

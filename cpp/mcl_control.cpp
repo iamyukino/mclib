@@ -87,7 +87,9 @@ mcl {
 
     unsigned long
     mcl_set_dbi_awareness (bool awareness) noexcept {
-    // Get windows system version
+        if (mcl_control_obj.b_setdpiunaware)
+            return 0ul;
+
         HMODULE hModShcoredll = ::LoadLibrary (_T("Shcore.dll"));
         bool    ret = false;
 
@@ -116,8 +118,10 @@ mcl {
 #           pragma warning(push)
 #           pragma warning(disable: 26812)
 #       endif
-            if (pfSetProcessDpiAwareness)
+            if (pfSetProcessDpiAwareness) {
+                mcl_control_obj.b_setdpiunaware = awareness;
                 pfSetProcessDpiAwareness (awareness ? PROCESS_DPI_UNAWARE : PROCESS_PER_MONITOR_DPI_AWARE);
+            }
 #       ifdef _MSC_VER
 #           pragma warning(pop)
 #       endif
@@ -221,7 +225,7 @@ mcl {
             bErrorCode = true;
         }
         // if (bopen) ml_ << L"  Unregistering class..." << std::endl;
-        if (!::UnregisterClass (_T("mclibTclass"), instance)) {
+        if (!::UnregisterClass (_T("MclibWnd"), instance)) {
             mcl_report_sysexception (L"Failed to unregister class.");
             bErrorCode = true;
         }
@@ -273,10 +277,10 @@ mcl {
         threaddr      = 0;             base_w  = base_h   = 0;
         hwnd          = nullptr;       dc_w    = dc_h     = 0;
         instance      = nullptr;       x_pos   = y_pos    = 0;
-        taskhandle    = nullptr;
-        window_caption[0] = '\0';      // switchs
-                                       b_fullscreen  = false;
-        timer         = 0;             b_maximize    = false;
+        taskhandle    = nullptr;       // switchs
+        window_caption[0] = '\0';      b_setdpiunaware = false;
+                                       b_fullscreen    = false;
+        timer         = 0;             b_maximize      = false;
 
         // events
         if (hWndMouseGrabed) {
@@ -370,7 +374,8 @@ mcl {
         // resize
         if (dbuf_surface)
             dbuf_surface -> resize ({this -> dc_w, this -> dc_h}, false);
-        cur_surface -> resize ({this -> dc_w, this -> dc_h}, false);
+        if (cur_surface)
+            cur_surface -> resize ({this -> dc_w, this -> dc_h}, false);
         
         ev.type = event.WindowResized;
         event.post (ev);
@@ -402,8 +407,8 @@ mcl {
         ::GetUpdateRect (hWnd, &rect, FALSE);
         HDC hdc = ::BeginPaint (hWnd, &ps);
 
-        mcl_imagebuf_t* buf = mcl_get_surface_dataplus (mcl_control_obj.cur_surface);
-        if (buf) {
+        mcl_imagebuf_t* buf = mcl_get_surface_dataplus (cur_surface);
+        if (cur_surface && buf) {
             mcl_simpletls_ns::mcl_spinlock_t lock (buf -> m_nrtlock, L"mcl_window_info_t::OnPaint");
             ::BitBlt (hdc, rect.left, rect.top, rect.right, rect.bottom,
                 buf -> m_hdc, rect.left, rect.top, SRCCOPY);
@@ -942,7 +947,7 @@ mcl {
         wc.lpfnWndProc = mcl_simpletls_ns::bind_mf(&mcl_window_info_t::wndProc, this);
         wc.hCursor       = ::LoadCursor (nullptr, IDC_ARROW);
         wc.hbrBackground = nullptr; // alternative: HBRUSH (COLOR_BACKGROUND + 1)
-        wc.lpszClassName = _T("mclibTclass");
+        wc.lpszClassName = _T("MclibWnd");
         wc.hIcon         = ::LoadIcon (nullptr, IDI_APPLICATION);
                 // Load a standard icon
         wc.hIconSm       = ::LoadIcon (nullptr, IDI_APPLICATION);
@@ -961,7 +966,7 @@ mcl {
         ::InterlockedExchange (&bIsReady, 1);
         
 #        define MCL_UNREGISTERING_WINDOW_()                         \
-        if (!::UnregisterClass (_T("mclibTclass"), instance))       \
+        if (!::UnregisterClass (_T("MclibWnd"), instance))       \
             mcl_report_sysexception (L"Failed to unregister class.")
         
 #        define MCL_DESTROY_WINDOW_()                               \

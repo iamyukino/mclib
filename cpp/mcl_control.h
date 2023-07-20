@@ -128,12 +128,13 @@ mcl {
         unsigned  b_allow_screensaver_before = 2;
         bool      b_fullscreen               = false;
         bool      b_maximize                 = false;
+        bool      b_setdpiunaware            = false;
 
     public:   // state quantities
         bool      bErrorCode = false;      // successful flag
-        bool      bCtrlMsgLoop = false;    // whether msg loop is taken over
         unsigned  bIsReady = 0ul;          // whether message loop starts
         unsigned  bIsExit  = 0ul;
+        bool      bCtrlMsgLoop = false;    // whether msg loop is taken over
         bool      bAtQuitInClose = false;
 
     public:   // mouse & key events
@@ -142,11 +143,11 @@ mcl {
         bool      bHideCursor = false;
         bool      bRepeatCount = false;
 
-        char      fMouseKeyState = 0;
         wchar_t   fModKeyState = 0;
+        char      fMouseKeyState = 0;
         char      fMouseCapture = 0;
 
-        char : 8; char : 8; char : 8;
+        char : 8; char : 8;
 
         cursor_t  cucur;
 

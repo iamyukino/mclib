@@ -47,6 +47,7 @@
 namespace
 mcl {
 
+    surface_t sf_nullptr;
     // Enum class. Color blending operations.
     mcl_blend_t blend;
 
@@ -222,8 +223,8 @@ mcl {
      */
     surface_t::
     surface_t (surface_t const& src) noexcept
-      : m_dataplus_ (0), m_data_{ &src && src.m_data_[0] } {
-        if (!(&src && src.m_dataplus_)) return ;
+      : m_dataplus_ (0), m_data_{ src.m_data_[0] } {
+        if (!src.m_dataplus_) return ;
         mcl_imagebuf_t* dsrc = static_cast<mcl_imagebuf_t*>(src.m_dataplus_);
 
         mcl_simpletls_ns::mcl_spinlock_t lk(dsrc -> m_nrtlock, L"surface_t::surface_t");
@@ -262,9 +263,9 @@ mcl {
      */
     surface_t::
     surface_t (surface_t&& src) noexcept
-      : m_dataplus_ (src ? src.m_dataplus_ : 0),
-        m_data_{ src && src.m_data_[0] } {
-        if (src) src.m_dataplus_ = nullptr;
+      : m_dataplus_ (src.m_dataplus_),
+        m_data_{ src.m_data_[0] } {
+        src.m_dataplus_ = nullptr;
     }
     
     /**
@@ -299,8 +300,6 @@ mcl {
      */
     surface_t& surface_t::
     operator= (surface_t const& rhs) noexcept {
-        if (!(&rhs && this)) return *this;
-        
         m_data_[0] = rhs.m_data_[0];
         if (m_dataplus_ == rhs.m_dataplus_ || !rhs.m_dataplus_)
             return *this;
@@ -350,8 +349,6 @@ mcl {
      */
     surface_t& surface_t::
     operator= (surface_t&& rhs) noexcept {
-        if (!(&rhs && this)) return *this;
-
         m_data_[0] = rhs.m_data_[0];
         if (m_dataplus_ == rhs.m_dataplus_ || !rhs.m_dataplus_)
             return *this;
@@ -370,7 +367,7 @@ mcl {
      */
     surface_t::
     operator void* () const noexcept {
-        return this && m_dataplus_ ?
+        return m_dataplus_ ?
             const_cast<surface_t*>(this) : 0;
     }
 
@@ -380,7 +377,7 @@ mcl {
      */
     bool surface_t::
     operator! () const noexcept {
-        return !(this && m_dataplus_);
+        return !m_dataplus_;
     }
 
     /**
@@ -389,7 +386,7 @@ mcl {
      */
     point2d_t surface_t::
     get_size () const noexcept {
-        return this && m_dataplus_ ? point2d_t {
+        return m_dataplus_ ? point2d_t {
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width,
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_height
         }: point2d_t {0, 0};
@@ -401,7 +398,7 @@ mcl {
      */
     point1d_t surface_t::
     get_width () const noexcept {
-        return this && m_dataplus_ ?
+        return m_dataplus_ ?
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width : 0;
     }
     
@@ -411,7 +408,7 @@ mcl {
      */
     point1d_t surface_t::
     get_height () const noexcept {
-        return this && m_dataplus_ ?
+        return m_dataplus_ ?
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_height : 0;
     }
 
@@ -421,7 +418,7 @@ mcl {
      */
     rect_t surface_t::
     get_rect (void* ) const noexcept {
-        if (!(this && m_dataplus_)) return { 0, 0, 0, 0 }; // display surface quit
+        if (!m_dataplus_) return { 0, 0, 0, 0 }; // display surface quit
         point1d_t rw = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_)->m_width;
         point1d_t rh = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_)->m_height;
         return { 0, 0, rw, rh };
@@ -434,7 +431,7 @@ mcl {
      */
     rect_t surface_t::
     get_rect (point2d_t center) const noexcept {
-        if (!(this && m_dataplus_)) // display surface quit
+        if (!m_dataplus_) // display surface quit
             return { center.x, center.y, 0, 0 };
         point1d_t rw = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_width;
         point1d_t rh = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_height;
@@ -447,7 +444,6 @@ mcl {
      */
     surface_t& surface_t::
     lock () noexcept {
-        if (!this) return *this;
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return *this; // display surface quit
         mcl_simpletls_ns::mcl_lock (dataplus -> m_nrtlock, dataplus -> m_nrt_count);
@@ -460,7 +456,6 @@ mcl {
      */
     surface_t& surface_t::
     unlock () noexcept {
-        if (!this) return *this;
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return *this; // display surface quit
         mcl_simpletls_ns::mcl_unlock (dataplus -> m_nrtlock, dataplus -> m_nrt_count);
@@ -473,7 +468,7 @@ mcl {
      */
     bool surface_t::
     get_locked () const noexcept {
-        return this && m_dataplus_ && reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_nrtlock;
+        return m_dataplus_ && reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_nrtlock;
     }
     
     /**
@@ -484,7 +479,6 @@ mcl {
      */
     color_t surface_t::
     get_at (point2d_t pos) const noexcept {
-        if (!this) return opaque;
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return opaque; // display surface quit
         if (pos.x < 0 || pos.y < 0) return opaque;
@@ -504,7 +498,6 @@ mcl {
      */
     color_t surface_t::
     set_at (point2d_t pos, color_t color) noexcept {
-        if (!this) return opaque;
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return opaque; // display surface quit
         if (pos.x < 0 || pos.y < 0) return opaque;
@@ -522,7 +515,7 @@ mcl {
      */
     bool surface_t::
     get_flags () const noexcept {
-        return this && m_dataplus_ && m_data_[0];
+        return m_dataplus_ && m_data_[0];
     }
 
     /**
@@ -530,7 +523,7 @@ mcl {
      */
     color_t* surface_t::
     _pixels_address () noexcept{
-        return this && m_dataplus_ ?
+        return m_dataplus_ ?
             reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_) -> m_pbuffer
             : nullptr;
     }
@@ -544,7 +537,7 @@ mcl {
      */
     point2d_t surface_t::
     resize (point2d_t size, bool b_fast) noexcept {
-        if (!this) return { 0, 0 };
+        if (this == &sf_nullptr) return { 0, 0 };
         if (size.x <= 0) size.x = 1;
         if (size.y <= 0) size.y = 1;
 
@@ -916,7 +909,6 @@ mcl {
      */
     rect_t surface_t::
     fill (color_t color, void*, blend_t special_flags) noexcept {
-        if (!this) return { 0, 0, 0, 0 };
         mcl_imagebuf_t* dataplus = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         if (!dataplus) return { 0, 0, 0, 0 }; // display surface quit
         
@@ -950,7 +942,6 @@ mcl {
      */
     rect_t surface_t::
     fill (color_t color, rect_t recta, blend_t special_flags) noexcept {
-        if (!this) return { recta.x, recta.y, 0, 0 };
         if (!(recta.w && recta.h))
             return { recta.x, recta.y, 0, 0 }; 
         
@@ -1308,7 +1299,6 @@ mcl {
      */
     rect_t surface_t::
     bilt (surface_t const& source, void*, void*, blend_t special_flags) noexcept{
-        if (!this || !&source) return { 0, 0, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
         if (!(src && dst)) return { 0, 0, 0, 0 }; // display surface quit
@@ -1352,7 +1342,6 @@ mcl {
      */
     rect_t surface_t::
     bilt (surface_t const& source, point2d_t dest, void*, blend_t special_flags) noexcept{
-        if (!this || !&source) return { dest.x, dest.y, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
         if (!(src && dst)) return { dest.x, dest.y, 0, 0 }; // display surface quit
@@ -1402,7 +1391,6 @@ mcl {
      */
     rect_t surface_t::
     bilt (surface_t const& source, void*, rect_t area, blend_t special_flags) noexcept{
-        if (!this || !&source) return { 0, 0, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
         if (!(src && dst)) return { 0, 0, 0, 0 }; // display surface quit
@@ -1457,7 +1445,6 @@ mcl {
      */
     rect_t surface_t::
     bilt (surface_t const& source, point2d_t dest, rect_t area, blend_t special_flags) noexcept{
-        if (!this || !&source) return { dest.x, dest.y, 0, 0 };
         mcl_imagebuf_t* dst = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
         mcl_imagebuf_t* src = reinterpret_cast<mcl_imagebuf_t*>(source.m_dataplus_);
         if (!(src && dst)) return { dest.x, dest.y, 0, 0 }; // display surface quit

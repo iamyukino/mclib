@@ -113,6 +113,9 @@ mcl {
     // module for image transfer.  see image.h
     class mcl_image_t;
 
+    // module for surfaces transfer.  see transform.h
+    class mcl_transform_t;
+
     // module for drawing shapes.  see draw.h
     class mcl_draw_t;
     

@@ -247,6 +247,8 @@ mcl {
         point2d_t         get_window_size () const noexcept;
         // Return the position and size of the window or screen
         rect_t            get_window_rect () const noexcept;
+        // Set the coordinates of the top left corner of the form
+        mcl_display_t&    set_window_pos (point2d_t topleft) noexcept;
 
         // Set whether the screensaver may run
         bool              set_allow_screensaver (bool b_allow = true) noexcept; 
