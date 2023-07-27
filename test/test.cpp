@@ -61,9 +61,9 @@ int main()
     display.set_icon(cpy);
 
     // test tclock_t
-    point2d_t point{ 0, 0 };
-    bool binput = true;
-    tclock_t ck;
+    point2d_t point{ 0, 0 }, pbki{ 0, 0 };
+    bool binput = false; key.stop_text_input ();
+    tclock_t ck; color_t bkic = white;
     
     while (1) {
         ck.tick (24);
@@ -79,48 +79,83 @@ int main()
                     binput ? key.start_text_input() : key.stop_text_input();
                 break;
             }
-            
-            // test text editing event
+            case event.Active: {
+                clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
+                    << ev.active.state;
+                break;
+            }
             case event.KeyDown: {
+                // test textinput
                 clog4m[cll4m.Info] << event.event_name(ev.type) << ":"
                     << key.name (ev.key.key);
 
-                // test transform.flip
-                if (ev.key.key == key.VkUp || ev.key.key == key.VkDown)
-                    bki = transform.flip (bki, 0, 1);
-                if (ev.key.key == key.VkLeft || ev.key.key == key.VkRight)
-                    bki = transform.flip (bki, 1, 0);
-                
-                // test transform.scale_by
-                static float t = 1;
-                static short m = 2;
+                // test transform
                 static surface_t ss = bki;
-                if (ev.key.key >= key.Vk0 && ev.key.key <= key.Vk9) {
-                    m = ev.key.key - key.Vk0;
-                    bki = transform.scale_by (ss, t, t, m);
-                }
-                if (ev.key.key == key.VkOEMPlus) {
-                    t += .1f;
-                    bki = transform.scale_by (ss, t, t, m);
-                }
-                if (ev.key.key == key.VkOEMMinus) {
-                    t -= .1f;
-                    bki = transform.scale_by (ss, t, t, m);
-                }
+                point2d_t off{ 0, 0 };
+
+                if (ev.key.key == key.VkUp)
+                    bki = transform.flip (bki, 0, 1);
+                if (ev.key.key == key.VkDown)
+                    bki = transform.flip (bki, 1, 0);
+                if (ev.key.key == key.VkLeft)
+                    bki = transform.rotate (bki, 5, &off);
+                if (ev.key.key == key.VkRight)
+                    bki = transform.rotate (bki, -5, &off);
+                if (ev.key.key == key.VkZ)
+                    bki = transform.rotozoom (bki, 5, 1.2f, &off);
+                if (ev.key.key == key.VkX)
+                    bki = transform.rotozoom (bki, -5, 1 / 1.2f, &off);
+                if (ev.key.key == key.VkC)
+                    bki = transform.scale2x (bki, &off);
+                if (ev.key.key == key.VkOEMPeriod)
+                    bkic = transform.average_color (bki);
+                if (ev.key.key == key.VkR)
+                    bki = transform.grayscale (bki);
+                if (ev.key.key == key.VkF)
+                    bki = transform.laplacian (bki);
+                if (ev.key.key == key.VkE)
+                    bki = transform.clip (bki, { point.x - 150 - pbki.x, point.y - 75 - pbki.y, 300, 150 });
+                if (ev.key.key == key.VkQ)
+                    bki = transform.chop (bki, { point.x - 150 - pbki.x, point.y - 75 - pbki.y, 300, 150 });
+                if (ev.key.key == key.Vk0)
+                    bki = ss, pbki = { 0, 0 }, bkic = white;
+                if (ev.key.key == key.VkOEMPlus)
+                    bki = transform.scale_by (bki, 1.2f, 1.2f, &off, 2);
+                if (ev.key.key == key.VkOEMMinus)
+                    bki = transform.scale_by (bki, 1.f / 1.2f, 1.f / 1.2f, &off, 2);
+
+                pbki.x += off.x;
+                pbki.y += off.y;
+                if (ev.key.key == key.VkW) pbki.y -= 40;
+                if (ev.key.key == key.VkS) pbki.y += 40;
+                if (ev.key.key == key.VkA) pbki.x -= 40;
+                if (ev.key.key == key.VkD) pbki.x += 40;
+
+                // test toggle_dynamic_wallpaper
+                if (ev.key.key == key.Vk1)
+                    display.toggle_dynamic_wallpaper ();
+                if (ev.key.key == key.Vk2)
+                    display.iconify ();
+                if (ev.key.key == key.Vk3)
+                    display.hide([] { static bool b = false; b = !b; return b; }());
+                if (ev.key.key == key.Vk4)
+                    display.maximize ();
+                if (ev.key.key == key.Vk5)
+                    display.toggle_fullscreen ();
                 break;
             }
             }
         }
 
         // test surface.fill & bilt
-        display.get_surface().fill(white);
-        display.get_surface().bilt(bki, 0, 0, blend.Ovl_rgba);
+        display.get_surface().fill(bkic);
+        display.get_surface().bilt(bki, pbki, 0, blend.Ovl_rgba);
         display.get_surface().fill(rgba(255, 181, 181, .5f), { point.x - 150, point.y - 75, 300, 150 }, blend.Ovl_rgba);
         key.set_text_input_rect({ point.x - 150, point.y - 75, 300, 150 });
         display.flip ();
-
-        // event.set_grab_mouse (key.get_async_mods (key.ModNum));
-        event.set_grab_key (key.get_async_mods (key.ModNum));
+        
+        event.set_grab_mouse (key.get_async_mods (key.ModNum), false);
+        event.set_grab_key (key.get_async_mods (key.ModNum), false);
         key.set_repeat (key.get_async_mods (key.ModCaps));
 
         // test clock.get_fps

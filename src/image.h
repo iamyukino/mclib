@@ -41,6 +41,19 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     pygame.image.get_extended()
+    *     pygame.image.tostring()
+    *     pygame.image.tobytes()
+    *     pygame.image.fromstring()
+    *     pygame.image.frombytes()
+    * 
+    * @unfinished
+    *     pygame.image.load()
+    *     pygame.image.save()
+    */
+
+   /**
     * @class mcl_image_t <src/image.h>
     * @brief module for image transfer
     * 

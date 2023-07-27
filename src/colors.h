@@ -39,6 +39,16 @@
 namespace
 mcl {
 
+   /**
+    * @unimplemented
+    *     pygame.Color.cmy()
+    *     pygame.Color.i1i2i3()
+    *     pygame.Color.correct_gamma()
+    *     pygame.Color.grayscale()
+    *     pygame.Color.lerp()
+    *     pygame.Color.premul_alpha()
+    */
+
     enum: color_t{
         
         aliceblue    =  0xff0000cd,  

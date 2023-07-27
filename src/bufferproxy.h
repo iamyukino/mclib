@@ -52,6 +52,11 @@
 namespace
 mcl {
     
+   /**
+    * @unimplemented
+    *     pygame.BufferProxy.raw()
+    */
+
     /**
      * @class bufferproxy_t
      * @brief Class to export a surface buffer through

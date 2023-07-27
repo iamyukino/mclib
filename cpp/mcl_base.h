@@ -220,31 +220,31 @@ namespace mcl
     * @function bind_mf <cpp/mcl_base.h>
     * @brief bind member function to callback function
     */
-    template <typename> struct mcl_callback_t;
-    template <typename Ret, typename Cls, typename... Params>
-    struct mcl_callback_t<Ret(Cls::*)(Params...)> {
+    template <int id, typename> struct mcl_callback_t;
+    template <int id, typename Ret, typename Cls, typename... Params>
+    struct mcl_callback_t<id, Ret(Cls::*)(Params...)> {
         template <typename... Args>
         static Ret callback(Args... args)
         { return (cls->*fun) (std::forward<decltype(args)>(args)...); }
         static Ret(Cls::* fun)(Params...);
         static Cls* cls;
     };
-    template <typename Ret, typename Cls, typename... Params>
-    Ret(Cls::* mcl_callback_t<Ret(Cls::*)(Params...)>::fun)(Params...);
-    template <typename Ret, typename Cls, typename... Params>
-    Cls* mcl_callback_t<Ret(Cls::*)(Params...)>::cls;
+    template <int id, typename Ret, typename Cls, typename... Params>
+    Ret(Cls::* mcl_callback_t<id, Ret(Cls::*)(Params...)>::fun)(Params...);
+    template <int id, typename Ret, typename Cls, typename... Params>
+    Cls* mcl_callback_t<id, Ret(Cls::*)(Params...)>::cls;
 
 #   define MCL_DEF_BIND_MF(...) \
-    template <typename Ret, typename Cls, typename... Params> \
+    template <int id, typename Ret, typename Cls, typename... Params> \
     MCL_NODISCARD_CXX17 Ret (* \
         bind_mf (Ret(Cls::*fun)(Params...) __VA_ARGS__, Cls* cls) noexcept \
     ) (Params...) \
     { \
         using NewType = Ret(Params...); \
         using OldType = Ret(Cls::*)(Params...); \
-        mcl_callback_t<OldType>::fun = fun; \
-        mcl_callback_t<OldType>::cls = cls; \
-        return static_cast<NewType*>(mcl_callback_t<OldType>::callback); \
+        mcl_callback_t<id, OldType>::fun = fun; \
+        mcl_callback_t<id, OldType>::cls = cls; \
+        return static_cast<NewType*>(mcl_callback_t<id, OldType>::callback); \
     }
 
     MCL_DEF_BIND_MF()

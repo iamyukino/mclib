@@ -93,6 +93,7 @@ mcl {
         LRESULT OnIMEEndComposition (HWND hWnd, WPARAM wParam, LPARAM lParam);
 
     public:
+        VOID ToggleWallpaperProc ();
         LRESULT CALLBACK hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam);
         LRESULT CALLBACK hookKeyBdProc (int nCode, WPARAM wParam, LPARAM lParam);
 
@@ -113,6 +114,7 @@ mcl {
         void*     timermap   = nullptr;
         void*     keymap     = nullptr;
         LONGLONG  timer      = 0ll;
+        enum : UINT_PTR { timerIdMin = UINT_PTR(~eventtype_t(0)), timerWallpaper};
         unsigned  threaddr   = 0u;         // thread id
         TCHAR     window_caption[_MAX_FNAME];
 
@@ -127,13 +129,14 @@ mcl {
     public:   // switchs
         unsigned  b_allow_screensaver_before = 2;
         bool      b_fullscreen               = false;
+        bool      b_wallpaper                = false;
         bool      b_maximize                 = false;
         bool      b_setdpiunaware            = false;
 
     public:   // state quantities
-        bool      bErrorCode = false;      // successful flag
         unsigned  bIsReady = 0ul;          // whether message loop starts
         unsigned  bIsExit  = 0ul;
+        bool      bErrorCode = false;      // successful flag
         bool      bCtrlMsgLoop = false;    // whether msg loop is taken over
         bool      bAtQuitInClose = false;
 
@@ -143,14 +146,19 @@ mcl {
         bool      bHideCursor = false;
         bool      bRepeatCount = false;
 
-        wchar_t   fModKeyState = 0;
         char      fMouseKeyState = 0;
+        wchar_t   fModKeyState = 0;
         char      fMouseCapture = 0;
 
-        char : 8; char : 8;
+        bool      bMouseHookAlone = false;
+        bool      bKeyHookAlone = false;
+
+        char : 8; char : 8; char : 8;
+        char : 8; char : 8; char : 8; char : 8;
 
         cursor_t  cucur;
 
+        HWND      hWndWorkerW = nullptr;
         HHOOK     hWndMouseGrabed = nullptr;
         HHOOK     hWndKeyGrabed = nullptr;
 

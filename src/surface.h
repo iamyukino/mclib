@@ -41,6 +41,41 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     pygame.Surface.blits()
+    *     pygame.Surface.convert()
+    *     pygame.Surface.convert_alpha()
+    *     pygame.Surface.scroll()
+    *     pygame.Surface.set_colorkey()
+    *     pygame.Surface.get_colorkey()
+    *     pygame.Surface.set_alpha()
+    *     pygame.Surface.get_alpha()
+    *     pygame.Surface.mustlock()
+    *     pygame.Surface.get_locks()
+    *     pygame.Surface.get_at_mapped()
+    *     pygame.Surface.get_palette()
+    *     pygame.Surface.get_palette_at()
+    *     pygame.Surface.set_palette()
+    *     pygame.Surface.set_palette_at()
+    *     pygame.Surface.map_rgb()
+    *     pygame.Surface.unmap_rgb()
+    *     pygame.Surface.set_clip()
+    *     pygame.Surface.get_clip()
+    *     pygame.Surface.subsurface()
+    *     pygame.Surface.get_parent()
+    *     pygame.Surface.get_abs_parent()
+    *     pygame.Surface.get_offset()
+    *     pygame.Surface.get_abs_offset()
+    *     pygame.Surface.get_bitsize()
+    *     pygame.Surface.get_bytesize()
+    *     pygame.Surface.premul_alpha()
+    * 
+    * @unfinished
+    *     pygame.Surface()
+    *     pygame.Surface.get_flags()
+    */
+
+   /**
     * @enum class mcl_dflags_t <src/display.h>
     * @brief Flags that controls which type of display you want.
     * 

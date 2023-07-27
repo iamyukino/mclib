@@ -144,10 +144,9 @@ mcl {
     *    or possibly a handle to a window or control
     * @param lParam:
     *    pointer to specific additional information
-    * @return NO_USE
     */
     LRESULT mcl_window_info_t::
-    OnClose (HWND , WPARAM wParam, LPARAM lParam) {
+    OnClose (HWND, WPARAM wParam, LPARAM lParam) {
     // WM_CLOSE
         // if needed, push to queue
         if (bCtrlMsgLoop && (0 == wParam)) {
@@ -166,7 +165,7 @@ mcl {
 
         // exit
         if (::InterlockedCompareExchange (&bIsReady, 0, 1) == 0)
-            return 0u;
+            return 0;
 
         bAtQuitInClose = true;
         mcl_do_atquit ();
@@ -190,6 +189,7 @@ mcl {
         }
         if (bopen) ml_ << "\"}\n" << L"Reseting..." << std::endl;
         ::ShowWindow (hwnd, SW_HIDE);
+
 #if (WINVER >= 0x0600)
         if (bUseAddCBL) {
             typedef BOOL (WINAPI *LPFN_ACFL)(HWND);
@@ -224,11 +224,13 @@ mcl {
             mcl_report_sysexception (L"Failed to destroy window.");
             bErrorCode = true;
         }
+      
         // if (bopen) ml_ << L"  Unregistering class..." << std::endl;
         if (!::UnregisterClass (_T("MclibWnd"), instance)) {
             mcl_report_sysexception (L"Failed to unregister class.");
             bErrorCode = true;
         }
+        
         // if (bopen) ml_ << L"  Reseting..." << std::endl;
         if (dbuf_surface) {
             delete dbuf_surface;
@@ -253,6 +255,10 @@ mcl {
                 timermap = nullptr;
             }
         }
+        if (mcl_control_obj.b_wallpaper) {
+            mcl_control_obj.b_wallpaper = false;
+            ::KillTimer (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper);
+        }
         if (keymap) {
             mcl_simpletls_ns::mcl_spinlock_t keymaplock (mcl_base_obj.keymaplock, L"mcl_window_info_t::OnClose");
             delete reinterpret_cast<std::vector<BYTE>*>(keymap);
@@ -267,6 +273,7 @@ mcl {
             ::FreeLibrary (hModImm32);
             hModImm32 = nullptr;
         }
+
         immcpf = { 0, {0, 0}, {0, 0, 0, 0} };
         mcl_event_obj._userType = mcl::mcl_event_t::UserEventMin;
         fMouseKeyState = 0;
@@ -291,6 +298,10 @@ mcl {
             ::UnhookWindowsHookEx (hWndKeyGrabed);
             hWndKeyGrabed = nullptr;
         }
+        bMouseHookAlone = false;
+        bKeyHookAlone = false;
+
+        hWndWorkerW = nullptr;
         bCtrlMsgLoop = false;
         bMouseInClient = false;
         bHideCursor = false;
@@ -305,7 +316,7 @@ mcl {
         mcl_set_dbi_awareness (true);
         
         if (bopen) ml_ << std::endl;
-        return 0ul;
+        return 0;
     }
     
     LRESULT mcl_window_info_t::
@@ -325,7 +336,7 @@ mcl {
     OnSize (HWND hWnd, WPARAM wParam, LPARAM lParam) {
     // WM_SIZE
         if (wParam == SIZE_MINIMIZED)
-            return 0;
+            return ::DefWindowProc (hWnd, WM_SIZE, wParam, lParam);
         
         event_t ev{ 0, {{0, 0}} };
         ev.window.wParam = wParam;
@@ -380,7 +391,7 @@ mcl {
         ev.type = event.WindowResized;
         event.post (ev);
 
-        return 0;
+        return ::DefWindowProc (hWnd, WM_SIZE, wParam, lParam);
     }
 
     LRESULT mcl_window_info_t::
@@ -397,7 +408,7 @@ mcl {
             ev.window.lParam = lParam;
             event.post (ev);
         }
-        return 0;
+        return ::DefWindowProc (hWnd, WM_MOVE, wParam, lParam);
     }
 
     LRESULT mcl_window_info_t::
@@ -419,7 +430,7 @@ mcl {
     }
 
     LRESULT mcl_window_info_t::
-    OnActivate (HWND, WPARAM wParam, LPARAM lParam) {
+    OnActivate (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         WORD fActive    = LOWORD(wParam);
         BOOL fMinimized = static_cast<BOOL>(HIWORD(wParam));
 
@@ -436,7 +447,7 @@ mcl {
             if (fActive != WA_INACTIVE) {
                 ev.type = event.WindowRestored;
                 event.post(ev);
-                return 0;
+                return ::DefWindowProc (hWnd, WM_ACTIVATE, wParam, lParam);
             }
             ev.type = event.WindowMinimized;
             event.post (ev);
@@ -452,28 +463,28 @@ mcl {
         if (fActive == WA_CLICKACTIVE) bHasIMFocus |= 2;
         
         constexpr int MouseFocus = 1, InputFocus = 2, MouseActive = 4;
-        if (bHasIMFocus & 1)        ev.active.state |= (MouseFocus | InputFocus);
-        else if (hWndMouseGrabed)   ev.active.state |= MouseFocus;
-        else if (hWndKeyGrabed)     ev.active.state |= InputFocus;
-        if (bHasIMFocus & 2)        ev.active.state |= MouseActive;
+        if (bHasIMFocus & 1) ev.active.state |= (MouseFocus | InputFocus);
+        if (bHasIMFocus & 2) ev.active.state |= MouseActive;
+        if (hWndMouseGrabed) ev.active.state |= MouseFocus;
+        if (hWndKeyGrabed)   ev.active.state |= InputFocus;
 
         event.post (ev);
-        return 0;
+        return ::DefWindowProc (hWnd, WM_ACTIVATE, wParam, lParam);
     }
 
     LRESULT mcl_window_info_t::
-    OnShowWindow (HWND, WPARAM wParam, LPARAM lParam) {
+    OnShowWindow (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         if (wParam) ev.type = event.WindowShown;
         else        ev.type = event.WindowHidden;
         ev.window.wParam = wParam;
         ev.window.lParam = lParam;
         event.post (ev);
-        return 0;
+        return ::DefWindowProc (hWnd, WM_SHOWWINDOW, wParam, lParam);
     }
     
     LRESULT mcl_window_info_t::
-    OnMouseMove (HWND, WPARAM wParam, LPARAM lParam) {
+    OnMouseMove (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         
         if (!hWndMouseGrabed) {
@@ -499,11 +510,11 @@ mcl {
                 ::TrackMouseEvent (&tme);
             }
         }
-        return 0;
+        return ::DefWindowProc (hWnd, WM_MOUSEMOVE, wParam, lParam);
     }
 
     LRESULT mcl_window_info_t::
-    OnMouseLeave (HWND, WPARAM wParam, LPARAM lParam) {
+    OnMouseLeave (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.WindowLeave;
         ev.window.wParam = wParam;
@@ -517,7 +528,7 @@ mcl {
         tme.hwndTrack = hwnd;
         tme.dwHoverTime = HOVER_DEFAULT;
         ::TrackMouseEvent (&tme);
-        return 0;
+        return ::DefWindowProc (hWnd, WM_MOUSELEAVE, wParam, lParam);
     }
 
     LRESULT mcl_window_info_t::
@@ -604,12 +615,9 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnKeyDown (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
-        if (hWndKeyGrabed)
-            return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
-
         WORD keyFlags = HIWORD(lParam);
         BOOL wasKeyDown = (keyFlags & KF_REPEAT) == KF_REPEAT;
-        if (bRepeatCount || !wasKeyDown) {
+        if (!hWndKeyGrabed && (bRepeatCount || !wasKeyDown)) {
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.KeyDown;
             ev.key.key = static_cast<unsigned char>(LOWORD(wParam));
@@ -658,11 +666,8 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnKeyUp (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
-        if (hWndKeyGrabed)
-            return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
-
         WORD keyFlags = HIWORD(lParam);
-        {
+        if (!hWndKeyGrabed) {
             event_t ev{ 0, {{0, 0}} };
             ev.type = event.KeyUp;
             ev.key.key = static_cast<unsigned char>(LOWORD(wParam));
@@ -705,6 +710,15 @@ mcl {
 
     LRESULT mcl_window_info_t::
     OnTimer (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (wParam > timerIdMin) {
+            if (wParam == timerWallpaper && b_wallpaper
+            && ::GetWindowLong (hWndWorkerW, GWL_STYLE) & WS_VISIBLE) {
+                ::ShowWindow (hWndWorkerW, SW_HIDE);
+                ToggleWallpaperProc ();
+            }
+            return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
+        }
+
         event_t ev{ 0, {{0, 0}} };
         do {
             if (!timermap) break;
@@ -731,6 +745,7 @@ mcl {
 
         return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
     }
+
 #if (WINVER >= 0x0600)
     LRESULT mcl_window_info_t::
     OnClipboardUpdate (HWND hWnd, WPARAM wParam, LPARAM lParam) {
@@ -745,6 +760,7 @@ mcl {
         return 0;
     }
 #endif
+
     LRESULT mcl_window_info_t::
     OnDrawClipboard (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         if (bUseAddCBL)
@@ -760,6 +776,7 @@ mcl {
         event.post (ev);
         return 0;
     }
+
     LRESULT mcl_window_info_t::
     OnChangeCBChain (HWND hWnd, WPARAM wParam, LPARAM lParam) {
         if (bUseAddCBL)
@@ -882,7 +899,7 @@ mcl {
     wndProc (HWND hWnd, UINT uMessage, WPARAM wParam, LPARAM lParam) {
     // Windows callback: This is where we will send messages to.
         switch (uMessage) {
-            case WM_CLOSE:       return OnClose       (hWnd, wParam, lParam);    break;  
+            case WM_CLOSE:       return OnClose       (hWnd, wParam, lParam);    break;
             case WM_NCHITTEST:   return OnNCHitTest   (hWnd, wParam, lParam);    break;
             case WM_SIZE:        return OnSize        (hWnd, wParam, lParam);    break;
             case WM_MOVE:        return OnMove        (hWnd, wParam, lParam);    break;
@@ -944,7 +961,7 @@ mcl {
                 // Zero out the struct and set the stuff we want to modify.
         wc.cbSize        = sizeof (WNDCLASSEXW);
         wc.hInstance     = nullptr;
-        wc.lpfnWndProc = mcl_simpletls_ns::bind_mf(&mcl_window_info_t::wndProc, this);
+        wc.lpfnWndProc   = mcl_simpletls_ns::bind_mf<4> (&mcl_window_info_t::wndProc, this);
         wc.hCursor       = ::LoadCursor (nullptr, IDC_ARROW);
         wc.hbrBackground = nullptr; // alternative: HBRUSH (COLOR_BACKGROUND + 1)
         wc.lpszClassName = _T("MclibWnd");
@@ -1010,7 +1027,7 @@ mcl {
             LPCTSTR(window_caption),
             static_cast<DWORD>(fstyle),
             wr.left + x_pos, // CW_USEDEFAULT
-            wr.top + y_pos, // CW_USEDEFAULT
+            wr.top + y_pos,  // CW_USEDEFAULT
             wr.right - wr.left, wr.bottom - wr.top,
             nullptr, nullptr, nullptr, nullptr
         );
@@ -1105,7 +1122,7 @@ mcl {
         }
         } // end subfor exit
 
-        if (::InterlockedExchange(&bIsExit, 0) == 2ul) {
+        if (::InterlockedExchange (&bIsExit, 0) == 2ul) {
             ::exit (0);
         }
         return 0;
@@ -1117,9 +1134,9 @@ mcl {
     */
     LRESULT CALLBACK mcl_window_info_t::
     hookMouseProc (int nCode, WPARAM wParam, LPARAM lParam){
-        PMOUSEHOOKSTRUCTEX pMouseData =
-            reinterpret_cast<PMOUSEHOOKSTRUCTEX>(reinterpret_cast<void*>(lParam));
         if (nCode >= 0) {
+            PMOUSEHOOKSTRUCTEX pMouseData =
+                reinterpret_cast<PMOUSEHOOKSTRUCTEX>(reinterpret_cast<void*>(lParam));
             switch (wParam) {
                 case WM_MOUSEMOVE:   if (hookOnMouseMove  (pMouseData))    break; return 1;
                 case WM_MOUSEWHEEL:  if (hookOnMouseWheel (0, pMouseData)) break; return 1;
@@ -1150,6 +1167,18 @@ mcl {
         if (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000) buttons |= mouse.BtnXButton2;
     }
 
+    static HWND
+    mcl_resolve_wnd (HWND hWnd) {
+        HWND hWndRet = nullptr; 
+        if (::GetWindowLong (hWnd, GWL_STYLE) & WS_CHILD) 
+            hWndRet = ::GetParent (hWnd); 
+        if (!hWndRet) 
+            hWndRet = ::GetWindow (hWnd, GW_OWNER);
+        if (hWndRet) 
+            return mcl_resolve_wnd (hWndRet);
+        return hWnd;  
+    }
+
     bool mcl_window_info_t::
     hookOnMouseMove (PMOUSEHOOKSTRUCTEX mouseData){
         event_t ev{ 0, {{0, 0}} };
@@ -1175,8 +1204,8 @@ mcl {
         fMouseKeyState = ev.wheel.buttons;
         event.post (ev);
 
-        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
-        return ret;
+        bool ret = mcl_resolve_wnd (::WindowFromPoint (mouseData -> pt)) == hwnd;
+        return bMouseHookAlone || ret;
     }
     bool mcl_window_info_t::
     hookOnButtonDown (char type, PMOUSEHOOKSTRUCTEX mouseData) {
@@ -1186,7 +1215,7 @@ mcl {
         if (GET_XBUTTON_WPARAM(mouseData -> mouseData) == XBUTTON2)
             ++ ev.mouse.button;
 
-        bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+        bool ret = mcl_resolve_wnd(::WindowFromPoint (mouseData -> pt)) == hwnd;
 
         ::ScreenToClient (hwnd, &mouseData -> pt);
         ev.mouse.pos.x = mouseData -> pt.x;
@@ -1196,7 +1225,7 @@ mcl {
         fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
-        return ret;
+        return bMouseHookAlone || ret;
     }
     bool mcl_window_info_t::
     hookOnButtonUp (char type, PMOUSEHOOKSTRUCTEX mouseData) {
@@ -1206,7 +1235,7 @@ mcl {
         if (GET_XBUTTON_WPARAM(mouseData -> mouseData) == XBUTTON2)
             ++ ev.mouse.button;
 
-        // bool ret = ::WindowFromPoint (mouseData -> pt) == hwnd;
+        // bool ret = mcl_resolve_wnd (::WindowFromPoint (mouseData -> pt)) == hwnd;
 
         ::ScreenToClient (hwnd, &mouseData -> pt);
         ev.mouse.pos.x = mouseData -> pt.x;
@@ -1216,7 +1245,7 @@ mcl {
         fMouseKeyState = ev.mouse.buttons;
         event.post (ev);
 
-        return true; // ret;
+        return bMouseHookAlone || true; // ret;
     }
   
    /**
@@ -1225,9 +1254,9 @@ mcl {
     */
     LRESULT CALLBACK mcl_window_info_t::
     hookKeyBdProc (int nCode, WPARAM wParam, LPARAM lParam){
-        PKBDLLHOOKSTRUCT pVirKey =
-            reinterpret_cast<PKBDLLHOOKSTRUCT>(reinterpret_cast<void*>(lParam));
         if (nCode >= 0) {
+            PKBDLLHOOKSTRUCT pVirKey =
+                reinterpret_cast<PKBDLLHOOKSTRUCT>(reinterpret_cast<void*>(lParam));
             switch (wParam) {
                 case WM_KEYDOWN:    if (hookOnKeyDown (static_cast<UINT>(wParam), pVirKey)) break; return 1;
                 case WM_SYSKEYDOWN: if (hookOnKeyDown (static_cast<UINT>(wParam), pVirKey)) break; return 1;
@@ -1250,7 +1279,7 @@ mcl {
         if (!keys) keys = new (std::nothrow) std::vector<BYTE>(256, 0);
         
         bool bKeyCount = bRepeatCount || !keys || !((*keys)[keybdData -> vkCode] & 0x80);
-        if (!bKeyCount) return bExt;
+        if (!bKeyCount) return bKeyHookAlone || bExt;
 
         ev.type = event.KeyDown;
         ev.key.key = static_cast<unsigned char>(keybdData -> vkCode);
@@ -1282,7 +1311,7 @@ mcl {
         }
 
         event.post (ev);
-        return bExt;
+        return bKeyHookAlone || bExt;
     }
 
     bool mcl_window_info_t::

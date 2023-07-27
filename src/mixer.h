@@ -42,6 +42,11 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     all
+    */
+
+   /**
     * @class mcl_mixer_t
     * @brief Module for loading and playing sounds.
     * 

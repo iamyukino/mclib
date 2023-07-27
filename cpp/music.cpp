@@ -185,7 +185,7 @@ mcl {
         mcl_simpletls_ns::mcl_spinlock_t lock (ldlib_lock, L"mcl_music_base_t::load_thread");
         if (post_ != mNotReady) return false;
         post_ = mNoMsg;
-        auto fun = mcl_simpletls_ns::bind_mf (&mcl_music_base_t::thread_mci, this);
+        auto fun = mcl_simpletls_ns::bind_mf<5> (&mcl_music_base_t::thread_mci, this);
 #       ifdef _MSC_VER
 #           pragma warning(push)
 #           pragma warning(disable: 5039)

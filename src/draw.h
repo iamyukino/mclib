@@ -40,6 +40,11 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     all
+    */
+
+   /**
     * @class mcl_draw_t <src/draw.h>
     * @brief module for drawing shapes
     * 

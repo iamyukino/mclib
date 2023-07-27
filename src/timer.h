@@ -40,6 +40,11 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     none
+    */
+
+   /**
     * @class mcl_time_t <src/timer.h>
     * @brief module for monitoring time
     * 

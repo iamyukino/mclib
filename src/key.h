@@ -41,6 +41,20 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     pygame.key.set_mods()
+    *     pygame.key.key_code()
+    * 
+    * @unfinished
+    *     pygame.key.set_repeat()
+    *     pygame.key.get_repeat()
+    * 
+    * @feature
+    *     mcl::key.get_async_pressed()
+    *     mcl::key.get_async_mods()
+    */
+
+   /**
     * @class mcl_key_t <src/key.h>
     * @brief module for working with the keyboard
     * 

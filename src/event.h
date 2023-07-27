@@ -52,6 +52,16 @@
 namespace
 mcl {
     
+   /**
+    * @unimplemented
+    *     pygame.event.pump()
+    *     pygame.event.set_keyboard_grab()
+    * 
+    * @feature
+    *     mcl::event.set_grab_xx()
+    *     mcl::event.get_details_xx()
+    */
+
     /**
      * @class event_t <src/event.h>
      * @brief Event types with their specific attributes
@@ -239,9 +249,11 @@ mcl {
         // test if a type of event is blocked from the queue
         bool                 get_blocked  (eventtype_t eventtypes) noexcept;
         // control the sharing of input devices with other applications
-        void                 set_grab_mouse (bool b_grab) noexcept;
-        void                 set_grab_key (bool b_grab) noexcept;
-        void                 set_grab     (bool b_grab) noexcept;
+        // Deprecated: it is better to use key.get_async_pressed & mouse.get_pos
+        //     than use set_grab, which may significantly reduce processing speed
+        void                 set_grab_mouse (bool b_grab, bool b_alone = true) noexcept;
+        void                 set_grab_key (bool b_grab, bool b_alone = true) noexcept;
+        void                 set_grab     (bool b_grab, bool b_alone = true) noexcept;
         // test if the program is sharing input devices
         bool                 get_grab_mouse () noexcept;
         bool                 get_grab_key () noexcept;

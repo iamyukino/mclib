@@ -45,6 +45,11 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     none
+    */
+    
+   /**
     * @class mcl_mixer_t::mcl_music_t <src/music.h>
     * @brief Module for controlling streamed audio.
     * 

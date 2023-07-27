@@ -40,6 +40,17 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     pygame.transform.get_smoothscale_backend()
+    *     pygame.transform.set_smoothscale_backend()
+    *     pygame.transform.average_surfaces()
+    *     pygame.transform.threshold()
+    * 
+    * @feature
+    *     mcl::transform.clip()
+    */
+
+   /**
     * @class mcl_transform_t <src/transform.h>
     * @brief module for surfaces transfer
     * 
@@ -58,11 +69,32 @@ mcl {
         bool       operator!       () const noexcept;  
 
         // flip vertically and horizontally
-        surface_t  flip     (surface_t const& surface, bool flip_x, bool flip_y) noexcept;
+        surface_t  flip      (surface_t const& surface, bool flip_x, bool flip_y) noexcept;
         // resize to new resolution. smooth_ipt in (0,1,2)
-        surface_t  scale    (surface_t const& surface, point2d_t size, short smooth_ipt = 1) noexcept;
+        surface_t  scale     (surface_t const& surface, point2d_t size,
+                                point2d_t* offset = nullptr, short smooth_ipt = 1) noexcept;
         // resize to new resolution, using scalar(s). smooth_ipt in (0,1,2)
-        surface_t  scale_by (surface_t const& surface, float factor_x, float factor_y, short smooth_ipt = 1) noexcept;
+        surface_t  scale_by  (surface_t const& surface, float factor_x, float factor_y,
+                                point2d_t* offset = nullptr, short smooth_ipt = 1) noexcept;
+        // rotate an image
+        surface_t  rotate    (surface_t const& surface, float angle,
+                                point2d_t* offset = nullptr) noexcept;
+        // filtered scale and rotation
+        surface_t  rotozoom  (surface_t const& surface, float angle, float scale,
+                                point2d_t* offset = nullptr) noexcept;
+        // specialized image doubler
+        surface_t  scale2x   (surface_t const& surface, point2d_t* offset = nullptr) noexcept;
+        // gets a copy of an image with an interior area removed
+        surface_t  chop      (surface_t const& surface, rect_t rect) noexcept;
+        // gets a copy of part of an image
+        surface_t  clip      (surface_t const& surface, rect_t rect) noexcept;
+        // find edges in a surface using the laplacian algorithm
+        surface_t  laplacian (surface_t const& surface) noexcept;
+        // finds the average color of a surface
+        color_t    average_color (surface_t const& surface) noexcept;
+        // grayscale a surface
+        surface_t  grayscale (surface_t const& surface) noexcept;
+
     };
     extern mcl_transform_t transform; // Module for surfaces transfer.
 

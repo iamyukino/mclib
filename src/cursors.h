@@ -43,6 +43,12 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     pygame.cursors.load_xbm()
+    *     pygame.cursors.Cursor.data()
+    */
+
+   /**
     * @class mcl_cursors_t <src/cursors.h>
     * @brief module for cursor resources
     * 
@@ -83,6 +89,7 @@ mcl {
         operator       void*       () const noexcept;
         bool           operator!   () const noexcept;
         
+        // create binary cursor data from simple strings
         pytuple< std::vector<unsigned char>, std::vector<unsigned char> >
             compile (char const* strings, char cblack = 'X', char cwhite = '.', char cxor = 'o') noexcept;
 

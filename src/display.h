@@ -57,6 +57,23 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     pygame.display.list_modes()
+    *     pygame.display.mode_ok()
+    *     pygame.display.set_palette()
+    * 
+    * @unfinished
+    *     pygame.display.set_mode()
+    *     pygame.display.get_desktop_sizes()
+    *     pygame.display.get_num_displays()
+    * 
+    * @feature
+    *     mcl::display.maximize()
+    *     mcl::display.hide()
+    *     mcl::display.toggle_dynamic_wallpaper()
+    */
+
+   /**
     * @enum class mcl_dflags_t <src/display.h>
     * @brief Flags that controls which type of display you want.
     * 
@@ -225,6 +242,11 @@ mcl {
         mcl_display_t&    toggle_fullscreen () noexcept;
         // Return true if full screen mode is set.
         bool              get_fullscreen () const noexcept;
+
+        // Switch between wallpaper and windowed displays (Experimental)
+        mcl_display_t&    toggle_dynamic_wallpaper () noexcept;
+        // Return true if wallpaper mode is set.
+        bool              get_dynamic_wallpaper () const noexcept;
 
         // Set the current window caption
         mcl_display_t&    set_caption   (char    const* caption = nullptr) noexcept;

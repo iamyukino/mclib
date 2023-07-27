@@ -285,7 +285,8 @@ mcl {
      * @brief Destructor.
      * @return none
      */
-    surface_t::~surface_t() noexcept {
+    surface_t::
+    ~surface_t () noexcept {
         if (m_dataplus_) {
             mcl_imagebuf_t* p = reinterpret_cast<mcl_imagebuf_t*>(m_dataplus_);
             m_dataplus_ = nullptr;

@@ -585,7 +585,7 @@ mcl {
      *     program afterwards if both mouse and key are grabed.
      */
     void mcl_event_t::
-    set_grab_mouse (bool b_grab) noexcept{
+    set_grab_mouse (bool b_grab, bool b_alone) noexcept{
         constexpr int MouseFocus = 1, InputFocus = 2;
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.Active;
@@ -593,6 +593,7 @@ mcl {
         
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_mouse");
         {
+        mcl_control_obj.bMouseHookAlone = !b_alone;
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndMouseGrabed))
             return ;
 
@@ -619,7 +620,7 @@ mcl {
 
         // lock all mouse input into your program
         mcl_control_obj.hWndMouseGrabed =
-            ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf (
+            ::SetWindowsHookEx (WH_MOUSE_LL, mcl_simpletls_ns::bind_mf<1>(
                     &mcl_window_info_t::hookMouseProc, &mcl_control_obj
                 ), mcl_control_obj.instance, 0);
 
@@ -640,7 +641,7 @@ mcl {
     }
 
     void mcl_event_t::
-    set_grab_key (bool b_grab) noexcept{
+    set_grab_key (bool b_grab, bool b_alone) noexcept{
         constexpr int MouseFocus = 1, InputFocus = 2;
         event_t ev{ 0, {{0, 0}} };
         ev.type = event.Active;
@@ -648,12 +649,13 @@ mcl {
 
         mcl_simpletls_ns::mcl_spinlock_t lock (mcl_base_obj.nrtlock, L"mcl_event_t::set_grab_key");
         {
+        mcl_control_obj.bKeyHookAlone = !b_alone;
         if (b_grab == static_cast<bool>(mcl_control_obj.hWndKeyGrabed))
             return ;
         
         if (mcl_control_obj.hWndKeyGrabed) {
         // unhook key hook
-            if (!::UnhookWindowsHookEx (mcl_control_obj.hWndKeyGrabed) && 0)
+            if (!::UnhookWindowsHookEx (mcl_control_obj.hWndKeyGrabed))
                 return ;
             mcl_control_obj.hWndKeyGrabed = nullptr;
 
@@ -674,7 +676,7 @@ mcl {
 
         // lock all keyboard input into your program
         mcl_control_obj.hWndKeyGrabed =
-            ::SetWindowsHookEx (WH_KEYBOARD_LL, mcl_simpletls_ns::bind_mf (
+            ::SetWindowsHookEx (WH_KEYBOARD_LL, mcl_simpletls_ns::bind_mf<2> (
                     &mcl_window_info_t::hookKeyBdProc, &mcl_control_obj
                 ), mcl_control_obj.instance, 0);
 
@@ -695,9 +697,9 @@ mcl {
     }
 
     void mcl_event_t::
-    set_grab (bool b_grab) noexcept{
-        set_grab_mouse (b_grab);
-        set_grab_key   (b_grab);
+    set_grab (bool b_grab, bool b_alone) noexcept{
+        set_grab_mouse (b_grab, b_alone);
+        set_grab_key   (b_grab, b_alone);
     }
 
     /**

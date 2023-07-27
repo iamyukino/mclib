@@ -108,6 +108,35 @@ mcl {
     }
 
     /**
+     * @function mcl_mouse_t::get_async_pressed <src/mouse.h>
+     * @brief Get the state of the mouse buttons. focus not required
+     * @return bool
+     */
+    bool mcl_mouse_t::
+    get_async_pressed (size_t m_index) noexcept{
+        switch (m_index) {
+            case 0: return bool(::GetAsyncKeyState (VK_LBUTTON) & 0x8000);
+            case 1: return bool(::GetAsyncKeyState (VK_MBUTTON) & 0x8000);
+            case 2: return bool(::GetAsyncKeyState (VK_RBUTTON) & 0x8000);
+            case 3: return bool(::GetAsyncKeyState (VK_XBUTTON1) & 0x8000);
+            case 4: return bool(::GetAsyncKeyState (VK_XBUTTON2) & 0x8000);
+        }
+        return false;
+    }
+    bool mcl_mouse_t::
+    get_async_buttons (btn_type btn_mask) noexcept{
+        btn_type btns = 0;
+        if (btn_mask & BtnLButton)  btns |= (::GetAsyncKeyState (VK_LBUTTON)  & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnRButton)  btns |= (::GetAsyncKeyState (VK_RBUTTON)  & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnShift)    btns |= (::GetAsyncKeyState (VK_SHIFT)    & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnCtrl)     btns |= (::GetAsyncKeyState (VK_CONTROL)  & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnMButton)  btns |= (::GetAsyncKeyState (VK_MBUTTON)  & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnXButton1) btns |= (::GetAsyncKeyState (VK_XBUTTON1) & 0x8000 ? 1 : 2);
+        if (btn_mask & BtnXButton2) btns |= (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000 ? 1 : 2);
+        return (btns & 1) && !(btns & 2);
+    }
+
+    /**
      * @function mcl_mouse_t::get_pos <src/mouse.h>
      * @brief Get the mouse cursor position.
      * @param[in] b_global: false if position is relative to

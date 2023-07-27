@@ -42,6 +42,15 @@ namespace
 mcl {
     
    /**
+    * @unimplemented
+    *     pygame.mouse.get_rel()
+    * 
+    * @feature
+    *     mcl::mouse.get_async_pressed()
+    *     mcl::mouse.get_async_buttons()
+    */
+
+   /**
     * @class mcl_mouse_t <src/mouse.h>
     * @brief module for interacting with the mouse
     * 
@@ -72,24 +81,26 @@ mcl {
         operator       void*       () const noexcept;
         bool           operator!   () const noexcept;
         
+        // check if the display is receiving mouse input
+        bool              get_focused () noexcept;
         // get the state of the mouse buttons.
         std::vector<bool> get_pressed (int num_buttons = 3) noexcept;
         // get the state of the mouse buttons and modifier keys.
         btn_type          get_buttons () noexcept;
-
-        // get the mouse cursor position
+        // get the state of the mouse buttons. focus not required
+        bool              get_async_pressed (size_t m_index) noexcept;
+        // get the state of the mouse buttons and modifier keys. focus not required
+        bool              get_async_buttons (btn_type btn_mask) noexcept;
+        // get the mouse cursor position. focus not required
         point2d_t         get_pos     (bool b_global = false) noexcept;
-        // set the mouse cursor position
+        // set the mouse cursor position. focus not required
         bool              set_pos     (point2d_t pos, bool b_global = false) noexcept;
-        
         // get the visibility state of the mouse cursor
         bool              get_visible () noexcept;
         // set the visibility state of the mouse cursor
         bool              set_visible (bool b_visible) noexcept;
-
-        // check if the display is receiving mouse input
-        bool              get_focused () noexcept;
-
+        // get the current mouse cursor
+        cursor_t          get_cursor  () noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
         bool              set_cursor  () noexcept;
         // set the mouse cursor to a new cursor.  see cursors.h
@@ -105,9 +116,6 @@ mcl {
         // set the mouse cursor to a new cursor.  see cursors.h
         bool              set_cursor  (point2d_t size, point2d_t hotspot,
             unsigned char const* xormasks, unsigned char const* andmasks) noexcept;
-
-        // get the current mouse cursor
-        cursor_t          get_cursor  () noexcept;
 
     };
     extern mcl_mouse_t mouse; // Module for interacting with the mouse.

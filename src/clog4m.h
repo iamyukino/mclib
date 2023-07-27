@@ -56,6 +56,11 @@ namespace
 mcl {
 
    /**
+    * @unimplemented
+    *     no_care
+    */
+
+   /**
     * @enum class mcl_cll4m_t <src/clog4m.h>
     * @brief log level for clog4m
     * 
