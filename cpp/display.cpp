@@ -548,7 +548,7 @@ mcl {
             // double buffered
             if ((dpm_flags & dflags.DoubleBuf) && !mcl_control_obj.dbuf_surface) {
                 mcl_control_obj.dbuf_surface = new(std::nothrow)
-                    surface_t({ mcl_control_obj.dc_w, mcl_control_obj.dc_h });
+                    surface_t({ mcl_control_obj.dc_w, mcl_control_obj.dc_h }, 0);
             }
             else if (!(dpm_flags & dflags.DoubleBuf) && mcl_control_obj.dbuf_surface) {
                 delete mcl_control_obj.dbuf_surface;
@@ -674,6 +674,26 @@ mcl {
         return *this;
     }
 
+    void mcl_SwitchToThisWindow () {
+        HWND hfw = ::GetForegroundWindow ();
+        if (hfw == mcl_control_obj.hwnd)
+            return ;
+
+        DWORD dwfw = ::GetWindowThreadProcessId (hfw, NULL);
+        DWORD dwtw = ::GetCurrentThreadId ();
+
+        ::AttachThreadInput (dwfw, dwtw, TRUE);
+        ::SetForegroundWindow (mcl_control_obj.hwnd);
+        ::SetFocus (mcl_control_obj.hwnd);
+        ::AttachThreadInput (dwfw, dwtw, FALSE);
+
+        hfw = ::GetForegroundWindow ();
+        if (hfw == mcl_control_obj.hwnd)
+            return ;
+
+        ::SwitchToThisWindow (mcl_control_obj.hwnd, TRUE);
+    }
+
    /**
     * @function mcl_display_t::hide <src/display.h>
     * @brief Put the window in the background / foreground
@@ -696,7 +716,7 @@ mcl {
                            b_hide ? SW_HIDE : SW_SHOW );
             if (!b_hide) {
                 ::UpdateWindow (mcl_control_obj.hwnd);  // for vc6
-                ::SwitchToThisWindow (mcl_control_obj.hwnd, TRUE);
+                mcl_SwitchToThisWindow ();
             }
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
@@ -753,6 +773,11 @@ mcl {
                     L"warning:  try to maximize window with wallpaper display. [-Wdisplay-window-wallpaper]\n";
                 return *this;
             }
+            if (mcl_control_obj.b_fullscreen) {
+                clog4m[cll4m.Debug] <<
+                    L"warning:  try to maximize window with fullscreen display. [-Wdisplay-window-fullscreen]\n";
+                return *this;
+            }
             if (!(last_style & WS_VISIBLE))
                 ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
             
@@ -764,7 +789,7 @@ mcl {
                 ::ShowWindow (mcl_control_obj.hwnd, SW_NORMAL);
                 
             ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
-            ::SwitchToThisWindow (mcl_control_obj.hwnd, TRUE);
+            mcl_SwitchToThisWindow ();
 
         } else clog4m[cll4m.Debug] <<
            L"warning:  The window has not been created"
@@ -851,9 +876,7 @@ mcl {
         if (mcl_control_obj.b_wallpaper)
             clog4m[cll4m.Debug] <<
                 L"warning:  try to toggle fullscreen with wallpaper display. [-Wdisplay-window-wallpaper]\n";
-        else if (get_active ()) {
-            ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
-
+        else {
             static point1d_t last_x, last_y, last_w, last_h;
             static LONG_PTR last_exstyle;
             
@@ -861,6 +884,12 @@ mcl {
             LONG_PTR  new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
             LONG_PTR  new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
             
+            ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
+            if (new_style & WS_MINIMIZE) {
+                ::ShowWindow (mcl_control_obj.hwnd, SW_NORMAL);
+                new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
+                new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
+            }            
             if (!mcl_control_obj.b_fullscreen) {
                 // full screen
                 last_x       = mcl_control_obj.x_pos;
@@ -870,18 +899,25 @@ mcl {
                 last_style   = new_style;
                 last_exstyle = new_exstyle;
                 
-                new_style   = (new_style & ~WS_THICKFRAME) | WS_VISIBLE | WS_POPUP;
-                // new_exstyle = new_style & ~WS_EX_CLIENTEDGE;
+                new_style   &= ~(WS_THICKFRAME | WS_CAPTION |
+                                   WS_DLGFRAME | WS_BORDER | WS_MAXIMIZE | WS_MAXIMIZEBOX);
+                new_style   |= WS_POPUP;
+                new_exstyle &= ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME);
                 
-                RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
+                RECT wr = {0, 0, mcl_control_obj.base_w, mcl_control_obj.base_h};
                 ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),
                                        FALSE, static_cast<DWORD>(new_exstyle) );
+                ::SetWindowPos       (mcl_control_obj.hwnd, HWND_TOPMOST, 0, 0,
+                                       wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_FRAMECHANGED);
+                RECT rc = { 0, 0, mcl_control_obj.dc_w, mcl_control_obj.dc_h };
+                ::InvalidateRect     (mcl_control_obj.hwnd, &rc, FALSE);
+                ::UpdateWindow       (mcl_control_obj.hwnd);
                 ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_STYLE,   new_style);
                 ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_EXSTYLE, new_exstyle);
-                ::SetWindowPos       (mcl_control_obj.hwnd, HWND_TOPMOST, wr.left, wr.top,
-                                       wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
-                
                 mcl_control_obj.b_fullscreen = true;
+                ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST, wr.left, wr.top,
+                                       wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+                ::ShowWindow         (mcl_control_obj.hwnd, SW_SHOW);
                 
             } else if (!(new_style & WS_MINIMIZE)) {
                 // windowed displays
@@ -889,11 +925,24 @@ mcl {
                 else                       new_style &= ~WS_POPUP;
                 if (last_style & WS_THICKFRAME) new_style |= WS_THICKFRAME;
                 else                            new_style &= ~WS_THICKFRAME;
+                if (last_style & WS_CAPTION) new_style |= WS_CAPTION;
+                else                         new_style &= ~WS_CAPTION;
+                if (last_style & WS_DLGFRAME) new_style |= WS_DLGFRAME;
+                else                          new_style &= ~WS_DLGFRAME;
+                if (last_style & WS_BORDER) new_style |= WS_BORDER;
+                else                        new_style &= ~WS_BORDER;
+                if (last_style & WS_MAXIMIZE) new_style |= WS_MAXIMIZE;
+                else                          new_style &= ~WS_MAXIMIZE;
+                if (last_style & WS_MAXIMIZEBOX) new_style |= WS_MAXIMIZEBOX;
+                else                             new_style &= ~WS_MAXIMIZEBOX;
+                if (last_exstyle & WS_EX_WINDOWEDGE) new_exstyle |= WS_EX_WINDOWEDGE;
+                else                                 new_exstyle &= ~WS_EX_WINDOWEDGE;
                 if (last_exstyle & WS_EX_CLIENTEDGE) new_exstyle |= WS_EX_CLIENTEDGE;
                 else                                 new_exstyle &= ~WS_EX_CLIENTEDGE;
+                if (last_exstyle & WS_EX_DLGMODALFRAME) new_exstyle |= WS_EX_DLGMODALFRAME;
+                else                                    new_exstyle &= ~WS_EX_DLGMODALFRAME;
                 last_style   = new_style;
                 last_exstyle = new_exstyle;
-                
                 mcl_control_obj.b_fullscreen = false;
                 
                 RECT wr = {0, 0, last_w, last_h};
@@ -906,11 +955,11 @@ mcl {
                 ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST,
                                        wr.left + last_x, wr.top + last_y,
                                        wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+                ::ShowWindow         (mcl_control_obj.hwnd, SW_SHOW);
             }
             ::UpdateWindow (mcl_control_obj.hwnd); // for vc6
-            ::SwitchToThisWindow (mcl_control_obj.hwnd, TRUE);
-        } else clog4m[cll4m.Debug] <<
-            L"warning:  try to toggle fullscreen with no active display. [-Wdisplay-window-notactive]\n";
+            mcl_SwitchToThisWindow ();
+        }
         return *this;
     }
 
@@ -922,7 +971,10 @@ mcl {
     static BOOL CALLBACK
     mcl_enumProc (HWND hwnd, LPARAM) {
         HWND hDefView = ::FindWindowEx (hwnd, 0, _T("SHELLDLL_DefView"), 0);
-        if (!hDefView) return TRUE;
+        if (!hDefView) {
+            mcl_control_obj.hWndLastWorkerW = ::FindWindowEx (0, hwnd, _T("WorkerW"), 0);
+            return TRUE;
+        }
         mcl_control_obj.hWndWorkerW = ::FindWindowEx (0, hwnd, _T("WorkerW"), 0);
         return FALSE;
     }
@@ -939,6 +991,7 @@ mcl {
 
         if (!hWndWorkerW)
             ::EnumWindows (mcl_enumProc, 0);
+        ::ShowWindow (mcl_control_obj.hWndWorkerW, SW_HIDE);
 
 #       ifdef _MSC_VER
 #           pragma warning(pop)
@@ -956,12 +1009,12 @@ mcl {
         LONG_PTR  new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
         LONG_PTR  new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
 
-        if (mcl_control_obj.b_maximize || new_style & WS_MINIMIZE) {
+        ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
+        if (new_style & WS_MINIMIZE) {
             ::ShowWindow (mcl_control_obj.hwnd, SW_NORMAL);
             new_style   = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_STYLE);
             new_exstyle = ::GetWindowLongPtr (mcl_control_obj.hwnd, GWL_EXSTYLE);
         }
-        ::ShowWindow (mcl_control_obj.hwnd, SW_HIDE);
         
         if (!mcl_control_obj.b_wallpaper) {
         // set to dynamic wallpaper
@@ -972,46 +1025,62 @@ mcl {
             last_style   = new_style;
             last_exstyle = new_exstyle;
 
-            new_style &= ~(WS_CAPTION | WS_DLGFRAME | WS_BORDER);
-            new_exstyle &= ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_DLGMODALFRAME | WS_EX_LAYERED);
+            new_style &= ~(WS_THICKFRAME | WS_CAPTION | WS_DLGFRAME | WS_BORDER |
+                               WS_MAXIMIZE | WS_MAXIMIZEBOX | WS_MINIMIZE | WS_MINIMIZEBOX);
+            new_exstyle &= ~(WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE |
+                          WS_EX_DLGMODALFRAME | WS_EX_LAYERED | WS_EX_NOACTIVATE);
             
-            RECT wr = {-1, -1, mcl_control_obj.base_w + 1, mcl_control_obj.base_h + 1};
+            RECT wr = {0, 0, mcl_control_obj.base_w, mcl_control_obj.base_h};
             ::AdjustWindowRectEx (&wr, static_cast<DWORD>(new_style),
                                     FALSE, static_cast<DWORD>(new_exstyle) );
             ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_STYLE,   new_style);
             ::SetWindowLongPtr   (mcl_control_obj.hwnd, GWL_EXSTYLE, new_exstyle);
+            mcl_control_obj.b_wallpaper = true;
             ::SetWindowPos       (mcl_control_obj.hwnd, HWND_BOTTOM, wr.left, wr.top,
-                wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+                                    wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
             
             mcl_control_obj.ToggleWallpaperProc ();
-            ::ShowWindow (mcl_control_obj.hwnd, SW_SHOW);
-            mcl_control_obj.b_wallpaper = true;
-
-            ::SetTimer (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper, 512, 0);
-
+            ::SetTimer           (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper, 512, 0);
+            ::SetWindowPos       (mcl_control_obj.hwnd, HWND_BOTTOM, wr.left, wr.top,
+                                    wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+            ::ShowWindow         (mcl_control_obj.hwnd, SW_SHOW);
+            
         } else {
+            if (last_style & WS_THICKFRAME) new_style |= WS_THICKFRAME;
+            else                            new_style &= ~WS_THICKFRAME;
             if (last_style & WS_CAPTION) new_style |= WS_CAPTION;
             else                         new_style &= ~WS_CAPTION;
             if (last_style & WS_DLGFRAME) new_style |= WS_DLGFRAME;
             else                          new_style &= ~WS_DLGFRAME;
             if (last_style & WS_BORDER) new_style |= WS_BORDER;
             else                        new_style &= ~WS_BORDER;
+            if (last_style & WS_MAXIMIZE) new_style |= WS_MAXIMIZE;
+            else                          new_style &= ~WS_MAXIMIZE;
+            if (last_style & WS_MAXIMIZEBOX) new_style |= WS_MAXIMIZEBOX;
+            else                             new_style &= ~WS_MAXIMIZEBOX;
+            if (last_style & WS_MINIMIZE) new_style |= WS_MINIMIZE;
+            else                          new_style &= ~WS_MINIMIZE;
+            if (last_style & WS_MINIMIZEBOX) new_style |= WS_MINIMIZEBOX;
+            else                             new_style &= ~WS_MINIMIZEBOX;
             if (last_exstyle & WS_EX_WINDOWEDGE) new_exstyle |= WS_EX_WINDOWEDGE;
             else                                 new_exstyle &= ~WS_EX_WINDOWEDGE;
             if (last_exstyle & WS_EX_CLIENTEDGE) new_exstyle |= WS_EX_CLIENTEDGE;
             else                                 new_exstyle &= ~WS_EX_CLIENTEDGE;
             if (last_exstyle & WS_EX_DLGMODALFRAME) new_exstyle |= WS_EX_DLGMODALFRAME;
             else                                    new_exstyle &= ~WS_EX_DLGMODALFRAME;
+            if (last_exstyle & WS_EX_NOACTIVATE) new_exstyle |= WS_EX_NOACTIVATE;
+            else                                 new_exstyle &= ~WS_EX_NOACTIVATE;
             last_style   = new_style;
             last_exstyle = new_exstyle;
             
             mcl_control_obj.b_wallpaper = false;
             ::KillTimer (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper);
 
-            HWND hProgman = ::FindWindow (_T("Progman"), 0); // find PM window¡£
+            HWND hProgman = ::FindWindow (_T("Progman"), 0);
             ::ShowWindow (hProgman, SW_SHOW);
+            ::ShowWindow (mcl_control_obj.hWndWorkerW, SW_SHOW);
             ::SetParent (mcl_control_obj.hwnd, 0);
-                
+            
             RECT wr = {0, 0, last_w, last_h};
             ::AdjustWindowRectEx (&wr, static_cast<DWORD>(last_style),
                                     FALSE, static_cast<DWORD>(last_exstyle));
@@ -1019,12 +1088,15 @@ mcl {
                                     GWL_STYLE, static_cast<DWORD>(last_style));
             ::SetWindowLongPtr   (mcl_control_obj.hwnd,
                                     GWL_EXSTYLE, static_cast<DWORD>(last_exstyle));
+            ::SetWindowPos       (mcl_control_obj.hwnd, HWND_TOPMOST,
+                                    wr.left + last_x, wr.top + last_y,
+                                    wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
+            ::ShowWindow         (mcl_control_obj.hwnd, SW_SHOW);
             ::SetWindowPos       (mcl_control_obj.hwnd, HWND_NOTOPMOST,
                                     wr.left + last_x, wr.top + last_y,
                                     wr.right - wr.left, wr.bottom - wr.top, SWP_FRAMECHANGED);
-            ::SwitchToThisWindow (mcl_control_obj.hwnd, TRUE);
+            mcl_SwitchToThisWindow ();
         }
-
         return *this;
     }
     

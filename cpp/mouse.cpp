@@ -123,17 +123,17 @@ mcl {
         }
         return false;
     }
-    bool mcl_mouse_t::
+    mcl_mouse_t::btn_type mcl_mouse_t::
     get_async_buttons (btn_type btn_mask) noexcept{
         btn_type btns = 0;
-        if (btn_mask & BtnLButton)  btns |= (::GetAsyncKeyState (VK_LBUTTON)  & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnRButton)  btns |= (::GetAsyncKeyState (VK_RBUTTON)  & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnShift)    btns |= (::GetAsyncKeyState (VK_SHIFT)    & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnCtrl)     btns |= (::GetAsyncKeyState (VK_CONTROL)  & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnMButton)  btns |= (::GetAsyncKeyState (VK_MBUTTON)  & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnXButton1) btns |= (::GetAsyncKeyState (VK_XBUTTON1) & 0x8000 ? 1 : 2);
-        if (btn_mask & BtnXButton2) btns |= (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000 ? 1 : 2);
-        return (btns & 1) && !(btns & 2);
+        if (btn_mask & BtnLButton  && (::GetAsyncKeyState (VK_LBUTTON)  & 0x8000)) btns |= BtnLButton;
+        if (btn_mask & BtnRButton  && (::GetAsyncKeyState (VK_RBUTTON)  & 0x8000)) btns |= BtnRButton;
+        if (btn_mask & BtnShift    && (::GetAsyncKeyState (VK_SHIFT)    & 0x8000)) btns |= BtnShift;
+        if (btn_mask & BtnCtrl     && (::GetAsyncKeyState (VK_CONTROL)  & 0x8000)) btns |= BtnCtrl;
+        if (btn_mask & BtnMButton  && (::GetAsyncKeyState (VK_MBUTTON)  & 0x8000)) btns |= BtnMButton;
+        if (btn_mask & BtnXButton1 && (::GetAsyncKeyState (VK_XBUTTON1) & 0x8000)) btns |= BtnXButton1;
+        if (btn_mask & BtnXButton2 && (::GetAsyncKeyState (VK_XBUTTON2) & 0x8000)) btns |= BtnXButton2;
+        return btns;
     }
 
     /**

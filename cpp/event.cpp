@@ -687,6 +687,12 @@ mcl {
         if (!mcl_control_obj.hWndKeyGrabed)
             return ;
 
+        {
+        mcl_simpletls_ns::mcl_spinlock_t kmlock(mcl_base_obj.keymaplock, L"mcl_event_t::set_grab_key");
+        std::vector<BYTE>*& keys = *reinterpret_cast<std::vector<BYTE>**>(&mcl_control_obj.keymap);
+        if (keys) for (BYTE& ki : *keys) ki &= 1;
+        }
+
         // post Active Event
         if (!(mcl_control_obj.bHasIMFocus & 1)) {
             ev.active.state = InputFocus;

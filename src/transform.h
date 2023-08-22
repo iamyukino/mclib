@@ -44,7 +44,6 @@ mcl {
     *     pygame.transform.get_smoothscale_backend()
     *     pygame.transform.set_smoothscale_backend()
     *     pygame.transform.average_surfaces()
-    *     pygame.transform.threshold()
     * 
     * @feature
     *     mcl::transform.clip()
@@ -72,10 +71,10 @@ mcl {
         surface_t  flip      (surface_t const& surface, bool flip_x, bool flip_y) noexcept;
         // resize to new resolution. smooth_ipt in (0,1,2)
         surface_t  scale     (surface_t const& surface, point2d_t size,
-                                point2d_t* offset = nullptr, short smooth_ipt = 1) noexcept;
+                                point2d_t* offset = nullptr, short smooth_ipt = 0) noexcept;
         // resize to new resolution, using scalar(s). smooth_ipt in (0,1,2)
         surface_t  scale_by  (surface_t const& surface, float factor_x, float factor_y,
-                                point2d_t* offset = nullptr, short smooth_ipt = 1) noexcept;
+                                point2d_t* offset = nullptr, short smooth_ipt = 0) noexcept;
         // rotate an image
         surface_t  rotate    (surface_t const& surface, float angle,
                                 point2d_t* offset = nullptr) noexcept;
@@ -94,7 +93,10 @@ mcl {
         color_t    average_color (surface_t const& surface) noexcept;
         // grayscale a surface
         surface_t  grayscale (surface_t const& surface) noexcept;
-
+        // finds which, and how many pixels in a surface are within a threshold
+        size_t     threshold (void* dest_surf, surface_t const& surf, color_t search_color,
+                                color_t threshold, color_t set_color, int set_behavior = 1,
+                                void const* search_surf = 0, bool inverse_set = false) noexcept;
     };
     extern mcl_transform_t transform; // Module for surfaces transfer.
 

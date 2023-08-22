@@ -68,6 +68,10 @@ mcl {
         LRESULT OnNCHitTest   (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnSize        (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnMove        (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnDisplayChange (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnEraseBkgnd  (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnMoving      (HWND hWnd, WPARAM wParam, LPARAM lParam);
+        LRESULT OnSizing      (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnPaint       (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnActivate    (HWND hWnd, WPARAM wParam, LPARAM lParam);
         LRESULT OnShowWindow  (HWND hWnd, WPARAM wParam, LPARAM lParam);
@@ -114,7 +118,8 @@ mcl {
         void*     timermap   = nullptr;
         void*     keymap     = nullptr;
         LONGLONG  timer      = 0ll;
-        enum : UINT_PTR { timerIdMin = UINT_PTR(~eventtype_t(0)), timerWallpaper};
+        enum : UINT_PTR { timerIdMin = UINT_PTR(~eventtype_t(0)),
+                          timerWallpaper, timerWallpaper2 };
         unsigned  threaddr   = 0u;         // thread id
         TCHAR     window_caption[_MAX_FNAME];
 
@@ -158,6 +163,7 @@ mcl {
 
         cursor_t  cucur;
 
+        HWND      hWndLastWorkerW = nullptr;
         HWND      hWndWorkerW = nullptr;
         HHOOK     hWndMouseGrabed = nullptr;
         HHOOK     hWndKeyGrabed = nullptr;
@@ -180,6 +186,7 @@ mcl {
     unsigned long mcl_set_dbi_awareness (bool awareness = false) noexcept;
     void mcl_report_sysexception (wchar_t const* what);
     void mcl_reset_check () noexcept;
+    void mcl_SwitchToThisWindow ();
 
 
     /**
@@ -223,7 +230,7 @@ mcl {
     */
     class mcl_imagebuf_t {
     public:
-        explicit mcl_imagebuf_t () noexcept{}
+        explicit mcl_imagebuf_t () noexcept: m_alpha (0xff){};
         explicit mcl_imagebuf_t (point1d_t width, point1d_t height) noexcept;
                 ~mcl_imagebuf_t () noexcept;
         bool     init           () noexcept;
@@ -235,6 +242,9 @@ mcl {
         HBITMAP   m_hbmp     = nullptr;
         point1d_t m_width    = 0;
         point1d_t m_height   = 0;
+
+        color_t m_colorkey   = 0;
+        color_t m_alpha;
 
     public:
         typename mcl_simpletls_ns::mcl_spinlock_t::lock_t m_nrtlock = 0ul;

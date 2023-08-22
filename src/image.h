@@ -41,6 +41,10 @@ namespace
 mcl {
 
    /**
+    * @todo
+    *     mcl::image.tobytes()
+    *     mcl::image.frombytes()
+    * 
     * @unimplemented
     *     pygame.image.get_extended()
     *     pygame.image.tostring()
@@ -49,6 +53,7 @@ mcl {
     *     pygame.image.frombytes()
     * 
     * @unfinished
+    *    # extended type, mask, low-bit image 
     *     pygame.image.load()
     *     pygame.image.save()
     */

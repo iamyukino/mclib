@@ -169,9 +169,11 @@ mcl {
 
         // Create a surface
         surface_t surf;
+        char* data = mcl_get_surface_data (&surf);
         mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(&surf);
         ibuf = new (std::nothrow) mcl_imagebuf_t{ qbmp.bmWidth, qbmp.bmHeight };
-        if (!surf) {
+        if (!ibuf || !ibuf -> m_width) {
+            if (ibuf) delete ibuf;
             ::SelectObject (hldc, hbmpold);
             ::DeleteDC (hldc);
             ::DeleteObject (hbmp);
@@ -180,8 +182,7 @@ mcl {
         }
         
         // Blit the dc
-        char* cbuf = mcl_get_surface_data (&surf);
-        BOOL retbilt = ::BitBlt (ibuf -> m_hdc, 0, 0,
+        BOOL retblit = ::BitBlt (ibuf -> m_hdc, 0, 0,
             qbmp.bmWidth, qbmp.bmHeight, hldc, 0, 0, SRCCOPY);
         
         // Unitialize
@@ -189,13 +190,13 @@ mcl {
         ::DeleteDC (hldc);
         ::DeleteObject (hbmp);
         
-        if (!retbilt)
+        if (!retblit)
             return sf_nullptr;
-        if (!type && cbuf[0]) {
+        if (!type && (data[0] & surface_t::SrcAlpha)) {
             // Convert into per pixel transparency
             for (color_t* p = ibuf -> m_pbuffer,
                 *e = p + static_cast<long long>(ibuf -> m_width) * ibuf -> m_height;
-                p != e; ++p) {
+                p != e; ++ p) {
                 *p |= 0xff000000;
             }
         }
@@ -331,7 +332,7 @@ mcl {
         // Select loaded bmp into dc
         ::SelectObject (hldc, hbmp);
 
-        surface_t surf;
+        surface_t surf(0, surface_t::SrcAlpha);
         mcl_imagebuf_t*& ibuf = *reinterpret_cast<mcl_imagebuf_t**>(&surf);
         ibuf = new (std::nothrow) mcl_imagebuf_t ();
         if (!ibuf) {

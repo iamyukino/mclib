@@ -90,7 +90,7 @@ mcl {
         // get the state of the mouse buttons. focus not required
         bool              get_async_pressed (size_t m_index) noexcept;
         // get the state of the mouse buttons and modifier keys. focus not required
-        bool              get_async_buttons (btn_type btn_mask) noexcept;
+        btn_type          get_async_buttons (btn_type btn_mask) noexcept;
         // get the mouse cursor position. focus not required
         point2d_t         get_pos     (bool b_global = false) noexcept;
         // set the mouse cursor position. focus not required

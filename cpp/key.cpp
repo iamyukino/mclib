@@ -267,7 +267,7 @@ mcl {
      * @brief Determine which modifier keys are being held
      * @return wchar_t
      */
-    wchar_t mcl_key_t::
+    mcl_key_t::mod_type mcl_key_t::
     get_mods () noexcept{
         return mcl_control_obj.fModKeyState;
     }
@@ -306,22 +306,22 @@ mcl {
      * @brief Determine whether a modifier key is up or down. focus not required
      * @return bool
      */
-    bool mcl_key_t::
+    mcl_key_t::mod_type mcl_key_t::
     get_async_mods (mod_type mod_mask) noexcept{
         mod_type mods = 0;
-        if (mod_mask & ModLShift) mods |= (::GetAsyncKeyState (VK_LSHIFT)   & 0x8000 ? 1 : 2);
-        if (mod_mask & ModRShift) mods |= (::GetAsyncKeyState (VK_RSHIFT)   & 0x8000 ? 1 : 2);
-        if (mod_mask & ModLCtrl)  mods |= (::GetAsyncKeyState (VK_LCONTROL) & 0x8000 ? 1 : 2);
-        if (mod_mask & ModRCtrl)  mods |= (::GetAsyncKeyState (VK_RCONTROL) & 0x8000 ? 1 : 2);
-        if (mod_mask & ModLAlt)   mods |= (::GetAsyncKeyState (VK_LMENU)    & 0x8000 ? 1 : 2);
-        if (mod_mask & ModRAlt)   mods |= (::GetAsyncKeyState (VK_RMENU)    & 0x8000 ? 1 : 2);
-        if (mod_mask & ModLMeta)  mods |= (::GetAsyncKeyState (VK_LWIN)     & 0x8000 ? 1 : 2);
-        if (mod_mask & ModRMeta)  mods |= (::GetAsyncKeyState (VK_RWIN)     & 0x8000 ? 1 : 2);
-        if (mod_mask & ModCaps)   mods |= (::GetKeyState      (VK_CAPITAL)  & 0x1    ? 1 : 2);
-        if (mod_mask & ModNum)    mods |= (::GetKeyState      (VK_NUMLOCK)  & 0x1    ? 1 : 2);
-        if (mod_mask & ModMode)   mods |= (::GetAsyncKeyState (VK_LCONTROL)
-                                           &::GetAsyncKeyState(VK_RMENU)    & 0x8000 ? 1 : 2);
-        return (mods & 1) && !(mods & 2);
+        if (mod_mask & ModLShift && (::GetAsyncKeyState (VK_LSHIFT)   & 0x8000)) mods |= ModLShift;
+        if (mod_mask & ModRShift && (::GetAsyncKeyState (VK_RSHIFT)   & 0x8000)) mods |= ModRShift;
+        if (mod_mask & ModLCtrl  && (::GetAsyncKeyState (VK_LCONTROL) & 0x8000)) mods |= ModLCtrl;
+        if (mod_mask & ModRCtrl  && (::GetAsyncKeyState (VK_RCONTROL) & 0x8000)) mods |= ModRCtrl;
+        if (mod_mask & ModLAlt   && (::GetAsyncKeyState (VK_LMENU)    & 0x8000)) mods |= ModLAlt;
+        if (mod_mask & ModRAlt   && (::GetAsyncKeyState (VK_RMENU)    & 0x8000)) mods |= ModRAlt;
+        if (mod_mask & ModLMeta  && (::GetAsyncKeyState (VK_LWIN)     & 0x8000)) mods |= ModLMeta;
+        if (mod_mask & ModRMeta  && (::GetAsyncKeyState (VK_RWIN)     & 0x8000)) mods |= ModRMeta;
+        if (mod_mask & ModCaps   && (::GetKeyState      (VK_CAPITAL)  & 0x1)   ) mods |= ModCaps;
+        if (mod_mask & ModNum    && (::GetKeyState      (VK_NUMLOCK)  & 0x1)   ) mods |= ModNum;
+        if (mod_mask & ModMode   && (::GetAsyncKeyState (VK_LCONTROL)
+                                    &::GetAsyncKeyState (VK_RMENU)    & 0x8000)) mods |= ModMode;
+        return mods;
     }
 
     /**

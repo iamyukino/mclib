@@ -50,8 +50,10 @@ mcl {
     *     pygame.key.get_repeat()
     * 
     * @feature
+    *    # font of IME editor 
     *     mcl::key.get_async_pressed()
     *     mcl::key.get_async_mods()
+    *     mcl::key.set_text_input_rect()
     */
 
    /**
@@ -271,11 +273,11 @@ mcl {
         // get the state of all keyboard buttons
         std::vector<bool> get_pressed () noexcept;
         // determine which modifier keys are being held
-        wchar_t           get_mods    () noexcept;
+        mod_type          get_mods    () noexcept;
         // determine whether a key is up or down. focus not required
         bool              get_async_pressed (type vk_index) noexcept;
         // determine whether a modifier key is up or down. focus not required
-        bool              get_async_mods (mod_type mod_mask) noexcept;
+        mod_type          get_async_mods (mod_type mod_mask) noexcept;
         // control how held keys are repeated
         bool              set_repeat  (bool b_repeat = false) noexcept;
         bool              get_repeat  () noexcept;

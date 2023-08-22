@@ -1,7 +1,18 @@
-# mclib v0.5.2-Debug.3471
+# mclib v0.5.2-Debug.3472
 
 Release notes for Mclib
 --------------------------------
+  |
+.3472     July 27th 2023 - August 16th 2023
+  |  
+  |  [  FIXED   ]    Fixed get_async_xx() .
+  |  [  ADDED   ]    Add surface.premul_alpha() .
+  |  [  ADDED   ]    Add surface.set_alpha() .
+  |  [  ADDED   ]    Add surface.set_colorkey() .
+  |  [  ADDED   ]    Add transform.threshold() .
+  |
+  |
+  |
   |
 .3471     July 13th 2023 - July 27th 2023
   |  

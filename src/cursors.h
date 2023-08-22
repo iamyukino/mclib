@@ -130,7 +130,7 @@ mcl {
         // Use system cursor.  See cursors.h .
         explicit       cursor_t (sys_cursor_t constant) noexcept;
         // Use color cursor.  All sizes and rgba colors are supported.
-        explicit       cursor_t (point2d_t hotspot, surface_t surface) noexcept;
+        explicit       cursor_t (point2d_t hotspot, surface_t const& surface) noexcept;
         // Use Windows binary cursor. (returned by mcl::cursors.compile)
         // Width and height must be equal and be a multiple of 8
         explicit       cursor_t (point2d_t size, point2d_t hotspot,

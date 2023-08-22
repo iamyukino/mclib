@@ -118,7 +118,11 @@ mcl {
 
    /**
     * @unimplemented
-    *     no_care
+    *     pygame.error
+    *     pygame.get_error()
+    *     pygame.set_error()
+    *     pygame.encode_string()
+    *     pygame.encode_file_path()
     */
 
    /**

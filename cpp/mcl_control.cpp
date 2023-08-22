@@ -300,7 +300,8 @@ mcl {
         }
         bMouseHookAlone = false;
         bKeyHookAlone = false;
-
+        
+        hWndLastWorkerW = nullptr;
         hWndWorkerW = nullptr;
         bCtrlMsgLoop = false;
         bMouseInClient = false;
@@ -384,9 +385,9 @@ mcl {
 
         // resize
         if (dbuf_surface)
-            dbuf_surface -> resize ({this -> dc_w, this -> dc_h}, false);
+            dbuf_surface -> resize ({this -> dc_w, this -> dc_h});
         if (cur_surface)
-            cur_surface -> resize ({this -> dc_w, this -> dc_h}, false);
+            cur_surface -> resize ({this -> dc_w, this -> dc_h});
         
         ev.type = event.WindowResized;
         event.post (ev);
@@ -407,8 +408,59 @@ mcl {
             ev.window.wParam = wParam;
             ev.window.lParam = lParam;
             event.post (ev);
+
+            if (hWndMouseGrabed) {
+                MOUSEHOOKSTRUCTEX mhs;
+                ::memset (&mhs, 0, sizeof(MOUSEHOOKSTRUCTEX));
+                ::GetCursorPos (&mhs.pt);
+                hookOnMouseMove (reinterpret_cast<PMOUSEHOOKSTRUCTEX>(&mhs));
+            }
         }
         return ::DefWindowProc (hWnd, WM_MOVE, wParam, lParam);
+    }
+
+    LRESULT mcl_window_info_t::
+    OnDisplayChange (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        mcl_set_dbi_awareness (true);
+        base_w = ::GetSystemMetrics (SM_CXSCREEN);
+        base_h = ::GetSystemMetrics (SM_CYSCREEN);
+        return ::DefWindowProc (hWnd, WM_DISPLAYCHANGE, wParam, lParam);
+    }
+
+    LRESULT mcl_window_info_t::
+    OnEraseBkgnd (HWND, WPARAM, LPARAM) {
+        return TRUE;
+    }
+
+    LRESULT mcl_window_info_t::
+    OnMoving (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        if (b_fullscreen || b_wallpaper) {
+            LPRECT pRect = reinterpret_cast<LPRECT>(reinterpret_cast<void*>(lParam));
+            if (pRect) {
+                pRect -> left   = 0;
+                pRect -> top    = 0;
+                pRect -> right  = base_w;
+                pRect -> bottom = base_h;
+            }
+            return TRUE;
+        }
+        return ::DefWindowProc (hWnd, WM_MOVING, wParam, lParam);
+    }
+
+    LRESULT mcl_window_info_t::
+    OnSizing (HWND hWnd, WPARAM wParam, LPARAM lParam) {
+        LRESULT def = ::DefWindowProc (hWnd, WM_SIZING, wParam, lParam);
+        if (b_fullscreen || b_wallpaper) {
+            LPRECT pRect = reinterpret_cast<LPRECT>(reinterpret_cast<void*>(lParam));
+            if (pRect) {
+                pRect -> left   = 0;
+                pRect -> top    = 0;
+                pRect -> right  = base_w;
+                pRect -> bottom = base_h;
+            }
+            return TRUE;
+        }
+        return def;
     }
 
     LRESULT mcl_window_info_t::
@@ -461,6 +513,9 @@ mcl {
         if (fActive == WA_INACTIVE) ev.active.gain = 0, bHasIMFocus = 0;
         else                        ev.active.gain = 1, bHasIMFocus |= 1;
         if (fActive == WA_CLICKACTIVE) bHasIMFocus |= 2;
+
+        if (!ev.active.gain && !b_wallpaper && hWndLastWorkerW && ::GetForegroundWindow () == mcl_control_obj.hWndLastWorkerW)
+            ::SetTimer (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper2, 16, 0);
         
         constexpr int MouseFocus = 1, InputFocus = 2, MouseActive = 4;
         if (bHasIMFocus & 1) ev.active.state |= (MouseFocus | InputFocus);
@@ -716,6 +771,14 @@ mcl {
                 ::ShowWindow (hWndWorkerW, SW_HIDE);
                 ToggleWallpaperProc ();
             }
+            if (wParam == timerWallpaper2) {
+                ::KillTimer (mcl_control_obj.hwnd, mcl_window_info_t::timerWallpaper2);
+                if (!b_wallpaper) {
+                    // mcl_SwitchToThisWindow ();
+                    ::ShowWindow (hwnd, SW_MINIMIZE);
+                }
+                return 0;
+            }
             return ::DefWindowProc (hWnd, WM_TIMER, wParam, lParam);
         }
 
@@ -903,6 +966,10 @@ mcl {
             case WM_NCHITTEST:   return OnNCHitTest   (hWnd, wParam, lParam);    break;
             case WM_SIZE:        return OnSize        (hWnd, wParam, lParam);    break;
             case WM_MOVE:        return OnMove        (hWnd, wParam, lParam);    break;
+            case WM_DISPLAYCHANGE: return OnDisplayChange (hWnd, wParam, lParam); break;
+            case WM_ERASEBKGND:  return OnEraseBkgnd  (hWnd, wParam, lParam);    break;
+            case WM_MOVING:      return OnMoving      (hWnd, wParam, lParam);    break;
+            case WM_SIZING:      return OnSizing      (hWnd, wParam, lParam);    break;
             case WM_PAINT:       return OnPaint       (hWnd, wParam, lParam);    break;
             case WM_ACTIVATE:    return OnActivate    (hWnd, wParam, lParam);    break;
             case WM_SHOWWINDOW:  return OnShowWindow  (hWnd, wParam, lParam);    break;
@@ -936,7 +1003,6 @@ mcl {
             case WM_IME_COMPOSITION: return OnIMEComposition (hWnd, wParam, lParam); break;
             case WM_IME_NOTIFY:  return OnIMENotify   (hWnd, wParam, lParam);    break;
             case WM_IME_ENDCOMPOSITION: return OnIMEEndComposition (hWnd, wParam, lParam); break;
-            // case WM_ERASEBKGND: return true; // never erase background
             case WM_DESTROY:            ::PostQuitMessage (0);                   break; 
             default:             return ::DefWindowProc (hWnd, uMessage, wParam, lParam);
         }
@@ -1047,7 +1113,7 @@ mcl {
         
         // if (bopen) ml_ << L"  Loading device contexts..." << std::endl;
         instance = ::GetModuleHandle (nullptr);
-        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h });
+        cur_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, 0);
         if (!cur_surface || !*cur_surface) {
             ml_[cll4m.Fatal] << "Failed to create surface." << std::endl;
             MCL_DESTROY_WINDOW_();
@@ -1057,7 +1123,7 @@ mcl {
         }
         if (flags & dflags.DoubleBuf) {
         // surface for double buffer
-            dbuf_surface = new(std::nothrow) surface_t({ dc_w, dc_h });
+            dbuf_surface = new(std::nothrow) surface_t({ dc_w, dc_h }, 0);
         }
 
         if (b_allow_screensaver_before == 2)

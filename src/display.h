@@ -63,6 +63,7 @@ mcl {
     *     pygame.display.set_palette()
     * 
     * @unfinished
+    *    # noframe & resizable, nrtlock
     *     pygame.display.set_mode()
     *     pygame.display.get_desktop_sizes()
     *     pygame.display.get_num_displays()

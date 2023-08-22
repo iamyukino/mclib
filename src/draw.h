@@ -55,21 +55,23 @@ mcl {
     */
     class
     mcl_draw_t { public:
-        explicit       mcl_draw_t ()                      = default;
-                      ~mcl_draw_t ()                      = default;
-                       mcl_draw_t (mcl_draw_t const& rhs) = delete;
-        mcl_draw_t&    operator=  (mcl_draw_t const& rhs) = delete;
-        operator       void*      () const noexcept;
-        bool           operator!  () const noexcept; 
+        explicit    mcl_draw_t ()                      = default;
+                   ~mcl_draw_t ()                      = default;
+                    mcl_draw_t (mcl_draw_t const& rhs) = delete;
+        mcl_draw_t& operator=  (mcl_draw_t const& rhs) = delete;
+        operator    void*      () const noexcept;
+        bool        operator!  () const noexcept; 
 
-        rect_t         rect       ( surface_t& surface, color_t color,
-                                    rect_t recta, point1d_t width = 0,
-                                    point1d_t border_radius = 0,
-                                    point1d_t border_top_left_radius = -1,
-                                    point1d_t border_top_right_radius = -1,
-                                    point1d_t border_bottom_left_radius = -1,
-                                    point1d_t border_bottom_right_radius = -1
-                                ) const noexcept;
+        // draw a rectangle
+        rect_t      rect       (surface_t& surface, color_t color, rect_t recta) noexcept;
+        // draw a rectangle
+        rect_t      rect       (surface_t& surface, color_t color, rect_t recta,
+                                  point1d_t width, point1d_t border_radius = 0,
+                                  point1d_t border_top_left_radius = -1,
+                                  point1d_t border_top_right_radius = -1,
+                                  point1d_t border_bottom_left_radius = -1,
+                                  point1d_t border_bottom_right_radius = -1
+                                ) noexcept;
     };
     extern mcl_draw_t draw; // Module for drawing shapes.
 

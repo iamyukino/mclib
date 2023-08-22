@@ -235,96 +235,109 @@ mcl {
     }
 
     cursor_t::
-    cursor_t (point2d_t hotspot, surface_t surface) noexcept
+    cursor_t (point2d_t hotspot, surface_t const& surface) noexcept
       : m_dataplus_(0), m_data_{3} {
-        point1d_t wid = surface.get_width (), hei = surface.get_height ();
-        if (!(wid && hei)) return ;
+        mcl_imagebuf_t* dataplus = mcl_get_surface_dataplus (&const_cast<surface_t&>(surface));
+        char*           data     = mcl_get_surface_data (&const_cast<surface_t&>(surface));
+        if (!dataplus) return ;
+        
+        // lock
+        mcl_simpletls_ns::mcl_spinlock_t lk(dataplus -> m_nrtlock, L"cursor_t::cursor_t");
+        if (!dataplus -> m_width) return ;
 
-        if (wid != hei) wid = (wid < hei ? wid : hei), hei = 0;
+        // resize
+        point1d_t wid = dataplus -> m_width, hei = dataplus -> m_height;
+        if (wid != hei) wid = (wid > hei ? wid : hei), hei = 0;
         if (wid & 15) wid += 16 - (wid & 15), hei = 0;
         
+        // bitmap header
         HBITMAP hBitmap = 0, hOldBitmap = 0;
         void*   lpBits = nullptr;
         HDC     hMemDC = 0, hdc = 0;
         HCURSOR hAlphaCursor = 0;
-        
-        int swWidth = 0, swHeight = 0;
         BITMAPV5HEADER bi{ 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0,
             {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
             0, 0, 0, 0, 0, 0, 0 };
-        
-        swWidth  = wid;   // width of cursor
-        swHeight = wid;   // height of cursor
 
         bi.bV5Size        = sizeof(BITMAPV5HEADER);
-        bi.bV5Width       = swWidth;
-        bi.bV5Height      = swHeight;
+        bi.bV5Width       = wid;
+        bi.bV5Height      = wid;
         bi.bV5Planes      = 1;
         bi.bV5BitCount    = 32;
         bi.bV5Compression = BI_BITFIELDS;
-        // The following mask specification specifies a supported 32 BPP
-        // alpha format for Windows XP.
+            // The following mask specification specifies a supported 32 BPP
+            // alpha format for Windows XP.
         bi.bV5AlphaMask   =  0xff000000; 
         bi.bV5RedMask     =  0x00ff0000;
         bi.bV5GreenMask   =  0x0000ff00;
         bi.bV5BlueMask    =  0x000000ff;
 
-        hdc = ::GetDC (0);
+        // create & copy the DIB section
+        hdc = ::GetDC (nullptr);
         if (!hdc) return ;
 
-        // Create the DIB section with an alpha channel.
         hBitmap = ::CreateDIBSection (hdc, reinterpret_cast<BITMAPINFO*>(&bi),
             DIB_RGB_COLORS, reinterpret_cast<void**>(&lpBits), 0, 0);
-        if (!hBitmap) {
-            ::ReleaseDC (0, hdc);
-            return ;
-        }
-
+        if (!hBitmap) { ::ReleaseDC (0, hdc); return ; }
+        
         hMemDC = ::CreateCompatibleDC (hdc);
         ::ReleaseDC (0, hdc);
-        if (!hMemDC) {
-            ::DeleteObject (hBitmap);
-            return ;
-        }
+        if (!hMemDC) { ::DeleteObject (hBitmap); return ; }
 
-        // Do a copy on the DIB section.
         hOldBitmap = static_cast<HBITMAP>(::SelectObject (hMemDC, hBitmap));
-        mcl_imagebuf_t* src = mcl_get_surface_dataplus(&surface);
-        ::BitBlt (hMemDC, 0, 0, swWidth, swHeight, src -> m_hdc, 0, 0, SRCCOPY);
+        ::BitBlt (hMemDC, 0, 0, wid, wid, dataplus -> m_hdc, 0, 0, SRCCOPY);
         ::SelectObject (hMemDC, hOldBitmap);
         ::DeleteDC (hMemDC);
 
-        // Create an empty mask bitmap.
-        HBITMAP hMonoBitmap = ::CreateBitmap (swWidth, swHeight, 1, 1, NULL);
-        if (!hMonoBitmap) {
-            ::DeleteObject (hBitmap);
-            return ;
+        // create an empty mask
+        HBITMAP hMonoBitmap = ::CreateBitmap (wid, wid, 1, 1, NULL);
+        if (!hMonoBitmap) { ::DeleteObject (hBitmap); return ; }
+        
+        // copy alpha info
+        color_t m_ck = dataplus -> m_colorkey;
+        color_t m_alpha = dataplus -> m_alpha;
+        color_t b_sa = color_t(data[0] & surface_t::SrcAlpha);
+        color_t b_ck = color_t(data[0] & surface_t::SrcColorKey);
+        
+        // map direction
+        DWORD *src = reinterpret_cast<DWORD*>(lpBits), *srce = 0;
+        point1d_t i = 0, skipw = wid - dataplus -> m_width;
+        
+        // blit function
+        std::function<void(color_t*)> fpCvAlpha;
+        if (!b_sa) {
+            m_alpha <<= 24;
+            fpCvAlpha = [b_ck, m_alpha, m_ck](color_t* pixel) {
+                *pixel &= 0xffffff;
+                *pixel = (b_ck && *pixel == m_ck) ? 0 : (*pixel | m_alpha);
+            };
+        } else if (m_alpha != 255) {
+            fpCvAlpha = [m_alpha](color_t* pixel) {
+                *pixel = (*pixel & 0xffffff) | ((*pixel >> 24) * m_alpha / 255) << 24;
+            };
+        } else {
+            fpCvAlpha = [](color_t*){ };
         }
 
         // Reset the alpha values for each pixel in the cursor if
         // semi-transparent is not required.
-        if (!surface.get_flags ()) {
-            int it = 0;
-            DWORD* lpdwPixel = reinterpret_cast<DWORD*>(lpBits);
-            
-            if (hei) { // never resized
-                for (it = swWidth * swHeight; it; ++ lpdwPixel, -- it)
-                    *lpdwPixel |= 0xff000000;
-            } else { // resized
-                wid = surface.get_width ();
-                hei = surface.get_height ();
-                int skipw = swWidth - wid;
-                while (-- hei) {
-                    for (it = wid; it; ++ lpdwPixel, -- it)
-                        *lpdwPixel |= 0xff000000;
-                    lpdwPixel += skipw;
-                }
+        if (hei) { // never resized
+            for (srce = src + wid * wid; src != srce; ++ src)
+                fpCvAlpha (src);
+        } else { // resized
+            srce = src + wid * (wid - dataplus -> m_height);
+            for (; src != srce; ++ src) *src = 0;
+            for (i = dataplus -> m_height; i; -- i) {
+                srce = src + dataplus -> m_width;
+                for (; src != srce; ++ src) fpCvAlpha (src);
+                srce = src + skipw; // fill left & right
+                for (; src != srce; ++ src) *src = 0;
             }
         }
 
         ICONINFO ii{ 0, 0, 0, 0, 0 };
-        ii.fIcon    = FALSE;  // Change fIcon to TRUE to create an alpha icon
+        ii.fIcon    = FALSE; // TRUE - icon, FALSE - cursor
         ii.xHotspot = static_cast<DWORD>(hotspot.x);
         ii.yHotspot = static_cast<DWORD>(hotspot.y);
         ii.hbmMask  = hMonoBitmap;

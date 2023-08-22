@@ -53,6 +53,9 @@ namespace
 mcl {
     
    /**
+    * @todo
+    *     mcl::event.set_grab()
+    * 
     * @unimplemented
     *     pygame.event.pump()
     *     pygame.event.set_keyboard_grab()

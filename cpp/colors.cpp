@@ -52,8 +52,8 @@ mcl {
    /**
     * @function cvtrgb2hsl <src/colors.h>
     * @brief Convert the RGB color to the HSL color
-    * @param {color_t} rgbcolor: {a,r,g,b} = [0, 256)
-    * @return {color_t} hslcolor: {a} = [0, 255), {h,s,l} = [0, 240)
+    * @param {color_t} rgbcolor: {a,r,g,b} = [0, 255]
+    * @return {color_t} hslcolor: {a} = [0, 255], {h,s,l} = [0, 240]
     */
     color_t
     cvtrgb2hsl (color_t rgbcolor) {
@@ -90,8 +90,8 @@ mcl {
    /**
     * @function cvthsl2hsv <src/colors.h>
     * @brief Convert the HSL color to the HSV color
-    * @param {color_t} hslcolor: {a} = [0, 255), {h,s,l} = [0, 240)
-    * @return {color_t} hsvcolor: {a} = [0, 255), {h,s,v} = [0, 240)
+    * @param {color_t} hslcolor: {a} = [0, 255], {h,s,l} = [0, 240]
+    * @return {color_t} hsvcolor: {a} = [0, 255], {h,s,v} = [0, 240]
     */
     color_t
     cvthsl2hsv (color_t hslcolor) {
@@ -115,8 +115,8 @@ mcl {
    /**
     * @function cvthsv2rgb <src/colors.h>
     * @brief Convert the HSV color to the RGB color.
-    * @param {color_t} hsvcolor: {a} = [0, 255), {h,s,v} = [0, 240)
-    * @return {color_t} rgbcolor: {a,r,g,b} = [0, 256)
+    * @param {color_t} hsvcolor: {a} = [0, 255], {h,s,v} = [0, 240]
+    * @return {color_t} rgbcolor: {a,r,g,b} = [0, 255]
     */
     color_t
     cvthsv2rgb (color_t hsvcolor) {
@@ -147,8 +147,8 @@ mcl {
    /**
     * @function cvtrgb2hsv <src/colors.h>
     * @brief Convert the RGB color to the HSV color.
-    * @param {color_t} rgbcolor: {a,r,g,b} = [0, 256)
-    * @return {color_t} hsvcolor: {a} = [0, 255), {h,s,v} = [0, 240)
+    * @param {color_t} rgbcolor: {a,r,g,b} = [0, 255]
+    * @return {color_t} hsvcolor: {a} = [0, 255], {h,s,v} = [0, 240]
     */
     color_t
     cvtrgb2hsv (color_t rgbcolor) {
@@ -182,8 +182,8 @@ mcl {
    /**
     * @function cvthsv2hsl <src/colors.h>
     * @brief Convert the HSV color to the HSL color.
-    * @param {color_t} hsvcolor: {a} = [0, 255), {h,s,v} = [0, 240)
-    * @return {color_t} hslcolor: {a} = [0, 255), {h,s,l} = [0, 240)
+    * @param {color_t} hsvcolor: {a} = [0, 255], {h,s,v} = [0, 240]
+    * @return {color_t} hslcolor: {a} = [0, 255], {h,s,l} = [0, 240]
     */
     color_t cvthsv2hsl (color_t hsvcolor) {
         
@@ -206,8 +206,8 @@ mcl {
    /**
     * @function cvthsl2rgb <src/colors.h>
     * @brief Convert the HSL color to the RGB color.
-    * @param {color_t} hslcolor: {a} = [0, 255), {h,s,l} = [0, 240)
-    * @return {color_t} rgbcolor: {a,r,g,b} = [0, 256)
+    * @param {color_t} hslcolor: {a} = [0, 255], {h,s,l} = [0, 240]
+    * @return {color_t} rgbcolor: {a,r,g,b} = [0, 255]
     */
     color_t
     cvthsl2rgb (color_t hslcolor) {
